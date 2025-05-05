@@ -6,8 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3E02C8BB2DC8DF7700108B7A /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E02C8B92DC8DF7700108B7A /* LoopKit.framework */; };
+		3E02C8BC2DC8DF7700108B7A /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3E02C8B92DC8DF7700108B7A /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		3E02C8BD2DC8DF7700108B7A /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E02C8BA2DC8DF7700108B7A /* LoopKitUI.framework */; };
+		3E02C8BE2DC8DF7700108B7A /* LoopKitUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3E02C8BA2DC8DF7700108B7A /* LoopKitUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3E02C8BF2DC8DF7700108B7A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				3E02C8BC2DC8DF7700108B7A /* LoopKit.framework in Embed Frameworks */,
+				3E02C8BE2DC8DF7700108B7A /* LoopKitUI.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		3E02C8AA2DC8DEA600108B7A /* EversenseKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EversenseKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E02C8B92DC8DF7700108B7A /* LoopKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E02C8BA2DC8DF7700108B7A /* LoopKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +60,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3E02C8BB2DC8DF7700108B7A /* LoopKit.framework in Frameworks */,
+				3E02C8BD2DC8DF7700108B7A /* LoopKitUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				3E02C8AC2DC8DEA600108B7A /* EversenseKit */,
+				3E02C8B82DC8DF7700108B7A /* Frameworks */,
 				3E02C8AB2DC8DEA600108B7A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +83,15 @@
 				3E02C8AA2DC8DEA600108B7A /* EversenseKit.framework */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3E02C8B82DC8DF7700108B7A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3E02C8B92DC8DF7700108B7A /* LoopKit.framework */,
+				3E02C8BA2DC8DF7700108B7A /* LoopKitUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -79,6 +115,7 @@
 				3E02C8A62DC8DEA600108B7A /* Sources */,
 				3E02C8A72DC8DEA600108B7A /* Frameworks */,
 				3E02C8A82DC8DEA600108B7A /* Resources */,
+				3E02C8BF2DC8DF7700108B7A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -105,6 +142,7 @@
 				TargetAttributes = {
 					3E02C8A92DC8DEA600108B7A = {
 						CreatedOnToolsVersion = 16.2;
+						LastSwiftMigration = 1620;
 					};
 				};
 			};
@@ -152,7 +190,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -180,11 +219,13 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -193,7 +234,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -221,11 +263,12 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
