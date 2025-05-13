@@ -24,6 +24,9 @@ enum FlashMemory: UInt32 {
     case mostRecentCalibrationTimeAddress = 0x000008A5
     case startDateOfCalibrationPhaseAddress = 0x000089D
     case startTimeOfCalibrationPhaseAddress = 0x0000089F
+    
+    case accelerometerValuesAddress = 0x0000042A
+    case accelerometerTempAddress = 0x00000430
 }
 
 class CommandOperations {

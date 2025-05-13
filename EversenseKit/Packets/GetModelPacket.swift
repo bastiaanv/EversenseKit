@@ -12,7 +12,7 @@ struct GetModelResponse {
 class GetModelPacket : BasePacket {
     typealias T = GetModelResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readFourByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetModelPacket : BasePacket {
         return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterModelNumber)
     }
     
-    func parseResponse(data: Data) -> GetModelResponse {
+    static func parseResponse(data: Data) -> GetModelResponse {
         return GetModelResponse(
             model: "\(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24))"
         )

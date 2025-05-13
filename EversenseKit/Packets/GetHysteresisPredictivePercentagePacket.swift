@@ -12,7 +12,7 @@ struct GetHysteresisPredictivePercentagePacketResponse {
 class GetHysteresisPredictivePercentagePacket : BasePacket {
     typealias T = GetHysteresisPredictivePercentagePacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetHysteresisPredictivePercentagePacket : BasePacket {
         return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisPredictivePercentageAddress)
     }
     
-    func parseResponse(data: Data) -> GetHysteresisPredictivePercentagePacketResponse {
+    static func parseResponse(data: Data) -> GetHysteresisPredictivePercentagePacketResponse {
         return GetHysteresisPredictivePercentagePacketResponse(value: data[0])
     }
 }

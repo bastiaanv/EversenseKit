@@ -12,7 +12,7 @@ struct GetBatteryPercentagePacketResponse {
 class GetBatteryPercentagePacket : BasePacket {
     typealias T = GetBatteryPercentagePacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetBatteryPercentagePacket : BasePacket {
         return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.batteryPercentageAddress)
     }
     
-    func parseResponse(data: Data) -> GetBatteryPercentagePacketResponse {
+    static func parseResponse(data: Data) -> GetBatteryPercentagePacketResponse {
         return GetBatteryPercentagePacketResponse(
             value: BatteryLevel(rawValue: data[0]) ?? .unknown
         )

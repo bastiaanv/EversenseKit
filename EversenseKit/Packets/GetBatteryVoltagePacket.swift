@@ -12,7 +12,7 @@ struct GetBatteryVoltagePacketResponse {
 class GetBatteryVoltagePacket : BasePacket {
     typealias T = GetBatteryVoltagePacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterCommandId
     }
     
@@ -20,7 +20,7 @@ class GetBatteryVoltagePacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.batteryVoltageAddress)
     }
     
-    func parseResponse(data: Data) -> GetBatteryVoltagePacketResponse {
+    static func parseResponse(data: Data) -> GetBatteryVoltagePacketResponse {
         return GetBatteryVoltagePacketResponse(value: Double((data[0] | (data[1] << 8))) * 0.006)
     }
 }

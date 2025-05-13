@@ -12,7 +12,7 @@ struct GetVersionExtendedPacketResponse {
 class GetVersionExtendedPacket : BasePacket {
     typealias T = GetVersionExtendedPacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readFourByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetVersionExtendedPacket : BasePacket {
         return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterSoftwareVersionExtAddress)
     }
     
-    func parseResponse(data: Data) -> GetVersionExtendedPacketResponse {
+    static func parseResponse(data: Data) -> GetVersionExtendedPacketResponse {
         let extVersion = data[0..<4].compactMap { String(UnicodeScalar($0)) }.joined()
         return GetVersionExtendedPacketResponse(extVersion: extVersion)
     }

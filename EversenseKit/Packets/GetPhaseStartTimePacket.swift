@@ -12,7 +12,7 @@ struct GetPhaseStartTimePacketResponse {
 class GetPhaseStartTimePacket : BasePacket {
     typealias T = GetPhaseStartTimePacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetPhaseStartTimePacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.startTimeOfCalibrationPhaseAddress)
     }
     
-    func parseResponse(data: Data) -> GetPhaseStartTimePacketResponse {
+    static func parseResponse(data: Data) -> GetPhaseStartTimePacketResponse {
         return GetPhaseStartTimePacketResponse(time: BinaryOperations.toTimeComponents(data: data))
     }
 }

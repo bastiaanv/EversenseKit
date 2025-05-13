@@ -12,7 +12,7 @@ struct GetHysteresisValuePacketResponse {
 class GetHysteresisValuePacket : BasePacket {
     typealias T = GetHysteresisValuePacketResponse
     
-    var response: PacketIds {
+    static var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetHysteresisValuePacket : BasePacket {
         return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisValueAddress)
     }
     
-    func parseResponse(data: Data) -> GetHysteresisValuePacketResponse {
+    static func parseResponse(data: Data) -> GetHysteresisValuePacketResponse {
         return GetHysteresisValuePacketResponse(valueInMgDl: data[0])
     }
 }

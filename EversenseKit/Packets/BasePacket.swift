@@ -8,13 +8,32 @@
 protocol BasePacket {
     associatedtype T
     
-    var response: PacketIds { get }
+    static var response: PacketIds { get }
     
     func getRequestData() -> Data
-    func parseResponse(data: Data) -> T
+    static func parseResponse(data: Data) -> T
 }
 
-enum PacketIds: UInt16 {
+extension BasePacket {
+    static func checkPacket(data: Data) -> Bool {
+        // Check packetId
+        guard data[0] == response.rawValue else {
+            return false
+        }
+        
+        // Minlength of a packet is 3
+        guard data.count >= 3 else {
+            return false
+        }
+        
+        let packet = Data(data.dropLast(2))
+        let calculatedChecksum = BinaryOperations.dataFrom16Bits(value: BinaryOperations.generateChecksumCRC16(data: packet))
+        
+        return calculatedChecksum == Data(data.subdata(in: data.count - 2..<data.count))
+    }
+}
+
+enum PacketIds: UInt8 {
     case assertSnoozeAgainsAlarmCommandId = 20
     case assertSnoozeAgainsAlarmResponseId = 148
     case calibrationAlertPush = 77
