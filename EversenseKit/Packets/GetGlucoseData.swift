@@ -14,7 +14,7 @@ struct GetGlucoseDataResponse {
 class GetGlucoseData : BasePacket {
     typealias T = GetGlucoseDataResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readSensorGlucoseResponseId
     }
     
@@ -26,7 +26,7 @@ class GetGlucoseData : BasePacket {
         return data
     }
     
-    static func parseResponse(data: Data) -> GetGlucoseDataResponse {
+    func parseResponse(data: Data) -> GetGlucoseDataResponse {
         return GetGlucoseDataResponse(
             trend: getTrend(value: data[13])
         )

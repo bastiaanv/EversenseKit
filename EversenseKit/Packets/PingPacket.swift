@@ -10,7 +10,7 @@ struct PingPacketResponse {}
 class PingPacket : BasePacket {
     typealias T = PingPacketResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.pingResponseId
     }
     
@@ -23,7 +23,7 @@ class PingPacket : BasePacket {
         return data
     }
     
-    static func parseResponse(data: Data) -> PingPacketResponse {
+    func parseResponse(data: Data) -> PingPacketResponse {
         return PingPacketResponse()
     }
 }

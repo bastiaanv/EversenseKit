@@ -12,7 +12,7 @@ struct GetAccelerometerValuesResponse {
 class GetAccelerometerValues : BasePacket {
     typealias T = GetAccelerometerValuesResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetAccelerometerValues : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.accelerometerValuesAddress)
     }
     
-    static func parseResponse(data: Data) -> GetAccelerometerValuesResponse {
+    func parseResponse(data: Data) -> GetAccelerometerValuesResponse {
         return GetAccelerometerValuesResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
     }
 }

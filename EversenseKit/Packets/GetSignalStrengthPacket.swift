@@ -12,7 +12,7 @@ struct GetSignalStrengthPacketResponse {
 class GetSignalStrengthPacket : BasePacket {
     typealias T = GetSignalStrengthPacketResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetSignalStrengthPacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.sensorFieldCurrentAddress)
     }
     
-    static func parseResponse(data: Data) -> GetSignalStrengthPacketResponse {
+    func parseResponse(data: Data) -> GetSignalStrengthPacketResponse {
         let value = UInt16(data[0]) | UInt16(data[1] << 8)
         var signalStrength = SignalStrength.NoSignal
         if value >= SignalStrength.Excellent.threshold {

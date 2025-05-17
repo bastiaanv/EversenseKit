@@ -12,7 +12,7 @@ struct GetLastCalibrationDatePacketResponse {
 class GetLastCalibrationDatePacket : BasePacket {
     typealias T = GetLastCalibrationDatePacketResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetLastCalibrationDatePacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.mostRecentCalibrationDateAddress)
     }
     
-    static func parseResponse(data: Data) -> GetLastCalibrationDatePacketResponse {
+    func parseResponse(data: Data) -> GetLastCalibrationDatePacketResponse {
         return GetLastCalibrationDatePacketResponse(
             date: BinaryOperations.toDateComponents(data: data)
         )

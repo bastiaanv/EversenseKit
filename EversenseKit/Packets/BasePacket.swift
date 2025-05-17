@@ -5,17 +5,17 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-protocol BasePacket {
-    associatedtype T
+protocol BasePacket<T> {
+    associatedtype T = AnyClass
     
-    static var response: PacketIds { get }
+    var response: PacketIds { get }
     
     func getRequestData() -> Data
-    static func parseResponse(data: Data) -> T
+    func parseResponse(data: Data) -> T
 }
 
 extension BasePacket {
-    static func checkPacket(data: Data) -> Bool {
+    func checkPacket(data: Data) -> Bool {
         // Check packetId
         guard data[0] == response.rawValue else {
             return false

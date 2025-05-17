@@ -8,6 +8,8 @@
 import LoopKit
 
 public class EversensCGMManager: CGMManager {
+    public var state: EversensCGMState
+    
     public var cgmManagerDelegate: (any LoopKit.CGMManagerDelegate)?
     
     public var providesBLEHeartbeat: Bool
@@ -31,7 +33,11 @@ public class EversensCGMManager: CGMManager {
     public var localizedTitle: String
     
     public required init?(rawState: RawStateValue) {
-        <#code#>
+        guard let state = EversensCGMState(rawValue: rawState) else {
+            return nil
+        }
+        
+        self.state = state
     }
     
     public var rawState: RawStateValue

@@ -10,6 +10,7 @@ import CoreBluetooth
 class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
+    private let cgmManager: EversensCGMManager
     private let connectCompletion: ((Result<Void, ConnectFailure>) -> Void)?
     
     private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
@@ -20,11 +21,38 @@ class PeripheralManager: NSObject {
     private var requestCharacteristic: CBCharacteristic?
     private var responseCharacteristic: CBCharacteristic?
     
-    init(peripheral: CBPeripheral, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
+    private var packet: (any BasePacket)?
+    private var writeQueue: [UInt8: AsyncThrowingStream<AnyClass, Error>.Continuation] = [:]
+    
+    init(peripheral: CBPeripheral, cgmManager: EversensCGMManager, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
         self.peripheral = peripheral
         self.connectCompletion = connectCompletion
         
         self.peripheral.delegate = self
+    }
+    
+    func write<T>(_ packet: any BasePacket) async throws -> T {
+        guard writeQueue[packet.response.rawValue] == nil, let characteristic = self.requestCharacteristic else {
+            throw NSError(domain: "Command already running", code: 0)
+        }
+        
+        let stream = AsyncThrowingStream<AnyClass, Error> { continuation in
+            writeQueue[packet.response.rawValue] = continuation
+            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+        }
+
+        return try await firstValue(from: stream)
+    }
+    
+    private func firstValue<T>(from stream: AsyncThrowingStream<AnyClass, Error>) async throws -> T {
+        for try await value in stream {
+            if let value = value as? T {
+                return value
+            }
+            
+            throw NSError(domain: "Got invalid data type", code: 0)
+        }
+        throw NSError(domain: "Got no response. Most likely an encryption issue", code: 0)
     }
 }
 
@@ -81,12 +109,12 @@ extension PeripheralManager: CBPeripheralDelegate {
         self.logger.debug("Received data: \(data.hexString())")
         
         if data[0] == PacketIds.saveBLEBondingInformationResponseId.rawValue {
-            guard SaveBleBondingInformationPacket.checkPacket(data: data) else {
+            guard SaveBleBondingInformationPacket().checkPacket(data: data) else {
                 self.logger.error("Checksum failed for SaveBleBondingInformationPacket - \(data.hexString())")
                 return
             }
             
-            // TODO: Start transmitter state sync'ing
+            self.fullTransmitterSync()
             return
         }
         
@@ -107,6 +135,84 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
         
-        // TODO: Parse normal packet
+        // Parse normal packet
+        guard let packet = self.packet, packet.checkPacket(data: data), let response = packet.parseResponse(data: data.subdata(in: 1..<data.count-2)) as? AnyClass else {
+            self.logger.warning("Received invalid response, invalid response code or checksum failed - data: \(data.hexString())")
+            return
+        }
+        
+        guard let stream = self.writeQueue[packet.response.rawValue] else {
+            self.logger.warning("No pending write for response code \(packet.response.rawValue) - data: \(data.hexString())")
+            return
+        }
+        
+        stream.yield(response)
+        stream.finish()
+    }
+}
+
+extension PeripheralManager {
+    func fullTransmitterSync() {
+        Task {
+            do {
+                // Get MMA Features
+                let mmaResponse: GetMmaFeaturesPacketResponse = try await self.write(GetMmaFeaturesPacket())
+                cgmManager.state.mmaFeatures = mmaResponse.value
+                
+                // Get battery voltage
+                let batteryResponse: GetBatteryVoltagePacketResponse = try await self.write(GetBatteryVoltagePacket())
+                cgmManager.state.batteryVoltage = batteryResponse.value
+                
+                // TODO: Write morningCalibrationTime
+                // TODO: Write eveningCalibrationTime
+                
+                // Set day startTime
+                let setDayStartTimePacket = SetDayStartTimePacket(dayStartTime: cgmManager.state.dayStartTime)
+                let _: SetDayStartTimePacketResponse = try await self.write(setDayStartTimePacket)
+                
+                // Set night startTime
+                let setNightStartTimePacket = SetNightStartTimePacket(nightStartTime: cgmManager.state.nightStartTime)
+                let _: SetNightStartTimePacketResponse = try await self.write(setNightStartTimePacket)
+                
+                // Do Ping
+                let _: PingPacketResponse = try await self.write(PingPacket())
+                
+                // Get Transmitter model
+                let modelResponse: GetModelPacketResponse = try await self.write(GetModelPacket())
+                cgmManager.state.model = modelResponse.model
+                
+                // Get Transmitter version & extended Version
+                let versionResponse: GetVersionPacketResponse = try await self.write(GetVersionPacket())
+                let versionExtendedResponse: GetVersionExtendedPacketResponse = try await self.write(GetVersionExtendedPacket())
+                cgmManager.state.version = versionResponse.version
+                cgmManager.state.extVersion = versionExtendedResponse.extVersion
+                
+                // Get phase start datetime
+                let phaseStartDate: GetPhaseStartDatePacketResponse = try await self.write(GetPhaseStartDatePacket())
+                let phaseStartTime: GetPhaseStartTimePacketResponse = try await self.write(GetPhaseStartTimePacket())
+                cgmManager.state.lastCalibration = Date.fromComponents(
+                    date: phaseStartDate.date,
+                    time: phaseStartTime.time
+                )
+                
+                // Get last calibration datetime
+                let lastCalibrationDate: GetLastCalibrationDatePacketResponse = try await self.write(GetLastCalibrationDatePacket())
+                let lastCalibrationTime: GetLastCalibrationTimePacketResponse = try await self.write(GetLastCalibrationTimePacket())
+                cgmManager.state.lastCalibration = Date.fromComponents(
+                    date: lastCalibrationDate.date,
+                    time: lastCalibrationTime.time
+                )
+                
+                // TODO: Get current calibration phase
+                
+                // Get hysteresis
+                let hysteresisPercentage: GetHysteresisPercentagePacketResponse = try await self.write(GetHysteresisPercentagePacket())
+                let hysteresisValue: GetHysteresisValuePacketResponse = try await self.write(GetHysteresisValuePacket())
+                cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
+                cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
+            } catch {
+                logger.error("Something went wrong during full sync: \(error)")
+            }
+        }
     }
 }

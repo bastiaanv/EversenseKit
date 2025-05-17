@@ -12,7 +12,7 @@ struct GetVersionPacketResponse {
 class GetVersionPacket : BasePacket {
     typealias T = GetVersionPacketResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readFourByteSerialFlashRegisterResponseId
     }
     
@@ -20,7 +20,7 @@ class GetVersionPacket : BasePacket {
         return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterSoftwareVersionAddress)
     }
     
-    static func parseResponse(data: Data) -> GetVersionPacketResponse {
+    func parseResponse(data: Data) -> GetVersionPacketResponse {
         let version = data[0..<4].compactMap { String(UnicodeScalar($0)) }.joined()
         return GetVersionPacketResponse(version: version)
     }

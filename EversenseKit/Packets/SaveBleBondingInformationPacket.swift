@@ -10,7 +10,7 @@ struct SaveBleBondingInformationPacketResponse {}
 class SaveBleBondingInformationPacket : BasePacket {
     typealias T = SaveBleBondingInformationPacketResponse
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.saveBLEBondingInformationResponseId
     }
     
@@ -22,7 +22,7 @@ class SaveBleBondingInformationPacket : BasePacket {
         return data
     }
     
-    static func parseResponse(data: Data) -> SaveBleBondingInformationPacketResponse {
+    func parseResponse(data: Data) -> SaveBleBondingInformationPacketResponse {
         return SaveBleBondingInformationPacketResponse()
     }
     

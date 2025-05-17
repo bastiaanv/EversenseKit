@@ -27,6 +27,10 @@ enum FlashMemory: UInt32 {
     
     case accelerometerValuesAddress = 0x0000042A
     case accelerometerTempAddress = 0x00000430
+    
+    case mmaFeaturesAddress = 0x00000137
+    case dayStartTimeAddress = 0x00001110
+    case nightStartTimeAddress = 0x00001112
 }
 
 class CommandOperations {
@@ -48,6 +52,14 @@ class CommandOperations {
     
     static func readSingleByteSerialFlashRegister(memoryAddress: FlashMemory) -> Data {
         var data = Data([0x2A, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16)])
+        let checksum = BinaryOperations.generateChecksumCRC16(data: data)
+        data.append(BinaryOperations.dataFrom16Bits(value: checksum))
+        
+        return data
+    }
+    
+    static func writeTwoByteSerialFlashRegister(memoryAddress: FlashMemory, data: Data) -> Data {
+        var data = Data([0x2D, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16), data[0], data[1]])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
         

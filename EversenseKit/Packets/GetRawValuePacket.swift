@@ -17,7 +17,7 @@ class GetRawValuePacket : BasePacket {
         self.memory = memory
     }
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
@@ -25,7 +25,7 @@ class GetRawValuePacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: self.memory)
     }
     
-    static func parseResponse(data: Data) -> GetRawValuePacketResponse {
+    func parseResponse(data: Data) -> GetRawValuePacketResponse {
         return GetRawValuePacketResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
     }
 }

@@ -14,7 +14,7 @@ class GetGlucoseAlertsAndStatusPacket : BasePacket {
     
     private let STATUS_FLAG_COUNT = 13
     
-    static var response: PacketIds {
+    var response: PacketIds {
         PacketIds.readSensorGlucoseAlertsAndStatusResponseId
     }
     
@@ -26,7 +26,7 @@ class GetGlucoseAlertsAndStatusPacket : BasePacket {
         return data
     }
     
-    static func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
+    func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
         var content = data.subdata(in: 1..<data.count-2)
         if content.count < STATUS_FLAG_COUNT {
             let prefix = Data(repeating: 0, count: content.count - STATUS_FLAG_COUNT)
