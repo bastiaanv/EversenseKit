@@ -5,12 +5,12 @@
 //  Created by Bastiaan Verhaar on 11/05/2025.
 //
 
-struct GetRawValuePacketResponse {
+struct GetRawValueResponse {
     let value: UInt16
 }
 
 class GetRawValuePacket : BasePacket {
-    typealias T = GetRawValuePacketResponse
+    typealias T = GetRawValueResponse
     
     private let memory: FlashMemory
     init(memory: FlashMemory) {
@@ -25,7 +25,7 @@ class GetRawValuePacket : BasePacket {
         return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: self.memory)
     }
     
-    func parseResponse(data: Data) -> GetRawValuePacketResponse {
-        return GetRawValuePacketResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
+    func parseResponse(data: Data) -> GetRawValueResponse {
+        return GetRawValueResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
     }
 }

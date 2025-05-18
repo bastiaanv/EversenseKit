@@ -5,23 +5,23 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetVersionPacketResponse {
+struct GetVersionResponse {
     let version: String
 }
 
 class GetVersionPacket : BasePacket {
-    typealias T = GetVersionPacketResponse
+    typealias T = GetVersionResponse
     
     var response: PacketIds {
         PacketIds.readFourByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterSoftwareVersionAddress)
+        return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterSoftwareVersion)
     }
     
-    func parseResponse(data: Data) -> GetVersionPacketResponse {
+    func parseResponse(data: Data) -> GetVersionResponse {
         let version = data[0..<4].compactMap { String(UnicodeScalar($0)) }.joined()
-        return GetVersionPacketResponse(version: version)
+        return GetVersionResponse(version: version)
     }
 }

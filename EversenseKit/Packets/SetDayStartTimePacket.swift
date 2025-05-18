@@ -5,10 +5,10 @@
 //  Created by Bastiaan Verhaar on 17/05/2025.
 //
 
-struct SetDayStartTimePacketResponse {}
+struct SetDayStartTimeResponse {}
 
 class SetDayStartTimePacket : BasePacket {
-    typealias T = SetDayStartTimePacketResponse
+    typealias T = SetDayStartTimeResponse
     
     private let dayStartTime: Date
     init(dayStartTime: Date) {
@@ -29,7 +29,7 @@ class SetDayStartTimePacket : BasePacket {
         )
     }
     
-    func parseResponse(data: Data) -> SetDayStartTimePacketResponse {
-        return SetDayStartTimePacketResponse()
+    func parseResponse(data: Data) -> SetDayStartTimeResponse {
+        return SetDayStartTimeResponse()
     }
 }

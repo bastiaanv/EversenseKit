@@ -5,23 +5,23 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetBatteryPercentagePacketResponse {
+struct GetBatteryPercentageResponse {
     let value: BatteryLevel
 }
 
 class GetBatteryPercentagePacket : BasePacket {
-    typealias T = GetBatteryPercentagePacketResponse
+    typealias T = GetBatteryPercentageResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.batteryPercentageAddress)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.batteryPercentage)
     }
     
-    func parseResponse(data: Data) -> GetBatteryPercentagePacketResponse {
-        return GetBatteryPercentagePacketResponse(
+    func parseResponse(data: Data) -> GetBatteryPercentageResponse {
+        return GetBatteryPercentageResponse(
             value: BatteryLevel(rawValue: data[0]) ?? .unknown
         )
     }

@@ -5,22 +5,22 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetHysteresisPredictiveValuePacketResponse {
+struct GetHysteresisPredictiveValueResponse {
     let valueInMgDl: UInt8
 }
 
 class GetHysteresisPredictiveValuePacket : BasePacket {
-    typealias T = GetHysteresisPredictiveValuePacketResponse
+    typealias T = GetHysteresisPredictiveValueResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisPredictiveValueAddress)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisPredictiveValue)
     }
     
-    func parseResponse(data: Data) -> GetHysteresisPredictiveValuePacketResponse {
-        return GetHysteresisPredictiveValuePacketResponse(valueInMgDl: data[0])
+    func parseResponse(data: Data) -> GetHysteresisPredictiveValueResponse {
+        return GetHysteresisPredictiveValueResponse(valueInMgDl: data[0])
     }
 }

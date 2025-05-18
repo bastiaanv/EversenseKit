@@ -5,23 +5,23 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetLastCalibrationDatePacketResponse {
+struct GetLastCalibrationDateResponse {
     let date: DateComponents
 }
 
 class GetLastCalibrationDatePacket : BasePacket {
-    typealias T = GetLastCalibrationDatePacketResponse
+    typealias T = GetLastCalibrationDateResponse
     
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.mostRecentCalibrationDateAddress)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.mostRecentCalibrationDate)
     }
     
-    func parseResponse(data: Data) -> GetLastCalibrationDatePacketResponse {
-        return GetLastCalibrationDatePacketResponse(
+    func parseResponse(data: Data) -> GetLastCalibrationDateResponse {
+        return GetLastCalibrationDateResponse(
             date: BinaryOperations.toDateComponents(data: data)
         )
     }

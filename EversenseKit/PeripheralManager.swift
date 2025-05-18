@@ -156,11 +156,11 @@ extension PeripheralManager {
         Task {
             do {
                 // Get MMA Features
-                let mmaResponse: GetMmaFeaturesPacketResponse = try await self.write(GetMmaFeaturesPacket())
+                let mmaResponse: GetMmaFeaturesResponse = try await self.write(GetMmaFeaturesPacket())
                 cgmManager.state.mmaFeatures = mmaResponse.value
                 
                 // Get battery voltage
-                let batteryResponse: GetBatteryVoltagePacketResponse = try await self.write(GetBatteryVoltagePacket())
+                let batteryResponse: GetBatteryVoltageResponse = try await self.write(GetBatteryVoltagePacket())
                 cgmManager.state.batteryVoltage = batteryResponse.value
                 
                 // TODO: Write morningCalibrationTime
@@ -168,48 +168,106 @@ extension PeripheralManager {
                 
                 // Set day startTime
                 let setDayStartTimePacket = SetDayStartTimePacket(dayStartTime: cgmManager.state.dayStartTime)
-                let _: SetDayStartTimePacketResponse = try await self.write(setDayStartTimePacket)
+                let _: SetDayStartTimeResponse = try await self.write(setDayStartTimePacket)
                 
                 // Set night startTime
                 let setNightStartTimePacket = SetNightStartTimePacket(nightStartTime: cgmManager.state.nightStartTime)
-                let _: SetNightStartTimePacketResponse = try await self.write(setNightStartTimePacket)
+                let _: SetNightStartTimeResponse = try await self.write(setNightStartTimePacket)
                 
                 // Do Ping
-                let _: PingPacketResponse = try await self.write(PingPacket())
+                let _: PingResponse = try await self.write(PingPacket())
                 
                 // Get Transmitter model
-                let modelResponse: GetModelPacketResponse = try await self.write(GetModelPacket())
+                let modelResponse: GetModelResponse = try await self.write(GetModelPacket())
                 cgmManager.state.model = modelResponse.model
                 
                 // Get Transmitter version & extended Version
-                let versionResponse: GetVersionPacketResponse = try await self.write(GetVersionPacket())
-                let versionExtendedResponse: GetVersionExtendedPacketResponse = try await self.write(GetVersionExtendedPacket())
+                let versionResponse: GetVersionResponse = try await self.write(GetVersionPacket())
+                let versionExtendedResponse: GetVersionExtendedResponse = try await self.write(GetVersionExtendedPacket())
                 cgmManager.state.version = versionResponse.version
                 cgmManager.state.extVersion = versionExtendedResponse.extVersion
                 
                 // Get phase start datetime
-                let phaseStartDate: GetPhaseStartDatePacketResponse = try await self.write(GetPhaseStartDatePacket())
-                let phaseStartTime: GetPhaseStartTimePacketResponse = try await self.write(GetPhaseStartTimePacket())
+                let phaseStartDate: GetPhaseStartDateResponse = try await self.write(GetPhaseStartDatePacket())
+                let phaseStartTime: GetPhaseStartTimeResponse = try await self.write(GetPhaseStartTimePacket())
                 cgmManager.state.lastCalibration = Date.fromComponents(
                     date: phaseStartDate.date,
                     time: phaseStartTime.time
                 )
                 
                 // Get last calibration datetime
-                let lastCalibrationDate: GetLastCalibrationDatePacketResponse = try await self.write(GetLastCalibrationDatePacket())
-                let lastCalibrationTime: GetLastCalibrationTimePacketResponse = try await self.write(GetLastCalibrationTimePacket())
+                let lastCalibrationDate: GetLastCalibrationDateResponse = try await self.write(GetLastCalibrationDatePacket())
+                let lastCalibrationTime: GetLastCalibrationTimeResponse = try await self.write(GetLastCalibrationTimePacket())
                 cgmManager.state.lastCalibration = Date.fromComponents(
                     date: lastCalibrationDate.date,
                     time: lastCalibrationTime.time
                 )
                 
-                // TODO: Get current calibration phase
+                // Get current calibration phase
+                let isOneCalPhase: GetIsOneCalPhaseResponse = try await self.write(GetIsOneCalPhasePacket())
+                let calibrationCount: GetCompletedCalibrationsCountResponse = try await self.write(GetCompletedCalibrationsCountPacket())
+                let calibrationPhase: GetCurrentCalibrationPhaseResponse = try await self.write(GetCurrentCalibrationPhasePacket())
+                cgmManager.state.isOneCalibrationPhase = isOneCalPhase.value
+                cgmManager.state.calibrationCount = calibrationCount.value
+                cgmManager.state.calibrationPhase = calibrationPhase.phase
                 
                 // Get hysteresis
-                let hysteresisPercentage: GetHysteresisPercentagePacketResponse = try await self.write(GetHysteresisPercentagePacket())
-                let hysteresisValue: GetHysteresisValuePacketResponse = try await self.write(GetHysteresisValuePacket())
+                let hysteresisPercentage: GetHysteresisPercentageResponse = try await self.write(GetHysteresisPercentagePacket())
+                let hysteresisValue: GetHysteresisValueResponse = try await self.write(GetHysteresisValuePacket())
                 cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
                 cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
+                
+                // Get predictive hysteresis
+                let predictiveHysteresisPercentage: GetHysteresisPredictivePercentageResponse = try await self.write(GetHysteresisPredictivePercentagePacket())
+                let predictiveHysteresisValue: GetHysteresisPredictiveValueResponse = try await self.write(GetHysteresisPredictiveValuePacket())
+                cgmManager.state.predictiveHysteresisPercentage = predictiveHysteresisPercentage.value
+                cgmManager.state.predictiveHysteresisValueInMgDl = predictiveHysteresisValue.valueInMgDl
+                
+                // Get algorithm format version
+                let algorithmFormatVersion: GetAlgorithmParameterFormatVersionResponse = try await self.write(GetAlgorithmParameterFormatVersionPacket())
+                cgmManager.state.algorithmFormatVersion = algorithmFormatVersion.value
+                
+                // Get transmitter starting moment
+                if cgmManager.state.isUSXLorOUSXL2 {
+                    let transmitterStartDate: GetTransmitterOperationStartDateResponse = try await self.write(GetTransmitterOperationStartDate())
+                    let transmitterStartTime: GetTransmitterOperationStartTimeResponse = try await self.write(GetTransmitterOperationStartTime())
+                    cgmManager.state.transmitterStart = Date.fromComponents(
+                        date: transmitterStartDate.date,
+                        time: transmitterStartTime.time
+                    )
+                }
+                
+                // Get communication protocol version
+                let communicationProtocol: GetCommunicationProtocolVersionResponse = try await self.write(GetCommunicationProtocolVersionPacket())
+                cgmManager.state.communicationProtocol = communicationProtocol.version
+                
+                // Get MEPMSP information
+                let mepValue: GetMEPSavedValueResponse = try await self.write(GetMEPSavedValuePacket())
+                let mepRefChannelMetric: GetMEPSavedRefChannelMetricResponse = try await self.write(GetMEPSavedRefChannelMetricPacket())
+                let mepDriftMetric: GetMEPSavedDriftMetricResponse = try await self.write(GetMEPSavedDriftMetricPacket())
+                let mepLowRefMetric: GetMEPSavedLowRefMetricResponse = try await self.write(GetMEPSavedLowRefMetricPacket())
+                let mepSpike: GetMEPSavedSpikeResponse = try await self.write(GetMEPSavedSpikePacket())
+                let eep24MSP: GetEEP24MSPResponse = try await self.write(GetEEP24MSPPacket())
+                cgmManager.state.mepValue = mepValue.value
+                cgmManager.state.mepRefChannelMetric = mepRefChannelMetric.value
+                cgmManager.state.mepDriftMetric = mepDriftMetric.value
+                cgmManager.state.mepLowRefMetric = mepLowRefMetric.value
+                cgmManager.state.mepSpike = mepSpike.value
+                cgmManager.state.eep24MSP = eep24MSP.value
+                
+                // Get glucose alarm repeat interval - SKIPPING day/night start time, since we just wrote them
+                let lowAlarmRepeatingDay: GetLowGlucoseAlarmRepeatIntervalDayTimeResponse = try await self.write(GetLowGlucoseAlarmRepeatIntervalDayTimePacket())
+                let highAlarmRepeatingDay: GetHighGlucoseAlarmRepeatIntervalDayTimeResponse = try await self.write(GetHighGlucoseAlarmRepeatIntervalDayTimePacket())
+                let lowAlarmRepeatingNight: GetLowGlucoseAlarmRepeatIntervalNightTimeResponse = try await self.write(GetLowGlucoseAlarmRepeatIntervalNightTimePacket())
+                let highAlarmRepeatingNight: GetHighGlucoseAlarmRepeatIntervalNightTimeResponse = try await self.write(GetHighGlucoseAlarmRepeatIntervalNightTimePacket())
+                cgmManager.state.lowGlucoseAlarmRepeatingDayTime = lowAlarmRepeatingDay.value
+                cgmManager.state.highGlucoseAlarmRepeatingDayTime = highAlarmRepeatingDay.value
+                cgmManager.state.lowGlucoseAlarmRepeatingNightTime = lowAlarmRepeatingNight.value
+                cgmManager.state.highGlucoseAlarmRepeatingNightTime = highAlarmRepeatingNight.value
+                
+                // Get sensorId
+                let senorId: GetSensorIdResponse = try await self.write(GetSensorIdPacket())
+                cgmManager.state.sensorId = senorId.value
             } catch {
                 logger.error("Something went wrong during full sync: \(error)")
             }

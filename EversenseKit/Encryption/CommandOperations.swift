@@ -6,31 +6,54 @@
 //
 
 enum FlashMemory: UInt32 {
-    case sensorFieldCurrentAddress = 0x00000408
-    case sensorFieldCurrentRawAddress = 0x0000049D
-    case batteryVoltageAddress = 0x00000404
-    case batteryPercentageAddress = 0x00000406
+    case sensorFieldCurrent = 0x00000408
+    case sensorFieldCurrentRaw = 0x0000049D
+    case batteryVoltage = 0x00000404
+    case batteryPercentage = 0x00000406
     
-    case hysteresisPercentageAddress = 0x00000093
-    case hysteresisValueAddress = 0x00000094
-    case hysteresisPredictivePercentageAddress = 0x00000095
-    case hysteresisPredictiveValueAddress = 0x00000096
+    case hysteresisPercentage = 0x00000093
+    case hysteresisValue = 0x00000094
+    case hysteresisPredictivePercentage = 0x00000095
+    case hysteresisPredictiveValue = 0x00000096
     
     case transmitterModelNumber = 0x00000006
-    case transmitterSoftwareVersionAddress = 0x0000000A
-    case transmitterSoftwareVersionExtAddress = 0x000000A2
+    case transmitterSoftwareVersion = 0x0000000A
+    case transmitterSoftwareVersionExt = 0x000000A2
     
-    case mostRecentCalibrationDateAddress = 0x000008A3
-    case mostRecentCalibrationTimeAddress = 0x000008A5
-    case startDateOfCalibrationPhaseAddress = 0x000089D
-    case startTimeOfCalibrationPhaseAddress = 0x0000089F
+    case isOneCalPhase = 0x00000496
+    case calibrationsMadeInThisPhase = 0x000008A1
+    case currentCalibrationPhase = 0x0000089C
     
-    case accelerometerValuesAddress = 0x0000042A
-    case accelerometerTempAddress = 0x00000430
+    case algorithmParameterFormatVersion = 0x00000480
+    case communicationProtocolVersion = 0x0000000E
     
-    case mmaFeaturesAddress = 0x00000137
-    case dayStartTimeAddress = 0x00001110
-    case nightStartTimeAddress = 0x00001112
+    case mostRecentCalibrationDate = 0x000008A3
+    case mostRecentCalibrationTime = 0x000008A5
+    case startDateOfCalibrationPhase = 0x000089D
+    case startTimeOfCalibrationPhase = 0x0000089F
+    case transmitterOperationStartDate = 0x00000490
+    case transmitterOperationStartTime = 0x0000049F
+    
+    case accelerometerValues = 0x0000042A
+    case accelerometerTemp = 0x00000430
+    
+    case linkedSensorId = 0x0000088C
+    case unlinkedSensorId = 0x00000416
+    
+    case mmaFeatures = 0x00000137
+    case dayStartTime = 0x00001110
+    case nightStartTime = 0x00001112
+    case lowGlucoseAlarmRepeatIntervalDayTime = 0x00001032
+    case highGlucoseAlarmRepeatIntervalDayTime = 0x00001033
+    case lowGlucoseAlarmRepeatIntervalNightTime = 0x0000110E
+    case highGlucoseAlarmRepeatIntervalNightTime = 0x0000110F
+    
+    case mepSavedValue = 0x000000B3
+    case mepSavedRefChannelMetric = 0x000000B7
+    case mepSavedDriftMetric = 0x000000BB
+    case mepSavedLowRefMetric = 0x000000BF
+    case mepSavedSpike = 0x000000C3
+    case eep24MSP = 0x00000A20
 }
 
 class CommandOperations {

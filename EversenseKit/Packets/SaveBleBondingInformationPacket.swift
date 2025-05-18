@@ -5,10 +5,10 @@
 //  Created by Bastiaan Verhaar on 13/05/2025.
 //
 
-struct SaveBleBondingInformationPacketResponse {}
+struct SaveBleBondingInformationResponse {}
 
 class SaveBleBondingInformationPacket : BasePacket {
-    typealias T = SaveBleBondingInformationPacketResponse
+    typealias T = SaveBleBondingInformationResponse
     
     var response: PacketIds {
         PacketIds.saveBLEBondingInformationResponseId
@@ -22,8 +22,8 @@ class SaveBleBondingInformationPacket : BasePacket {
         return data
     }
     
-    func parseResponse(data: Data) -> SaveBleBondingInformationPacketResponse {
-        return SaveBleBondingInformationPacketResponse()
+    func parseResponse(data: Data) -> SaveBleBondingInformationResponse {
+        return SaveBleBondingInformationResponse()
     }
     
     

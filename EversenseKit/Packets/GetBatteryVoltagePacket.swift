@@ -5,22 +5,22 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetBatteryVoltagePacketResponse {
+struct GetBatteryVoltageResponse {
     let value: Double
 }
 
 class GetBatteryVoltagePacket : BasePacket {
-    typealias T = GetBatteryVoltagePacketResponse
+    typealias T = GetBatteryVoltageResponse
     
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterCommandId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.batteryVoltageAddress)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.batteryVoltage)
     }
     
-    func parseResponse(data: Data) -> GetBatteryVoltagePacketResponse {
-        return GetBatteryVoltagePacketResponse(value: Double((data[0] | (data[1] << 8))) * 0.006)
+    func parseResponse(data: Data) -> GetBatteryVoltageResponse {
+        return GetBatteryVoltageResponse(value: Double((data[0] | (data[1] << 8))) * 0.006)
     }
 }

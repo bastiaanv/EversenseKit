@@ -17,7 +17,7 @@ class GetAccelerometerTemp : BasePacket {
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.accelerometerTempAddress)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.accelerometerTemp)
     }
     
     func parseResponse(data: Data) -> GetAccelerometerTempResponse {

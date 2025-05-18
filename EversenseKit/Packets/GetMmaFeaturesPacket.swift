@@ -5,22 +5,22 @@
 //  Created by Bastiaan Verhaar on 15/05/2025.
 //
 
-struct GetMmaFeaturesPacketResponse {
+struct GetMmaFeaturesResponse {
     let value: UInt8
 }
 
 class GetMmaFeaturesPacket : BasePacket {
-    typealias T = GetMmaFeaturesPacketResponse
+    typealias T = GetMmaFeaturesResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.mmaFeaturesAddress)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.mmaFeatures)
     }
     
-    func parseResponse(data: Data) -> GetMmaFeaturesPacketResponse {
-        return GetMmaFeaturesPacketResponse(value: data[0])
+    func parseResponse(data: Data) -> GetMmaFeaturesResponse {
+        return GetMmaFeaturesResponse(value: data[0])
     }
 }

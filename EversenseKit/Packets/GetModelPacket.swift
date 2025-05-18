@@ -5,12 +5,12 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetModelPacketResponse {
+struct GetModelResponse {
     let model: String
 }
 
 class GetModelPacket : BasePacket {
-    typealias T = GetModelPacketResponse
+    typealias T = GetModelResponse
     
     var response: PacketIds {
         PacketIds.readFourByteSerialFlashRegisterResponseId
@@ -20,8 +20,8 @@ class GetModelPacket : BasePacket {
         return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.transmitterModelNumber)
     }
     
-    func parseResponse(data: Data) -> GetModelPacketResponse {
-        return GetModelPacketResponse(
+    func parseResponse(data: Data) -> GetModelResponse {
+        return GetModelResponse(
             model: "\(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24))"
         )
     }

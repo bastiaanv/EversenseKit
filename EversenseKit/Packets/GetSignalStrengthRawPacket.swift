@@ -5,23 +5,23 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetSignalStrengthRawPacketResponse {
+struct GetSignalStrengthRawResponse {
     let value: SignalStrength
     let rawValue: UInt16
 }
 
 class GetSignalStrengthRawPacket : BasePacket {
-    typealias T = GetSignalStrengthRawPacketResponse
+    typealias T = GetSignalStrengthRawResponse
     
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.sensorFieldCurrentRawAddress)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.sensorFieldCurrentRaw)
     }
     
-    func parseResponse(data: Data) -> GetSignalStrengthRawPacketResponse {
+    func parseResponse(data: Data) -> GetSignalStrengthRawResponse {
         let value = UInt16(data[0]) | UInt16(data[1] << 8)
         var signalStrength = SignalStrength.NoSignal
         if value >= SignalStrength.Excellent.threshold {
@@ -36,6 +36,6 @@ class GetSignalStrengthRawPacket : BasePacket {
             signalStrength = SignalStrength.Poor
         }
         
-        return GetSignalStrengthRawPacketResponse(value: signalStrength, rawValue: value)
+        return GetSignalStrengthRawResponse(value: signalStrength, rawValue: value)
     }
 }

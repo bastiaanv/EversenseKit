@@ -5,22 +5,22 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetHysteresisPercentagePacketResponse {
+struct GetHysteresisPercentageResponse {
     let value: UInt8
 }
 
 class GetHysteresisPercentagePacket : BasePacket {
-    typealias T = GetHysteresisPercentagePacketResponse
+    typealias T = GetHysteresisPercentageResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisPercentageAddress)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.hysteresisPercentage)
     }
     
-    func parseResponse(data: Data) -> GetHysteresisPercentagePacketResponse {
-        return GetHysteresisPercentagePacketResponse(value: data[0])
+    func parseResponse(data: Data) -> GetHysteresisPercentageResponse {
+        return GetHysteresisPercentageResponse(value: data[0])
     }
 }

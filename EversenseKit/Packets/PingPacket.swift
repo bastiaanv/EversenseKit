@@ -5,10 +5,10 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct PingPacketResponse {}
+struct PingResponse {}
 
 class PingPacket : BasePacket {
-    typealias T = PingPacketResponse
+    typealias T = PingResponse
     
     var response: PacketIds {
         PacketIds.pingResponseId
@@ -23,7 +23,7 @@ class PingPacket : BasePacket {
         return data
     }
     
-    func parseResponse(data: Data) -> PingPacketResponse {
-        return PingPacketResponse()
+    func parseResponse(data: Data) -> PingResponse {
+        return PingResponse()
     }
 }

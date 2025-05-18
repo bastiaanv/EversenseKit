@@ -5,10 +5,10 @@
 //  Created by Bastiaan Verhaar on 17/05/2025.
 //
 
-struct SetNightStartTimePacketResponse {}
+struct SetNightStartTimeResponse {}
 
 class SetNightStartTimePacket: BasePacket {
-    typealias T = SetNightStartTimePacketResponse
+    typealias T = SetNightStartTimeResponse
     
     private let nightStartTime: Date
     init(nightStartTime: Date) {
@@ -29,8 +29,8 @@ class SetNightStartTimePacket: BasePacket {
         )
     }
     
-    func parseResponse(data: Data) -> SetNightStartTimePacketResponse {
-        return SetNightStartTimePacketResponse()
+    func parseResponse(data: Data) -> SetNightStartTimeResponse {
+        return SetNightStartTimeResponse()
     }
     
     

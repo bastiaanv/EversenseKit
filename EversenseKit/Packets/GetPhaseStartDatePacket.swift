@@ -5,22 +5,22 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-struct GetPhaseStartDatePacketResponse {
+struct GetPhaseStartDateResponse {
     let date: DateComponents
 }
 
 class GetPhaseStartDatePacket : BasePacket {
-    typealias T = GetPhaseStartDatePacketResponse
+    typealias T = GetPhaseStartDateResponse
     
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.startDateOfCalibrationPhaseAddress)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.startDateOfCalibrationPhase)
     }
     
-    func parseResponse(data: Data) -> GetPhaseStartDatePacketResponse {
-        return GetPhaseStartDatePacketResponse(date: BinaryOperations.toDateComponents(data: data))
+    func parseResponse(data: Data) -> GetPhaseStartDateResponse {
+        return GetPhaseStartDateResponse(date: BinaryOperations.toDateComponents(data: data))
     }
 }
