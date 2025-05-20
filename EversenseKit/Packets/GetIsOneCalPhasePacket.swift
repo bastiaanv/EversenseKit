@@ -21,6 +21,8 @@ class GetIsOneCalPhasePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetIsOneCalPhaseResponse {
-        return GetIsOneCalPhaseResponse(value: data[0] == 1)
+        return GetIsOneCalPhaseResponse(
+            value: data[start] == 1
+        )
     }
 }

@@ -16,14 +16,17 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         extVersion = rawValue["extVersion"] as? String
         communicationProtocol = rawValue["communicationProtocol"] as? String
         sensorId = rawValue["sensorId"] as? String
+        unLinkedSensorId = rawValue["unLinkedSensorId"] as? String
         mmaFeatures = rawValue["mmaFeatures"] as? UInt8 ?? 0
         batteryVoltage = rawValue["batteryVoltage"] as? Double ?? 0
         algorithmFormatVersion = rawValue["algorithmFormatVersion"] as? UInt16 ?? 0
         dayStartTime = rawValue["dayStartTime"] as? Date ?? Date.defaultDayStartTime
         nightStartTime = rawValue["nightStartTime"] as? Date ?? Date.defaultNightStartTime
+        warmingUpDuration = rawValue["warmingUpDuration"] as? TimeInterval ?? .hours(24)
         transmitterStart = rawValue["transmitterStart"] as? Date
         lastCalibration = rawValue["lastCalibration"] as? Date
         phaseStart = rawValue["phaseStart"] as? Date
+        sensorInsertion = rawValue["sensorInsertion"] as? Date
         hysteresisPercentage = rawValue["hysteresisPercentage"] as? UInt8 ?? 0
         hysteresisValueInMgDl = rawValue["hysteresisValueInMgDl"] as? UInt8 ?? 0
         isOneCalibrationPhase = rawValue["isOneCalibrationPhase"] as? Bool ?? false
@@ -38,6 +41,8 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         highGlucoseAlarmRepeatingDayTime = rawValue["highGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
         lowGlucoseAlarmRepeatingNightTime = rawValue["lowGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
         highGlucoseAlarmRepeatingNightTime = rawValue["highGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
+        isClinicalMode = rawValue["isClinicalMode"] as? Bool ?? false
+        clinicalModeDuration = rawValue["clinicalModeDuration"] as? TimeInterval
         
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
@@ -54,14 +59,17 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         value["extVersion"] = extVersion
         value["communicationProtocol"] = communicationProtocol
         value["sensorId"] = sensorId
+        value["unLinkedSensorId"] = unLinkedSensorId
         value["mmaFeatures"] = mmaFeatures
         value["batteryVoltage"] = batteryVoltage
         value["algorithmFormatVersion"] = algorithmFormatVersion
         value["transmitterStart"] = transmitterStart
         value["dayStartTime"] = dayStartTime
         value["nightStartTime"] = nightStartTime
+        value["warmingUpDuration"] = warmingUpDuration
         value["lastCalibration"] = lastCalibration
         value["phaseStart"] = phaseStart
+        value["sensorInsertion"] = sensorInsertion
         value["hysteresisPercentage"] = hysteresisPercentage
         value["hysteresisValueInMgDl"] = hysteresisValueInMgDl
         value["isOneCalibrationPhase"] = isOneCalibrationPhase
@@ -77,6 +85,8 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         value["highGlucoseAlarmRepeatingDayTime"] = highGlucoseAlarmRepeatingDayTime
         value["lowGlucoseAlarmRepeatingNightTime"] = lowGlucoseAlarmRepeatingNightTime
         value["highGlucoseAlarmRepeatingNightTime"] = highGlucoseAlarmRepeatingNightTime
+        value["isClinicalMode"] = isClinicalMode
+        value["clinicalModeDuration"] = clinicalModeDuration
         
         return value
     }
@@ -86,6 +96,7 @@ public struct EversensCGMState: RawRepresentable, Equatable {
     public var extVersion: String?
     public var communicationProtocol: String?
     public var sensorId: String?
+    public var unLinkedSensorId: String?
     
     public var mmaFeatures: UInt8
     public var batteryVoltage: Double
@@ -93,10 +104,12 @@ public struct EversensCGMState: RawRepresentable, Equatable {
     
     public var dayStartTime: Date
     public var nightStartTime: Date
+    public var warmingUpDuration: TimeInterval
     
     public var transmitterStart: Date?
     public var lastCalibration: Date?
     public var phaseStart: Date?
+    public var sensorInsertion: Date?
     
     public var hysteresisPercentage: UInt8
     public var hysteresisValueInMgDl: UInt8
@@ -118,6 +131,9 @@ public struct EversensCGMState: RawRepresentable, Equatable {
     public var highGlucoseAlarmRepeatingDayTime: UInt8
     public var lowGlucoseAlarmRepeatingNightTime: UInt8
     public var highGlucoseAlarmRepeatingNightTime: UInt8
+    
+    public var isClinicalMode: Bool
+    public var clinicalModeDuration: TimeInterval?
     
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)

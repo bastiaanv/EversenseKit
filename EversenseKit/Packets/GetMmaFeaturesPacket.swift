@@ -21,6 +21,8 @@ class GetMmaFeaturesPacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetMmaFeaturesResponse {
-        return GetMmaFeaturesResponse(value: data[0])
+        return GetMmaFeaturesResponse(
+            value: data[start]
+        )
     }
 }

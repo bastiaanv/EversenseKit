@@ -22,7 +22,7 @@ class GetBatteryPercentagePacket : BasePacket {
     
     func parseResponse(data: Data) -> GetBatteryPercentageResponse {
         return GetBatteryPercentageResponse(
-            value: BatteryLevel(rawValue: data[0]) ?? .unknown
+            value: BatteryLevel(rawValue: data[start]) ?? .unknown
         )
     }
 }

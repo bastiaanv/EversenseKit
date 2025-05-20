@@ -21,6 +21,6 @@ class GetBatteryVoltagePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetBatteryVoltageResponse {
-        return GetBatteryVoltageResponse(value: Double((data[0] | (data[1] << 8))) * 0.006)
+        return GetBatteryVoltageResponse(value: Double((data[0] | ((data[1]) << 8))) * 0.006)
     }
 }

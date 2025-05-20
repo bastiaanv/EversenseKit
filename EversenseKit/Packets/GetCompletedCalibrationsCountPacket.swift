@@ -21,7 +21,9 @@ class GetCompletedCalibrationsCountPacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetCompletedCalibrationsCountResponse {
-        return GetCompletedCalibrationsCountResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
+        return GetCompletedCalibrationsCountResponse(
+            value: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
+        )
     }
     
     

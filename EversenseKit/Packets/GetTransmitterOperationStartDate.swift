@@ -22,7 +22,7 @@ class GetTransmitterOperationStartDate : BasePacket {
     
     func parseResponse(data: Data) -> GetTransmitterOperationStartDateResponse {
         return GetTransmitterOperationStartDateResponse(
-            date: BinaryOperations.toDateComponents(data: data)
+            date: BinaryOperations.toDateComponents(data: data, start: start)
         )
     }
 }

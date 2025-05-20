@@ -21,6 +21,8 @@ class GetHysteresisPredictivePercentagePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetHysteresisPredictivePercentageResponse {
-        return GetHysteresisPredictivePercentageResponse(value: data[0])
+        return GetHysteresisPredictivePercentageResponse(
+            value: data[start]
+        )
     }
 }

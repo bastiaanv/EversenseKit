@@ -22,6 +22,8 @@ class GetHighGlucoseAlarmRepeatIntervalDayTimePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetHighGlucoseAlarmRepeatIntervalDayTimeResponse {
-        return GetHighGlucoseAlarmRepeatIntervalDayTimeResponse(value: data[0])
+        return GetHighGlucoseAlarmRepeatIntervalDayTimeResponse(
+            value: data[start]
+        )
     }
 }

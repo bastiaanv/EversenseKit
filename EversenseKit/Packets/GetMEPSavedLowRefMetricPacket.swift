@@ -21,7 +21,7 @@ class GetMEPSavedLowRefMetricPacket: BasePacket {
     }
     
     func parseResponse(data: Data) -> GetMEPSavedLowRefMetricResponse {
-        let bits = UInt32(data[0]) | UInt32(data[1] << 8) | UInt32(data[2] << 16) | UInt32(data[3] << 24)
+        let bits = UInt32(data[start]) | (UInt32(data[start+1]) << 8) | (UInt32(data[start+2]) << 16) | (UInt32(data[start+3]) << 24)
         return GetMEPSavedLowRefMetricResponse(value: Float(bitPattern: bits))
     }
 }

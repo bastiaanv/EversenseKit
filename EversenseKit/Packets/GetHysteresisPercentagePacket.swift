@@ -21,6 +21,8 @@ class GetHysteresisPercentagePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetHysteresisPercentageResponse {
-        return GetHysteresisPercentageResponse(value: data[0])
+        return GetHysteresisPercentageResponse(
+            value: data[start]
+        )
     }
 }

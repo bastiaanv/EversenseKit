@@ -22,6 +22,8 @@ class GetLowGlucoseAlarmRepeatIntervalNightTimePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetLowGlucoseAlarmRepeatIntervalNightTimeResponse {
-        return GetLowGlucoseAlarmRepeatIntervalNightTimeResponse(value: data[0])
+        return GetLowGlucoseAlarmRepeatIntervalNightTimeResponse(
+            value: data[start]
+        )
     }
 }

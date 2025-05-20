@@ -5,12 +5,12 @@
 //  Created by Bastiaan Verhaar on 18/05/2025.
 //
 
-struct GetSensorIdResponse {
+struct GetUnlinkedSensorIdResponse {
     let value: String?
 }
 
-class GetSensorIdPacket : BasePacket {
-    typealias T = GetSensorIdResponse
+class GetUnlinkedSensorIdPacket : BasePacket {
+    typealias T = GetUnlinkedSensorIdResponse
     
     private let unlinkedSensorId: UInt32 = 4294967295
     
@@ -19,10 +19,10 @@ class GetSensorIdPacket : BasePacket {
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.linkedSensorId)
+        return CommandOperations.readFourByteSerialFlashRegister(memoryAddress: FlashMemory.unlinkedSensorId)
     }
     
-    func parseResponse(data: Data) -> GetSensorIdResponse {
+    func parseResponse(data: Data) -> GetUnlinkedSensorIdResponse {
         let id = UInt32(data[start]) | (UInt32(data[start+1]) << 8) | (UInt32(data[start+2]) << 16)
         var value: String? = String(id)
         
@@ -31,6 +31,6 @@ class GetSensorIdPacket : BasePacket {
             value = nil
         }
         
-        return GetSensorIdResponse(value: value)
+        return GetUnlinkedSensorIdResponse(value: value)
     }
 }

@@ -15,6 +15,10 @@ protocol BasePacket<T> {
 }
 
 extension BasePacket {
+    var start: Int {
+        response.getDataStart()
+    }
+    
     func checkPacket(data: Data) -> Bool {
         // Check packetId
         guard data[0] == response.rawValue else {
@@ -145,4 +149,16 @@ enum PacketIds: UInt8 {
     case writeSingleMiscEventLogRecordResponseId = 164
     case writeTwoByteSerialFlashRegisterCommandId = 45
     case writeTwoByteSerialFlashRegisterResponseId = 173
+    
+    func getDataStart() -> Int {
+        switch self {
+        case .readSingleByteSerialFlashRegisterResponseId:
+        case .readTwoByteSerialFlashRegisterResponseId:
+        case .readFourByteSerialFlashRegisterResponseId:
+            return 3
+
+        default:
+            return 0
+        }
+    }
 }

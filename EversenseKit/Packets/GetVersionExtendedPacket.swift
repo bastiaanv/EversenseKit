@@ -21,7 +21,7 @@ class GetVersionExtendedPacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetVersionExtendedResponse {
-        let extVersion = data[0..<4].compactMap { String(UnicodeScalar($0)) }.joined()
+        let extVersion = data[start..<start+4].compactMap { String(UnicodeScalar($0)) }.joined()
         return GetVersionExtendedResponse(extVersion: extVersion)
     }
 }

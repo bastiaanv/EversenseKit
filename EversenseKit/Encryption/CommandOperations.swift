@@ -24,6 +24,10 @@ enum FlashMemory: UInt32 {
     case calibrationsMadeInThisPhase = 0x000008A1
     case currentCalibrationPhase = 0x0000089C
     
+    case warmUpDuration = 0x00000016
+    case clinicalMode = 0x00000B49
+    case clinicalModeDuration = 0x00000098
+    
     case algorithmParameterFormatVersion = 0x00000480
     case communicationProtocolVersion = 0x0000000E
     
@@ -33,6 +37,8 @@ enum FlashMemory: UInt32 {
     case startTimeOfCalibrationPhase = 0x0000089F
     case transmitterOperationStartDate = 0x00000490
     case transmitterOperationStartTime = 0x0000049F
+    case sensorInsertionDate = 0x00000890
+    case sensorInsertionTime = 0x00000892
     
     case accelerometerValues = 0x0000042A
     case accelerometerTemp = 0x00000430

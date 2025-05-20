@@ -21,6 +21,8 @@ class GetAccelerometerTemp : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetAccelerometerTempResponse {
-        return GetAccelerometerTempResponse(value: UInt16(data[0]) | UInt16(data[1] << 8))
+        return GetAccelerometerTempResponse(
+            value: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
+        )
     }
 }

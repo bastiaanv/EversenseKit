@@ -21,7 +21,7 @@ class GetVersionPacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetVersionResponse {
-        let version = data[0..<4].compactMap { String(UnicodeScalar($0)) }.joined()
+        let version = data[start..<start+4].compactMap { String(UnicodeScalar($0)) }.joined()
         return GetVersionResponse(version: version)
     }
 }

@@ -18,21 +18,21 @@ class BinaryOperations {
         return Data([UInt8(value), UInt8(value >> 8), UInt8(value >> 16), UInt8(value >> 24)])
     }
     
-    static func toDateComponents(data: Data) -> DateComponents {
-        let day = data[0] & 31
-        let year = (data[1] >> 1) + 2000
-        var month = data[0] >> 5
-        if (data[1] % 2 == 1) {
+    static func toDateComponents(data: Data, start: Int) -> DateComponents {
+        let day = data[start] & 31
+        let year = (data[start+1] >> 1) + 2000
+        var month = data[start] >> 5
+        if (data[start+1] % 2 == 1) {
             month += 8
         }
         
         return DateComponents(year: Int(year), month: Int(month), day: Int(day))
     }
     
-    static func toTimeComponents(data: Data) -> DateComponents {
-        let hour = data[1] >> 3
-        let minute = ((data[1] & 7) << 3) | (data[0] >> 5)
-        let second = (data[0] & 31) * 2
+    static func toTimeComponents(data: Data, start: Int) -> DateComponents {
+        let hour = data[start+1] >> 3
+        let minute = ((data[start+1] & 7) << 3) | (data[start] >> 5)
+        let second = (data[start] & 31) * 2
         
         return DateComponents(hour: Int(hour), minute: Int(minute), second: Int(second))
     }

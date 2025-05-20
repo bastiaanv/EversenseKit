@@ -21,7 +21,7 @@ class GetSignalStrengthPacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetSignalStrengthResponse {
-        let value = UInt16(data[0]) | UInt16(data[1] << 8)
+        let value = UInt16(data[start]) | (UInt16(data[start+1]) << 8)
         var signalStrength = SignalStrength.NoSignal
         if value >= SignalStrength.Excellent.threshold {
             signalStrength = SignalStrength.Excellent

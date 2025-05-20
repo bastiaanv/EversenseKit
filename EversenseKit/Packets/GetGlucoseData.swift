@@ -27,8 +27,9 @@ class GetGlucoseData : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetGlucoseDataResponse {
+        // TODO: Need to extra more data???
         return GetGlucoseDataResponse(
-            trend: getTrend(value: data[13])
+            trend: getTrend(value: data[start+13])
         )
     }
     

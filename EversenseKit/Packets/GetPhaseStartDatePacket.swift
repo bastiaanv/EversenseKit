@@ -21,6 +21,8 @@ class GetPhaseStartDatePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetPhaseStartDateResponse {
-        return GetPhaseStartDateResponse(date: BinaryOperations.toDateComponents(data: data))
+        return GetPhaseStartDateResponse(
+            date: BinaryOperations.toDateComponents(data: data, start: start)
+        )
     }
 }

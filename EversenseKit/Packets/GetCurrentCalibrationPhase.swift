@@ -21,6 +21,8 @@ class GetCurrentCalibrationPhasePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetCurrentCalibrationPhaseResponse {
-        return GetCurrentCalibrationPhaseResponse(phase: CalibrationPhase(rawValue: data[0]) ?? .UNKNOWN)
+        return GetCurrentCalibrationPhaseResponse(
+            phase: CalibrationPhase(rawValue: data[start]) ?? .UNKNOWN
+        )
     }
 }

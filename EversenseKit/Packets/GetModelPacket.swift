@@ -22,7 +22,7 @@ class GetModelPacket : BasePacket {
     
     func parseResponse(data: Data) -> GetModelResponse {
         return GetModelResponse(
-            model: "\(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24))"
+            model: "\(UInt32(data[start]) | (UInt32(data[start+1]) << 8) | (UInt32(data[start+2]) << 16) | (UInt32(data[start+3]) << 24))"
         )
     }
 }

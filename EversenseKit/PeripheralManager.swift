@@ -7,6 +7,12 @@
 
 import CoreBluetooth
 
+enum SecurityType {
+    case none
+    case v1
+    case v2
+}
+
 class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
@@ -15,7 +21,11 @@ class PeripheralManager: NSObject {
     
     private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
     private let requestCharacteristicUUID = CBUUID(string: "6eb0f021-a7ba-7e7d-66c9-6d813f01d273")
+    private let requestCharacteristicSecureUUID = CBUUID(string: "6eb0f025-bd60-7aaa-25a7-0029573f4f23")
+    private let requestCharacteristicSecureV2UUID = CBUUID(string: "c3230002-9308-47ae-ac12-3d030892a211")
     private let responseCharacteristicUUID = CBUUID(string: "6eb0f024-bd60-7aaa-25a7-0029573f4f23")
+    private let responseCharacteristicSecureUUID = CBUUID(string: "6eb0f027-a7ba-7e7d-66c9-6d813f01d273")
+    private let responseCharacteristicSecureV2UUID = CBUUID(string: "c3230003-9308-47ae-ac12-3d030892a211")
     
     private var service: CBService?
     private var requestCharacteristic: CBCharacteristic?
@@ -24,9 +34,20 @@ class PeripheralManager: NSObject {
     private var packet: (any BasePacket)?
     private var writeQueue: [UInt8: AsyncThrowingStream<AnyClass, Error>.Continuation] = [:]
     
+    private let maxPacketSize: Int
+    private var security: SecurityType
+    
+    public var isTransmitter365: Bool {
+        self.security == .v1 || self.security == .v2
+    }
+    
     init(peripheral: CBPeripheral, cgmManager: EversensCGMManager, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
         self.peripheral = peripheral
+        self.cgmManager = cgmManager
         self.connectCompletion = connectCompletion
+        
+        // Need the MTU for the 365 transmitter
+        self.maxPacketSize = self.peripheral.maximumWriteValueLength(for: .withoutResponse)
         
         self.peripheral.delegate = self
     }
@@ -38,7 +59,12 @@ class PeripheralManager: NSObject {
         
         let stream = AsyncThrowingStream<AnyClass, Error> { continuation in
             writeQueue[packet.response.rawValue] = continuation
-            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+            
+            if case security = .none {
+                peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+            } else {
+                // TODO: Secure data write
+            }
         }
 
         return try await firstValue(from: stream)
@@ -82,16 +108,48 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
         
-        self.requestCharacteristic = service.characteristics?.first { $0.uuid == self.requestCharacteristicUUID }
-        self.responseCharacteristic = service.characteristics?.first { $0.uuid == self.responseCharacteristicUUID }
-        guard let _ = self.requestCharacteristic, let responseCharacteristic = self.responseCharacteristic else {
-            self.logger.error("One or both characteristics not found: \(self.responseCharacteristic != nil), \(self.requestCharacteristic != nil)")
-            self.connectCompletion?(.failure(.failedToDiscoverCharacteristics))
+        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicUUID }),
+           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicUUID }) {
+            
+            self.security = .none
+            self.requestCharacteristic = requestCharacteristic
+            self.responseCharacteristic = responseCharacteristic
+            
+            self.logger.debug("[NONE security] Discovering completed -> Enabling notifing...")
+            peripheral.setNotifyValue(true, for: responseCharacteristic)
             return
         }
         
-        self.logger.debug("Discovering completed -> Enabling notifing...")
-        peripheral.setNotifyValue(true, for: responseCharacteristic)
+        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureUUID }),
+           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureUUID }) {
+            
+            self.security = .v1
+            self.requestCharacteristic = requestCharacteristic
+            self.responseCharacteristic = responseCharacteristic
+            
+            self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
+            peripheral.setNotifyValue(true, for: responseCharacteristic)
+            
+            // TODO: Get fleetKey from API & send it
+            return
+        }
+        
+        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureV2UUID }),
+           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureV2UUID }) {
+            
+            self.security = .v2
+            self.requestCharacteristic = requestCharacteristic
+            self.responseCharacteristic = responseCharacteristic
+            
+            self.logger.debug("[V2 security] Discovering completed -> Enabling notifing...")
+            peripheral.setNotifyValue(true, for: responseCharacteristic)
+            
+            // TODO: Need to send whoAmI or sendStart command here
+            return
+        }
+
+        self.logger.error("Characteristics could not found: \(service.characteristics ?? [])")
+        self.connectCompletion?(.failure(.failedToDiscoverCharacteristics))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -114,7 +172,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 return
             }
             
-            self.fullTransmitterSync()
+            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: self.cgmManager)
             return
         }
         
@@ -124,7 +182,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 return
             }
             
-            let code = UInt16(data[3] << 8) | UInt16(data[2])
+            let code = (UInt16(data[3]) << 8) | UInt16(data[2])
             guard let error = CommandError(rawValue: code) else {
                 self.logger.error("Received unknown error - code: \(code), data: \(data.hexString())")
                 return
@@ -148,129 +206,5 @@ extension PeripheralManager: CBPeripheralDelegate {
         
         stream.yield(response)
         stream.finish()
-    }
-}
-
-extension PeripheralManager {
-    func fullTransmitterSync() {
-        Task {
-            do {
-                // Get MMA Features
-                let mmaResponse: GetMmaFeaturesResponse = try await self.write(GetMmaFeaturesPacket())
-                cgmManager.state.mmaFeatures = mmaResponse.value
-                
-                // Get battery voltage
-                let batteryResponse: GetBatteryVoltageResponse = try await self.write(GetBatteryVoltagePacket())
-                cgmManager.state.batteryVoltage = batteryResponse.value
-                
-                // TODO: Write morningCalibrationTime
-                // TODO: Write eveningCalibrationTime
-                
-                // Set day startTime
-                let setDayStartTimePacket = SetDayStartTimePacket(dayStartTime: cgmManager.state.dayStartTime)
-                let _: SetDayStartTimeResponse = try await self.write(setDayStartTimePacket)
-                
-                // Set night startTime
-                let setNightStartTimePacket = SetNightStartTimePacket(nightStartTime: cgmManager.state.nightStartTime)
-                let _: SetNightStartTimeResponse = try await self.write(setNightStartTimePacket)
-                
-                // Do Ping
-                let _: PingResponse = try await self.write(PingPacket())
-                
-                // Get Transmitter model
-                let modelResponse: GetModelResponse = try await self.write(GetModelPacket())
-                cgmManager.state.model = modelResponse.model
-                
-                // Get Transmitter version & extended Version
-                let versionResponse: GetVersionResponse = try await self.write(GetVersionPacket())
-                let versionExtendedResponse: GetVersionExtendedResponse = try await self.write(GetVersionExtendedPacket())
-                cgmManager.state.version = versionResponse.version
-                cgmManager.state.extVersion = versionExtendedResponse.extVersion
-                
-                // Get phase start datetime
-                let phaseStartDate: GetPhaseStartDateResponse = try await self.write(GetPhaseStartDatePacket())
-                let phaseStartTime: GetPhaseStartTimeResponse = try await self.write(GetPhaseStartTimePacket())
-                cgmManager.state.lastCalibration = Date.fromComponents(
-                    date: phaseStartDate.date,
-                    time: phaseStartTime.time
-                )
-                
-                // Get last calibration datetime
-                let lastCalibrationDate: GetLastCalibrationDateResponse = try await self.write(GetLastCalibrationDatePacket())
-                let lastCalibrationTime: GetLastCalibrationTimeResponse = try await self.write(GetLastCalibrationTimePacket())
-                cgmManager.state.lastCalibration = Date.fromComponents(
-                    date: lastCalibrationDate.date,
-                    time: lastCalibrationTime.time
-                )
-                
-                // Get current calibration phase
-                let isOneCalPhase: GetIsOneCalPhaseResponse = try await self.write(GetIsOneCalPhasePacket())
-                let calibrationCount: GetCompletedCalibrationsCountResponse = try await self.write(GetCompletedCalibrationsCountPacket())
-                let calibrationPhase: GetCurrentCalibrationPhaseResponse = try await self.write(GetCurrentCalibrationPhasePacket())
-                cgmManager.state.isOneCalibrationPhase = isOneCalPhase.value
-                cgmManager.state.calibrationCount = calibrationCount.value
-                cgmManager.state.calibrationPhase = calibrationPhase.phase
-                
-                // Get hysteresis
-                let hysteresisPercentage: GetHysteresisPercentageResponse = try await self.write(GetHysteresisPercentagePacket())
-                let hysteresisValue: GetHysteresisValueResponse = try await self.write(GetHysteresisValuePacket())
-                cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
-                cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
-                
-                // Get predictive hysteresis
-                let predictiveHysteresisPercentage: GetHysteresisPredictivePercentageResponse = try await self.write(GetHysteresisPredictivePercentagePacket())
-                let predictiveHysteresisValue: GetHysteresisPredictiveValueResponse = try await self.write(GetHysteresisPredictiveValuePacket())
-                cgmManager.state.predictiveHysteresisPercentage = predictiveHysteresisPercentage.value
-                cgmManager.state.predictiveHysteresisValueInMgDl = predictiveHysteresisValue.valueInMgDl
-                
-                // Get algorithm format version
-                let algorithmFormatVersion: GetAlgorithmParameterFormatVersionResponse = try await self.write(GetAlgorithmParameterFormatVersionPacket())
-                cgmManager.state.algorithmFormatVersion = algorithmFormatVersion.value
-                
-                // Get transmitter starting moment
-                if cgmManager.state.isUSXLorOUSXL2 {
-                    let transmitterStartDate: GetTransmitterOperationStartDateResponse = try await self.write(GetTransmitterOperationStartDate())
-                    let transmitterStartTime: GetTransmitterOperationStartTimeResponse = try await self.write(GetTransmitterOperationStartTime())
-                    cgmManager.state.transmitterStart = Date.fromComponents(
-                        date: transmitterStartDate.date,
-                        time: transmitterStartTime.time
-                    )
-                }
-                
-                // Get communication protocol version
-                let communicationProtocol: GetCommunicationProtocolVersionResponse = try await self.write(GetCommunicationProtocolVersionPacket())
-                cgmManager.state.communicationProtocol = communicationProtocol.version
-                
-                // Get MEPMSP information
-                let mepValue: GetMEPSavedValueResponse = try await self.write(GetMEPSavedValuePacket())
-                let mepRefChannelMetric: GetMEPSavedRefChannelMetricResponse = try await self.write(GetMEPSavedRefChannelMetricPacket())
-                let mepDriftMetric: GetMEPSavedDriftMetricResponse = try await self.write(GetMEPSavedDriftMetricPacket())
-                let mepLowRefMetric: GetMEPSavedLowRefMetricResponse = try await self.write(GetMEPSavedLowRefMetricPacket())
-                let mepSpike: GetMEPSavedSpikeResponse = try await self.write(GetMEPSavedSpikePacket())
-                let eep24MSP: GetEEP24MSPResponse = try await self.write(GetEEP24MSPPacket())
-                cgmManager.state.mepValue = mepValue.value
-                cgmManager.state.mepRefChannelMetric = mepRefChannelMetric.value
-                cgmManager.state.mepDriftMetric = mepDriftMetric.value
-                cgmManager.state.mepLowRefMetric = mepLowRefMetric.value
-                cgmManager.state.mepSpike = mepSpike.value
-                cgmManager.state.eep24MSP = eep24MSP.value
-                
-                // Get glucose alarm repeat interval - SKIPPING day/night start time, since we just wrote them
-                let lowAlarmRepeatingDay: GetLowGlucoseAlarmRepeatIntervalDayTimeResponse = try await self.write(GetLowGlucoseAlarmRepeatIntervalDayTimePacket())
-                let highAlarmRepeatingDay: GetHighGlucoseAlarmRepeatIntervalDayTimeResponse = try await self.write(GetHighGlucoseAlarmRepeatIntervalDayTimePacket())
-                let lowAlarmRepeatingNight: GetLowGlucoseAlarmRepeatIntervalNightTimeResponse = try await self.write(GetLowGlucoseAlarmRepeatIntervalNightTimePacket())
-                let highAlarmRepeatingNight: GetHighGlucoseAlarmRepeatIntervalNightTimeResponse = try await self.write(GetHighGlucoseAlarmRepeatIntervalNightTimePacket())
-                cgmManager.state.lowGlucoseAlarmRepeatingDayTime = lowAlarmRepeatingDay.value
-                cgmManager.state.highGlucoseAlarmRepeatingDayTime = highAlarmRepeatingDay.value
-                cgmManager.state.lowGlucoseAlarmRepeatingNightTime = lowAlarmRepeatingNight.value
-                cgmManager.state.highGlucoseAlarmRepeatingNightTime = highAlarmRepeatingNight.value
-                
-                // Get sensorId
-                let senorId: GetSensorIdResponse = try await self.write(GetSensorIdPacket())
-                cgmManager.state.sensorId = senorId.value
-            } catch {
-                logger.error("Something went wrong during full sync: \(error)")
-            }
-        }
     }
 }

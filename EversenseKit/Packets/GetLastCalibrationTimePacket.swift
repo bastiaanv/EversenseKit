@@ -21,6 +21,8 @@ class GetLastCalibrationTimePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetLastCalibrationTimeResponse {
-        return GetLastCalibrationTimeResponse(time: BinaryOperations.toTimeComponents(data: data))
+        return GetLastCalibrationTimeResponse(
+            time: BinaryOperations.toTimeComponents(data: data, start: start)
+        )
     }
 }

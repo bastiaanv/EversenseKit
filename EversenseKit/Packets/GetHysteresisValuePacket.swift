@@ -21,6 +21,8 @@ class GetHysteresisValuePacket : BasePacket {
     }
     
     func parseResponse(data: Data) -> GetHysteresisValueResponse {
-        return GetHysteresisValueResponse(valueInMgDl: data[0])
+        return GetHysteresisValueResponse(
+            valueInMgDl: data[start]
+        )
     }
 }
