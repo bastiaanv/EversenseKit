@@ -32,6 +32,7 @@ class PeripheralManager: NSObject {
     private var responseCharacteristic: CBCharacteristic?
     
     private var packet: (any BasePacket)?
+    private var writeTimeoutTask: Task<(), Never>?
     private var writeQueue: [UInt8: AsyncThrowingStream<AnyClass, Error>.Continuation] = [:]
     
     private let maxPacketSize: Int
@@ -79,6 +80,25 @@ class PeripheralManager: NSObject {
             throw NSError(domain: "Got invalid data type", code: 0)
         }
         throw NSError(domain: "Got no response. Most likely an encryption issue", code: 0)
+    }
+    
+    private func startTimeoutTimer(packet: any BasePacket) {
+        self.writeTimeoutTask = Task {
+            do {
+                try await Task.sleep(nanoseconds: UInt64(.seconds(2)) * 1_000_000_000)
+                guard let stream = self.writeQueue[packet.response.rawValue] else {
+                    // We did what we must, so exist and be happy :)
+                    return
+                }
+                
+                stream.finish()
+                
+                self.writeQueue.removeValue(forKey: packet.response.rawValue)
+                self.writeTimeoutTask = nil
+            } catch {
+                // Task was cancelled because message has been received
+            }
+        }
     }
 }
 
@@ -203,6 +223,9 @@ extension PeripheralManager: CBPeripheralDelegate {
             self.logger.warning("No pending write for response code \(packet.response.rawValue) - data: \(data.hexString())")
             return
         }
+        
+        self.writeTimeoutTask?.cancel()
+        self.writeTimeoutTask = nil
         
         stream.yield(response)
         stream.finish()

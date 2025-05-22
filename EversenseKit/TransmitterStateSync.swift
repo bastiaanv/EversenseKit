@@ -6,6 +6,8 @@
 //
 
 class TransmitterStateSync {
+    static let fakeAppVersion = "8.0.1"
+    
     static func fullSync(peripheralManager: PeripheralManager, cgmManager: EversensCGMManager) {
         let logger = EversenseLogger(category: "TransmitterStateSync")
         
@@ -149,7 +151,49 @@ class TransmitterStateSync {
                     cgmManager.state.clinicalModeDuration = clinicalModeDuration.value
                 }
                 
-                // Get BLE disconnect alarm
+                // Get BLE disconnect alarm -> possible we get no reply, this feature might not be supported
+                do {
+                    let bleDisconnectAlarm: GetDelayBLEDisconnectAlarmResponse = try await peripheralManager.write(GetDelayBLEDisconnectAlarmPacket())
+                    cgmManager.state.isDelayBLEDisconnectionAlarmSupported = true
+                    cgmManager.state.delayBLEDisconnectionAlarm = bleDisconnectAlarm.value
+                } catch {
+                    cgmManager.state.isDelayBLEDisconnectionAlarmSupported = false
+                    cgmManager.state.delayBLEDisconnectionAlarm = .seconds(180)
+                }
+                
+                let vibrateMode: GetVibrateModeResponse = try await peripheralManager.write(GetVibrateModePacket())
+                cgmManager.state.vibrateMode = vibrateMode.value
+                
+                // Write the fake app version
+                if let appVersion = SetAppVersionPacket.parseAppVersion(version: TransmitterStateSync.fakeAppVersion) {
+                    let _: SetAppVersionResponse = try await peripheralManager.write(SetAppVersionPacket(appVersion: appVersion))
+                }
+                
+                // Get sampling interval
+                let sensorSamplingInterval: GetSensorSamplingIntervalResponse = try await peripheralManager.write(GetSensorSamplingIntervalPacket())
+                cgmManager.state.sensorSamplingInterval = sensorSamplingInterval.value
+                
+                // Get calibration times
+                let morningCalibrationTime: GetMorningCalibrationTimeResponse = try await peripheralManager.write(GetMorningCalibrationTimePacket())
+                let eveningCalibrationTime: GetEveningCalibrationTimeResponse = try await peripheralManager.write(GetEveningCalibrationTimePacket())
+                cgmManager.state.morningCalibrationTime = morningCalibrationTime.value
+                cgmManager.state.eveningCalibrationTime = eveningCalibrationTime.value
+                
+                // Get glucose alarms & status
+                let glucoseAlarmsStatus: GetGlucoseAlertsAndStatusPacketResonse = try await peripheralManager.write(GetGlucoseAlertsAndStatusPacket())
+                cgmManager.state.alarms = glucoseAlarmsStatus.alarms
+                
+                // Get calibration thresholds
+                let minCalibration: GetCalibrationMinThresholdResponse = try await peripheralManager.write(GetCalibrationMinThresholdPacket())
+                let maxCalibration: GetCalibrationMaxThresholdResponse = try await peripheralManager.write(GetCalibrationMaxThresholdPacket())
+                cgmManager.state.calibrationMinThreshold = minCalibration.value
+                cgmManager.state.calibrationMaxThreshold = maxCalibration.value
+                
+                // Get glucose targets
+                let lowGlucoseTarget: GetLowGlucoseTargetResponse = try await peripheralManager.write(GetLowGlucoseTargetPacket())
+                let highGlucoseTarget: GetHighGlucoseTargetResponse = try await peripheralManager.write(GetHighGlucoseTargetPacket())
+                cgmManager.state.lowGlucoseTarget = lowGlucoseTarget.value
+                cgmManager.state.highGlucoseTarget = highGlucoseTarget.value
             } catch {
                 logger.error("Something went wrong during full sync: \(error)")
             }

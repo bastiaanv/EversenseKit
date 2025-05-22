@@ -23,13 +23,22 @@ enum FlashMemory: UInt32 {
     case isOneCalPhase = 0x00000496
     case calibrationsMadeInThisPhase = 0x000008A1
     case currentCalibrationPhase = 0x0000089C
+    case minCalibrationThreshold = 0x00000912
+    case maxCalibrationThreshold = 0x00000914
+    
+    case lowGlucoseTarget = 0x00001102
+    case highGlucoseTarget = 0x00001104
     
     case warmUpDuration = 0x00000016
     case clinicalMode = 0x00000B49
     case clinicalModeDuration = 0x00000098
+    case appVersion = 0x00000B4B
+    case vibrateMode = 0x000000902
+    case sensorGlucoseSamplingInterval = 0x00000012
     
     case algorithmParameterFormatVersion = 0x00000480
     case communicationProtocolVersion = 0x0000000E
+    case delayBLEDisconnectAlarm = 0x000008B2
     
     case mostRecentCalibrationDate = 0x000008A3
     case mostRecentCalibrationTime = 0x000008A5
@@ -39,6 +48,9 @@ enum FlashMemory: UInt32 {
     case transmitterOperationStartTime = 0x0000049F
     case sensorInsertionDate = 0x00000890
     case sensorInsertionTime = 0x00000892
+    
+    case morningCalibrationTime = 0x00000898
+    case eveningCalibrationTime = 0x0000089A
     
     case accelerometerValues = 0x0000042A
     case accelerometerTemp = 0x00000430
@@ -81,6 +93,14 @@ class CommandOperations {
     
     static func readSingleByteSerialFlashRegister(memoryAddress: FlashMemory) -> Data {
         var data = Data([0x2A, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16)])
+        let checksum = BinaryOperations.generateChecksumCRC16(data: data)
+        data.append(BinaryOperations.dataFrom16Bits(value: checksum))
+        
+        return data
+    }
+    
+    static func writeFourByteSerialFlashRegister(memoryAddress: FlashMemory, data: Data) -> Data {
+        var data = Data([0x2F, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16), data[0], data[1], data[2], data[3]])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
         
