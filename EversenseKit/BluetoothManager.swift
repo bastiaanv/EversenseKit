@@ -10,6 +10,7 @@ import CoreBluetooth
 class BluetoothManager : NSObject {
     private let logger = EversenseLogger(category: "BluetoothManager")
     private let managerQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.bluetoothManagerQueue", qos: .unspecified)
+    public let cgmManager: EversenseCGMManager
     private var manager: CBCentralManager?
     
     private var peripheral: CBPeripheral?
@@ -18,7 +19,8 @@ class BluetoothManager : NSObject {
     private var scanCompletion: ((ScanItem) -> Void)?
     private var connectCompletion: ((Result<Void, ConnectFailure>) -> Void)?
     
-    override init() {
+    init(cgmManager: EversenseCGMManager) {
+        self.cgmManager = cgmManager
         managerQueue.sync {
             self.manager = CBCentralManager(delegate: self, queue: managerQueue)
         }
@@ -83,7 +85,7 @@ extension BluetoothManager : CBCentralManagerDelegate {
         }
         
         self.peripheral = peripheral
-        self.peripheralManager = PeripheralManager(peripheral: peripheral, connectCompletion: connectCompletion)
+        self.peripheralManager = PeripheralManager(peripheral: peripheral, cgmManager: cgmManager, connectCompletion: connectCompletion)
         
         self.logger.debug("Connected to transmitter -> Start discovering services...")
         peripheral.discoverServices(nil)

@@ -6,23 +6,23 @@
 //
 
 
-struct GetPredictiveFallingTimeIntervalResponse {
+struct GetPredictiveRisingTimeIntervalResponse {
     let value: TimeInterval
 }
 
-class GetPredictiveFallingTimeIntervalPacket : BasePacket {
-    typealias T = GetPredictiveFallingTimeIntervalResponse
+class GetPredictiveRisingTimeIntervalPacket : BasePacket {
+    typealias T = GetPredictiveRisingTimeIntervalResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.predictiveFallingTime)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.predictiveRisingTime)
     }
     
-    func parseResponse(data: Data) -> GetPredictiveFallingTimeIntervalResponse {
-        return GetPredictiveFallingTimeIntervalResponse(
+    func parseResponse(data: Data) -> GetPredictiveRisingTimeIntervalResponse {
+        return GetPredictiveRisingTimeIntervalResponse(
             value: .minutes(Double(data[start]))
         )
     }

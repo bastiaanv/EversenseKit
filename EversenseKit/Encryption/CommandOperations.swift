@@ -28,6 +28,19 @@ enum FlashMemory: UInt32 {
     
     case lowGlucoseTarget = 0x00001102
     case highGlucoseTarget = 0x00001104
+    case highGlucoseAlarmEnabled = 0x00001029
+    case highGlucoseAlarmThreshold = 0x0000110C
+    case lowGlucoseAlarmThreshold = 0x0000110A
+    case predictiveAlert = 0x00001020
+    case predictiveFallingTime = 0x00001021
+    case predictiveRisingTime = 0x00001022
+    case predictiveLowAlert = 0x00001027
+    case predictiveHighAlert = 0x00001028
+    case rateAlert = 0x00001010
+    case rateFallingAlert = 0x00001025
+    case rateRisingAlert = 0x00001026
+    case rateFallingThreshold = 0x00001011
+    case rateRisingThreshold = 0x00001012
     
     case warmUpDuration = 0x00000016
     case clinicalMode = 0x00000B49
@@ -35,6 +48,7 @@ enum FlashMemory: UInt32 {
     case appVersion = 0x00000B4B
     case vibrateMode = 0x000000902
     case sensorGlucoseSamplingInterval = 0x00000012
+    case atccalCrcAddress = 0x0000048C
     
     case algorithmParameterFormatVersion = 0x00000480
     case communicationProtocolVersion = 0x0000000E
@@ -48,6 +62,9 @@ enum FlashMemory: UInt32 {
     case transmitterOperationStartTime = 0x0000049F
     case sensorInsertionDate = 0x00000890
     case sensorInsertionTime = 0x00000892
+    case mostRecentGlucoseDate = 0x00000410
+    case mostRecentGlucoseTime = 0x00000412
+    case mostRecentGlucoseValue = 0x00000414
     
     case morningCalibrationTime = 0x00000898
     case eveningCalibrationTime = 0x0000089A
@@ -72,6 +89,15 @@ enum FlashMemory: UInt32 {
     case mepSavedLowRefMetric = 0x000000BF
     case mepSavedSpike = 0x000000C3
     case eep24MSP = 0x00000A20
+    
+    case rawValue1 = 0x0000041A
+    case rawValue2 = 0x0000041C
+    case rawValue3 = 0x0000041E
+    case rawValue4 = 0x00000420
+    case rawValue5 = 0x00000422
+    case rawValue6 = 0x00000424
+    case rawValue7 = 0x00000426
+    case rawValue8 = 0x00000428
 }
 
 class CommandOperations {

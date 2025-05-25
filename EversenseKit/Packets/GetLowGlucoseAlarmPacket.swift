@@ -6,23 +6,23 @@
 //
 
 
-struct GetHighGlucoseAlarmResponse {
+struct GetLowGlucoseAlarmResponse {
     let valueInMgDl: UInt16
 }
 
-class GetHighGlucoseAlarmPacket : BasePacket {
-    typealias T = GetHighGlucoseAlarmResponse
+class GetLowGlucoseAlarmPacket : BasePacket {
+    typealias T = GetLowGlucoseAlarmResponse
     
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.highGlucoseAlarmThreshold)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.lowGlucoseAlarmThreshold)
     }
     
-    func parseResponse(data: Data) -> GetHighGlucoseAlarmResponse {
-        return GetHighGlucoseAlarmResponse(
+    func parseResponse(data: Data) -> GetLowGlucoseAlarmResponse {
+        return GetLowGlucoseAlarmResponse(
             valueInMgDl: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
         )
     }

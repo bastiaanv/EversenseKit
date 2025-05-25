@@ -9,7 +9,7 @@ struct GetAccelerometerValuesResponse {
     let value: UInt16
 }
 
-class GetAccelerometerValues : BasePacket {
+class GetAccelerometerValuesPacket : BasePacket {
     typealias T = GetAccelerometerValuesResponse
     
     var response: PacketIds {

@@ -6,23 +6,23 @@
 //
 
 
-struct GetPredictiveLowAlertsResponse {
+struct GetPredictiveHighAlertsResponse {
     let value: Bool
 }
 
-class GetPredictiveLowAlertsPacket : BasePacket {
-    typealias T = GetPredictiveLowAlertsResponse
+class GetPredictiveHighAlertsPacket : BasePacket {
+    typealias T = GetPredictiveHighAlertsResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.predictiveLowAlert)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.predictiveHighAlert)
     }
     
-    func parseResponse(data: Data) -> GetPredictiveLowAlertsResponse {
-        return GetPredictiveLowAlertsResponse(
+    func parseResponse(data: Data) -> GetPredictiveHighAlertsResponse {
+        return GetPredictiveHighAlertsResponse(
             value: data[start] == 0x55
         )
     }

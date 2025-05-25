@@ -6,7 +6,7 @@
 //
 
 struct GetHighGlucoseTargetResponse {
-    let value: UInt16
+    let valueInMgDl: UInt16
 }
 
 class GetHighGlucoseTargetPacket : BasePacket {
@@ -22,7 +22,7 @@ class GetHighGlucoseTargetPacket : BasePacket {
     
     func parseResponse(data: Data) -> GetHighGlucoseTargetResponse {
         return GetHighGlucoseTargetResponse(
-            value: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
+            valueInMgDl: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
         )
     }
 }

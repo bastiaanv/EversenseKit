@@ -6,12 +6,12 @@
 //
 
 
-struct GetRateRisingAlert {
+struct GetRateRisingAlertResponse {
     let value: Bool
 }
 
-class GetRateFisingAlertPacket : BasePacket {
-    typealias T = GetRateRisingAlert
+class GetRateRisingAlertPacket : BasePacket {
+    typealias T = GetRateRisingAlertResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
@@ -21,8 +21,8 @@ class GetRateFisingAlertPacket : BasePacket {
         return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.rateRisingAlert)
     }
     
-    func parseResponse(data: Data) -> GetRateRisingAlert {
-        return GetRateRisingAlert(
+    func parseResponse(data: Data) -> GetRateRisingAlertResponse {
+        return GetRateRisingAlertResponse(
             value: data[start] == 0x55
         )
     }

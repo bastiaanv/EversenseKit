@@ -5,13 +5,13 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-enum SignalStrength {
-    case NoSignal
-    case Poor
-    case VeryLow
-    case Low
-    case Good
-    case Excellent
+public enum SignalStrength : UInt8 {
+    case NoSignal = 0
+    case Poor = 1
+    case VeryLow = 2
+    case Low = 3
+    case Good = 4
+    case Excellent = 5
     
     var rawThreshold: UInt16 {
         switch self {

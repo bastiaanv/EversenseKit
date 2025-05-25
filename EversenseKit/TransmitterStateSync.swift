@@ -8,17 +8,22 @@
 class TransmitterStateSync {
     static let fakeAppVersion = "8.0.1"
     
-    static func fullSync(peripheralManager: PeripheralManager, cgmManager: EversensCGMManager) {
+    static func fullSync(peripheralManager: PeripheralManager, cgmManager: EversenseCGMManager) {
         let logger = EversenseLogger(category: "TransmitterStateSync")
         
         Task {
             do {
+                cgmManager.state.isSyncing = true
+                cgmManager.notifyStateDidChange()
+                
                 // Get MMA Features
                 let mmaResponse: GetMmaFeaturesResponse = try await peripheralManager.write(GetMmaFeaturesPacket())
                 cgmManager.state.mmaFeatures = mmaResponse.value
                 
                 // Get battery voltage
                 let batteryResponse: GetBatteryVoltageResponse = try await peripheralManager.write(GetBatteryVoltagePacket())
+                let batteryPercentage: GetBatteryPercentageResponse = try await peripheralManager.write(GetBatteryPercentagePacket())
+                cgmManager.state.batteryPercentage = batteryPercentage.value
                 cgmManager.state.batteryVoltage = batteryResponse.value
                 
                 // TODO: Write morningCalibrationTime
@@ -192,11 +197,96 @@ class TransmitterStateSync {
                 // Get glucose targets
                 let lowGlucoseTarget: GetLowGlucoseTargetResponse = try await peripheralManager.write(GetLowGlucoseTargetPacket())
                 let highGlucoseTarget: GetHighGlucoseTargetResponse = try await peripheralManager.write(GetHighGlucoseTargetPacket())
-                cgmManager.state.lowGlucoseTarget = lowGlucoseTarget.value
-                cgmManager.state.highGlucoseTarget = highGlucoseTarget.value
+                cgmManager.state.lowGlucoseTargetInMgDl = lowGlucoseTarget.valueInMgDl
+                cgmManager.state.highGlucoseTargetInMgDl = highGlucoseTarget.valueInMgDl
+                
+                // Get glucose alarm enabled & thresholds
+                let isGlucoseAlarmEnabled: GetGlucoseAlarmEnabledResponse = try await peripheralManager.write(GetGlucoseAlarmEnabledPacket())
+                let lowGlucoseAlarm: GetLowGlucoseAlarmResponse = try await peripheralManager.write(GetLowGlucoseAlarmPacket())
+                let highGlucoseAlarm: GetHighGlucoseAlarmResponse = try await peripheralManager.write(GetHighGlucoseAlarmPacket())
+                cgmManager.state.isGlucoseAlarmEnabled = isGlucoseAlarmEnabled.value
+                cgmManager.state.lowGlucoseAlarmInMgDl = lowGlucoseAlarm.valueInMgDl
+                cgmManager.state.highGlucoseAlarmInMgDl = highGlucoseAlarm.valueInMgDl
+                
+                // Get predictive values
+                let isPredictionEnabled: GetPredictiveAlertsResponse = try await peripheralManager.write(GetPredictiveAlertsPacket())
+                let isPredictionLowEnabled: GetPredictiveLowAlertsResponse = try await peripheralManager.write(GetPredictiveLowAlertsPacket())
+                let isPredictionHighEnabled: GetPredictiveHighAlertsResponse = try await peripheralManager.write(GetPredictiveHighAlertsPacket())
+                let predictionFallingInterval: GetPredictiveFallingTimeIntervalResponse = try await peripheralManager.write(GetPredictiveFallingTimeIntervalPacket())
+                let predictionRisingInterval: GetPredictiveRisingTimeIntervalResponse = try await peripheralManager.write(GetPredictiveRisingTimeIntervalPacket())
+                cgmManager.state.isPredictionEnabled = isPredictionEnabled.value
+                cgmManager.state.isPredictionLowEnabled = isPredictionLowEnabled.value
+                cgmManager.state.isPredictionHighEnabled = isPredictionHighEnabled.value
+                cgmManager.state.predictionFallingInterval = predictionFallingInterval.value
+                cgmManager.state.predictionRisingInterval = predictionRisingInterval.value
+                
+                // Get rate values
+                let isRateEnabled: GetRateAlertResponse = try await peripheralManager.write(GetRateAlertPacket())
+                let isFallingRateEnabled: GetRateFallingAlertResponse = try await peripheralManager.write(GetRateFallingAlertPacket())
+                let isRisingRateEnabled: GetRateRisingAlertResponse = try await peripheralManager.write(GetRateRisingAlertPacket())
+                let rateFallingThreshold: GetRateFallingThresholdResponse = try await peripheralManager.write(GetRateFallingThresholdPacket())
+                let rateRisingThreshold: GetRateRisingThresholdResponse = try await peripheralManager.write(GetRateRisingThresholdPacket())
+                cgmManager.state.isRateEnabled = isRateEnabled.value
+                cgmManager.state.isFallingRateEnabled = isFallingRateEnabled.value
+                cgmManager.state.isRisingRateEnabled = isRisingRateEnabled.value
+                cgmManager.state.rateFallingThreshold = rateFallingThreshold.value
+                cgmManager.state.rateRisingThreshold = rateRisingThreshold.value
+                
+                // Get signal strength
+                let rawSignalStrength: GetSignalStrengthRawResponse = try await peripheralManager.write(GetSignalStrengthRawPacket())
+                cgmManager.state.signalStrength = rawSignalStrength.value
+                cgmManager.state.signalStrengthRaw = rawSignalStrength.rawValue
+                
+                // Do Crc check
+                let crcCheck: GetAtccalCrcResponse = try await peripheralManager.write(GetAtccalCrcPacket())
+                if !crcCheck.isValid {
+                    logger.warning("CRC check failed - CRC: \(crcCheck.crc), Calculated CRC: \(crcCheck.calcCrc)")
+                }
+                
+                // Set Battery monitor threshold
+                let _: SetBatteryMonitorThresholdResponse = try await peripheralManager.write(SetBatteryMonitorThresholdPacket(
+                    tempThresholdWarning: cgmManager.state.tempThresholdWarning,
+                    tempThresholdModeChange: cgmManager.state.tempThresholdModeChange
+                ))
+                
+                // Get Raw & Glucose data
+                let rawValue1: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue1))
+                let rawValue2: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue2))
+                let rawValue3: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue3))
+                let rawValue4: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue4))
+                let rawValue5: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue5))
+                let rawValue6: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue6))
+                let rawValue7: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue7))
+                let rawValue8: GetRawValueResponse = try await peripheralManager.write(GetRawValuePacket(memory: FlashMemory.rawValue8))
+                let acceleroValues: GetAccelerometerValuesResponse = try await peripheralManager.write(GetAccelerometerValuesPacket())
+                let acceleroTemp: GetAccelerometerTempResponse = try await peripheralManager.write(GetAccelerometerTempPacket())
+                let recentGlucoseDate: GetRecentGlucoseDateResponse = try await peripheralManager.write(GetRecentGlucoseDatePacket())
+                let recentGlucoseTime: GetRecentGlucoseTimeResponse = try await peripheralManager.write(GetRecentGlucoseTimePacket())
+                let recentGlucoseValue: GetRecentGlucoseValueResponse = try await peripheralManager.write(GetRecentGlucoseValuePacket())
+                let glucoseData: GetGlucoseDataResponse = try await peripheralManager.write(GetGlucoseDataPacket())
+                
+                cgmManager.state.rawGlucoseValue1 = rawValue1.value
+                cgmManager.state.rawGlucoseValue2 = rawValue2.value
+                cgmManager.state.rawGlucoseValue3 = rawValue3.value
+                cgmManager.state.rawGlucoseValue4 = rawValue4.value
+                cgmManager.state.rawGlucoseValue5 = rawValue5.value
+                cgmManager.state.rawGlucoseValue6 = rawValue6.value
+                cgmManager.state.rawGlucoseValue7 = rawValue7.value
+                cgmManager.state.rawGlucoseValue8 = rawValue8.value
+                cgmManager.state.accelerometerValue = acceleroValues.value
+                cgmManager.state.accelerometerTemp = acceleroTemp.value
+                cgmManager.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
+                cgmManager.state.recentGlucoseDateTime = Date.fromComponents(
+                    date: recentGlucoseDate.date,
+                    time: recentGlucoseTime.time
+                )
+                cgmManager.state.recentGlucoseTrend = glucoseData.trend ?? .flat
             } catch {
                 logger.error("Something went wrong during full sync: \(error)")
             }
+            
+            cgmManager.state.isSyncing = false
+            cgmManager.notifyStateDidChange()
         }
     }
 }

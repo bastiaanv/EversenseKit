@@ -68,6 +68,18 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         signalStrengthRaw = rawValue["signalStrengthRaw"] as? UInt16 ?? 0
         tempThresholdWarning = rawValue["tempThresholdWarning"] as? UInt8 ?? 68
         tempThresholdModeChange = rawValue["tempThresholdModeChange"] as? UInt8 ?? 52
+        rawGlucoseValue1 = rawValue["rawGlucoseValue1"] as? UInt16 ?? 0
+        rawGlucoseValue2 = rawValue["rawGlucoseValue2"] as? UInt16 ?? 0
+        rawGlucoseValue3 = rawValue["rawGlucoseValue3"] as? UInt16 ?? 0
+        rawGlucoseValue4 = rawValue["rawGlucoseValue4"] as? UInt16 ?? 0
+        rawGlucoseValue5 = rawValue["rawGlucoseValue5"] as? UInt16 ?? 0
+        rawGlucoseValue6 = rawValue["rawGlucoseValue6"] as? UInt16 ?? 0
+        rawGlucoseValue7 = rawValue["rawGlucoseValue7"] as? UInt16 ?? 0
+        rawGlucoseValue8 = rawValue["rawGlucoseValue8"] as? UInt16 ?? 0
+        accelerometerValue = rawValue["accelerometerValue"] as? UInt16 ?? 0
+        accelerometerTemp = rawValue["accelerometerTemp"] as? UInt16 ?? 0
+        recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
+        recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
         
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
@@ -97,6 +109,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
             batteryPercentage = BatteryLevel(rawValue: rawBatteryPercentage) ?? .Percentage0
         } else {
             batteryPercentage = .Percentage0
+        }
+        
+        if let rawRecentGlucoseTrend = rawValue["recentGlucoseTrend"] as? GlucoseTrend.RawValue {
+            recentGlucoseTrend = GlucoseTrend(rawValue: rawRecentGlucoseTrend) ?? .flat
+        } else {
+            recentGlucoseTrend = .flat
         }
     }
     
@@ -165,6 +183,19 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["rateRisingThreshold"] = rateRisingThreshold
         value["tempThresholdWarning"] = tempThresholdWarning
         value["tempThresholdModeChange"] = tempThresholdModeChange
+        value["rawGlucoseValue1"] = rawGlucoseValue1
+        value["rawGlucoseValue2"] = rawGlucoseValue2
+        value["rawGlucoseValue3"] = rawGlucoseValue3
+        value["rawGlucoseValue4"] = rawGlucoseValue4
+        value["rawGlucoseValue5"] = rawGlucoseValue5
+        value["rawGlucoseValue6"] = rawGlucoseValue6
+        value["rawGlucoseValue7"] = rawGlucoseValue7
+        value["rawGlucoseValue8"] = rawGlucoseValue8
+        value["accelerometerValue"] = accelerometerValue
+        value["accelerometerTemp"] = accelerometerTemp
+        value["recentGlucoseInMgDl"] = recentGlucoseInMgDl
+        value["recentGlucoseDateTime"] = recentGlucoseDateTime
+        value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
         
         return value
     }
@@ -248,6 +279,20 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     
     public var tempThresholdWarning: UInt8
     public var tempThresholdModeChange: UInt8
+    
+    public var rawGlucoseValue1: UInt16
+    public var rawGlucoseValue2: UInt16
+    public var rawGlucoseValue3: UInt16
+    public var rawGlucoseValue4: UInt16
+    public var rawGlucoseValue5: UInt16
+    public var rawGlucoseValue6: UInt16
+    public var rawGlucoseValue7: UInt16
+    public var rawGlucoseValue8: UInt16
+    public var accelerometerValue: UInt16
+    public var accelerometerTemp: UInt16
+    public var recentGlucoseInMgDl: UInt16?
+    public var recentGlucoseDateTime: Date?
+    public var recentGlucoseTrend: GlucoseTrend
     
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)

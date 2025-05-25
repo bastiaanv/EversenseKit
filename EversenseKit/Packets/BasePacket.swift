@@ -133,7 +133,7 @@ enum PacketIds: UInt8 {
 //    case testCommandForceGlucoseMeasurement = 24
 //    case testCommandId = 96
 //    case testCommandReadNRawRegister = 7
-//    case testResponseId = 224
+    case testResponseId = 224
     case transmitterBatteryPush = 71
     case transmitterEOLPush = 74
     case transmitterStatusPush = 70

@@ -16,7 +16,7 @@ enum SecurityType {
 class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
-    private let cgmManager: EversensCGMManager
+    private let cgmManager: EversenseCGMManager
     private let connectCompletion: ((Result<Void, ConnectFailure>) -> Void)?
     
     private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
@@ -42,7 +42,7 @@ class PeripheralManager: NSObject {
         self.security == .v1 || self.security == .v2
     }
     
-    init(peripheral: CBPeripheral, cgmManager: EversensCGMManager, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
+    init(peripheral: CBPeripheral, cgmManager: EversenseCGMManager, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
         self.peripheral = peripheral
         self.cgmManager = cgmManager
         self.connectCompletion = connectCompletion

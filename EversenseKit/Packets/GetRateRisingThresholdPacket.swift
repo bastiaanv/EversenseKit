@@ -6,23 +6,23 @@
 //
 
 
-struct GetRateFallingThresholdResponse {
+struct GetRateRisingThresholdResponse {
     let value: Double
 }
 
-class GetRateFallingThresholdPacket : BasePacket {
-    typealias T = GetRateFallingThresholdResponse
+class GetRateRisingThresholdPacket : BasePacket {
+    typealias T = GetRateRisingThresholdResponse
     
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.rateFallingThreshold)
+        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.rateRisingThreshold)
     }
     
-    func parseResponse(data: Data) -> GetRateFallingThresholdResponse {
-        return GetRateFallingThresholdResponse(
+    func parseResponse(data: Data) -> GetRateRisingThresholdResponse {
+        return GetRateRisingThresholdResponse(
             value: Double(data[start]) / 10
         )
     }

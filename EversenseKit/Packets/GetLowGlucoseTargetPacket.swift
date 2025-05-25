@@ -7,7 +7,7 @@
 
 
 struct GetLowGlucoseTargetResponse {
-    let value: UInt16
+    let valueInMgDl: UInt16
 }
 
 class GetLowGlucoseTargetPacket : BasePacket {
@@ -23,7 +23,7 @@ class GetLowGlucoseTargetPacket : BasePacket {
     
     func parseResponse(data: Data) -> GetLowGlucoseTargetResponse {
         return GetLowGlucoseTargetResponse(
-            value: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
+            valueInMgDl: UInt16(data[start]) | (UInt16(data[start+1]) << 8)
         )
     }
 }

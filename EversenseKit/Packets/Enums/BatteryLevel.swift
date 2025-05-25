@@ -5,7 +5,7 @@
 //  Created by Bastiaan Verhaar on 05/05/2025.
 //
 
-enum BatteryLevel: UInt8 {
+public enum BatteryLevel: UInt8 {
     case Percentage0 = 0
     case Percentage5 = 1
     case Percentage10 = 2

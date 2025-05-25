@@ -1,5 +1,5 @@
 //
-//  EversensCGMManager.swift
+//  EversenseCGMManager.swift
 //  EversenseKit
 //
 //  Created by Bastiaan Verhaar on 05/05/2025.
@@ -8,8 +8,8 @@
 import LoopKit
 
 public class EversenseCGMManager: CGMManager {
-    public var state: EversensCGMState
-    e
+    public var state: EversenseCGMState
+    
     public var cgmManagerDelegate: (any LoopKit.CGMManagerDelegate)?
     
     public var providesBLEHeartbeat: Bool
@@ -33,7 +33,7 @@ public class EversenseCGMManager: CGMManager {
     public var localizedTitle: String
     
     public required init?(rawState: RawStateValue) {
-        guard let state = EversensCGMState(rawValue: rawState) else {
+        guard let state = EversenseCGMState(rawValue: rawState) else {
             return nil
         }
         
@@ -62,7 +62,7 @@ public class EversenseCGMManager: CGMManager {
 
 }
 
-extension EversensCGMManager {
+extension EversenseCGMManager {
     func notifyStateDidChange() {
         // TODO: Implement
     }

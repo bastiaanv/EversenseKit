@@ -10,7 +10,7 @@ struct GetRecentGlucoseTimeResponse {
     let time: DateComponents
 }
 
-class GetRecentGlucoseDatePacket : BasePacket {
+class GetRecentGlucoseTimePacket : BasePacket {
     typealias T = GetRecentGlucoseTimeResponse
     
     var response: PacketIds {
@@ -18,7 +18,7 @@ class GetRecentGlucoseDatePacket : BasePacket {
     }
     
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.mostRecentGlucoseDate)
+        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.mostRecentGlucoseTime)
     }
     
     func parseResponse(data: Data) -> GetRecentGlucoseTimeResponse {
