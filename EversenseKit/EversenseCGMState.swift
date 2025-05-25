@@ -1,5 +1,5 @@
 //
-//  EversensCGMState.swift
+//  EversenseCGMState.swift
 //  EversenseKit
 //
 //  Created by Bastiaan Verhaar on 15/05/2025.
@@ -7,10 +7,11 @@
 
 import LoopKit
 
-public struct EversensCGMState: RawRepresentable, Equatable {
+public struct EversenseCGMState: RawRepresentable, Equatable {
     public typealias RawValue = CGMManager.RawStateValue
     
     public init?(rawValue: RawValue) {
+        isSyncing = rawValue["isSyncing"] as? Bool ?? false
         model = rawValue["model"] as? String
         version = rawValue["version"] as? String
         extVersion = rawValue["extVersion"] as? String
@@ -49,8 +50,24 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         highGlucoseAlarmRepeatingNightTime = rawValue["highGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
         isClinicalMode = rawValue["isClinicalMode"] as? Bool ?? false
         clinicalModeDuration = rawValue["clinicalModeDuration"] as? TimeInterval
-        lowGlucoseTarget = rawValue["lowGlucoseTarget"] as? UInt16 ?? 0
-        highGlucoseTarget = rawValue["highGlucoseTarget"] as? UInt16 ?? 0
+        lowGlucoseTargetInMgDl = rawValue["lowGlucoseTargetInMgDl"] as? UInt16 ?? 0
+        highGlucoseTargetInMgDl = rawValue["highGlucoseTargetInMgDl"] as? UInt16 ?? 0
+        isGlucoseAlarmEnabled = rawValue["isGlucoseAlarmEnabled"] as? Bool ?? false
+        lowGlucoseAlarmInMgDl = rawValue["lowGlucoseAlarmInMgDl"] as? UInt16 ?? 0
+        highGlucoseAlarmInMgDl = rawValue["highGlucoseAlarmInMgDl"] as? UInt16 ?? 0
+        isPredictionEnabled = rawValue["isPredictionEnabled"] as? Bool ?? false
+        isPredictionLowEnabled = rawValue["isPredictionLowEnabled"] as? Bool ?? false
+        isPredictionHighEnabled = rawValue["isPredictionHighEnabled"] as? Bool ?? false
+        predictionRisingInterval = rawValue["predictionRisingInterval"] as? TimeInterval
+        predictionFallingInterval = rawValue["predictionFallingInterval"] as? TimeInterval
+        isRateEnabled = rawValue["isRateEnabled"] as? Bool ?? false
+        isFallingRateEnabled = rawValue["isRateEnabled"] as? Bool ?? false
+        isRisingRateEnabled = rawValue["isRisingRateEnabled"] as? Bool ?? false
+        rateFallingThreshold = rawValue["rateFallingThreshold"] as? Double
+        rateRisingThreshold = rawValue["rateRisingThreshold"] as? Double
+        signalStrengthRaw = rawValue["signalStrengthRaw"] as? UInt16 ?? 0
+        tempThresholdWarning = rawValue["tempThresholdWarning"] as? UInt8 ?? 68
+        tempThresholdModeChange = rawValue["tempThresholdModeChange"] as? UInt8 ?? 52
         
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
@@ -69,11 +86,24 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         } else {
             eveningCalibrationTime = DateComponents()
         }
+        
+        if let rawSignalStrength = rawValue["signalStrength"] as? SignalStrength.RawValue {
+            signalStrength = SignalStrength(rawValue: rawSignalStrength) ?? .NoSignal
+        } else {
+            signalStrength = .NoSignal
+        }
+        
+        if let rawBatteryPercentage = rawValue["batteryPercentage"] as? BatteryLevel.RawValue {
+            batteryPercentage = BatteryLevel(rawValue: rawBatteryPercentage) ?? .Percentage0
+        } else {
+            batteryPercentage = .Percentage0
+        }
     }
     
     public var rawValue: RawValue {
         var value: [String: Any] = [:]
         
+        value["isSyncing"] = isSyncing
         value["model"] = model
         value["version"] = version
         value["extVersion"] = extVersion
@@ -82,6 +112,9 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         value["unLinkedSensorId"] = unLinkedSensorId
         value["mmaFeatures"] = mmaFeatures
         value["vibrateMode"] = vibrateMode
+        value["batteryPercentage"] = batteryPercentage.rawValue
+        value["signalStrength"] = signalStrength.rawValue
+        value["signalStrengthRaw"] = signalStrengthRaw
         value["batteryVoltage"] = batteryVoltage
         value["algorithmFormatVersion"] = algorithmFormatVersion
         value["transmitterStart"] = transmitterStart
@@ -115,12 +148,28 @@ public struct EversensCGMState: RawRepresentable, Equatable {
         value["highGlucoseAlarmRepeatingNightTime"] = highGlucoseAlarmRepeatingNightTime
         value["isClinicalMode"] = isClinicalMode
         value["clinicalModeDuration"] = clinicalModeDuration
-        value["lowGlucoseTarget"] = lowGlucoseTarget
-        value["highGlucoseTarget"] = highGlucoseTarget
+        value["lowGlucoseTargetInMgDl"] = lowGlucoseTargetInMgDl
+        value["highGlucoseTargetInMgDl"] = highGlucoseTargetInMgDl
+        value["isGlucoseAlarmEnabled"] = isGlucoseAlarmEnabled
+        value["lowGlucoseAlarmInMgDl"] = lowGlucoseAlarmInMgDl
+        value["highGlucoseAlarmInMgDl"] = highGlucoseAlarmInMgDl
+        value["isPredictionEnabled"] = isPredictionEnabled
+        value["isPredictionLowEnabled"] = isPredictionLowEnabled
+        value["isPredictionHighEnabled"] = isPredictionHighEnabled
+        value["predictionRisingInterval"] = predictionRisingInterval
+        value["predictionFallingInterval"] = predictionFallingInterval
+        value["isRateEnabled"] = isRateEnabled
+        value["isFallingRateEnabled"] = isFallingRateEnabled
+        value["isRisingRateEnabled"] = isRisingRateEnabled
+        value["rateFallingThreshold"] = rateFallingThreshold
+        value["rateRisingThreshold"] = rateRisingThreshold
+        value["tempThresholdWarning"] = tempThresholdWarning
+        value["tempThresholdModeChange"] = tempThresholdModeChange
         
         return value
     }
     
+    public var isSyncing: Bool
     public var model: String?
     public var version: String?
     public var extVersion: String?
@@ -130,8 +179,12 @@ public struct EversensCGMState: RawRepresentable, Equatable {
     
     public var mmaFeatures: UInt8
     public var batteryVoltage: Double
+    public var batteryPercentage: BatteryLevel
     public var algorithmFormatVersion: UInt16
     public var vibrateMode: Bool?
+    
+    public var signalStrength: SignalStrength
+    public var signalStrengthRaw: UInt16
     
     var alarms: [TransmitterAlert]
     
@@ -175,8 +228,26 @@ public struct EversensCGMState: RawRepresentable, Equatable {
     public var isClinicalMode: Bool
     public var clinicalModeDuration: TimeInterval?
     
-    public var lowGlucoseTarget: UInt16
-    public var highGlucoseTarget: UInt16
+    public var lowGlucoseTargetInMgDl: UInt16
+    public var highGlucoseTargetInMgDl: UInt16
+    public var isGlucoseAlarmEnabled: Bool
+    public var lowGlucoseAlarmInMgDl: UInt16
+    public var highGlucoseAlarmInMgDl: UInt16
+    
+    public var isPredictionEnabled: Bool
+    public var isPredictionLowEnabled: Bool
+    public var isPredictionHighEnabled: Bool
+    public var predictionFallingInterval: TimeInterval?
+    public var predictionRisingInterval: TimeInterval?
+    
+    public var isRateEnabled: Bool
+    public var isFallingRateEnabled: Bool
+    public var isRisingRateEnabled: Bool
+    public var rateFallingThreshold: Double?
+    public var rateRisingThreshold: Double?
+    
+    public var tempThresholdWarning: UInt8
+    public var tempThresholdModeChange: UInt8
     
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)

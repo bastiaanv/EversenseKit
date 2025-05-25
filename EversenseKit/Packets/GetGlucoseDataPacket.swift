@@ -1,5 +1,5 @@
 //
-//  GetGlucoseData.swift
+//  GetGlucoseDataPacket.swift
 //  EversenseKit
 //
 //  Created by Bastiaan Verhaar on 11/05/2025.
@@ -11,7 +11,7 @@ struct GetGlucoseDataResponse {
     let trend: GlucoseTrend?
 }
 
-class GetGlucoseData : BasePacket {
+class GetGlucoseDataPacket : BasePacket {
     typealias T = GetGlucoseDataResponse
     
     var response: PacketIds {

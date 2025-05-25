@@ -7,9 +7,9 @@
 
 import LoopKit
 
-public class EversensCGMManager: CGMManager {
+public class EversenseCGMManager: CGMManager {
     public var state: EversensCGMState
-    
+    e
     public var cgmManagerDelegate: (any LoopKit.CGMManagerDelegate)?
     
     public var providesBLEHeartbeat: Bool
@@ -60,4 +60,10 @@ public class EversensCGMManager: CGMManager {
         return []
     }
 
+}
+
+extension EversensCGMManager {
+    func notifyStateDidChange() {
+        // TODO: Implement
+    }
 }
