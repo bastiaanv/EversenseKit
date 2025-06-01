@@ -10,23 +10,61 @@ import CoreBluetooth
 class BluetoothManager : NSObject {
     private let logger = EversenseLogger(category: "BluetoothManager")
     private let managerQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.bluetoothManagerQueue", qos: .unspecified)
-    public let cgmManager: EversenseCGMManager
+    public var cgmManager: EversenseCGMManager?
     private var manager: CBCentralManager?
     
     private var peripheral: CBPeripheral?
     private var peripheralManager: PeripheralManager?
     
     private var scanCompletion: ((ScanItem) -> Void)?
-    private var connectCompletion: ((Result<Void, ConnectFailure>) -> Void)?
+    private var connectCompletion: ((ConnectFailure?) -> Void)?
     
-    init(cgmManager: EversenseCGMManager) {
-        self.cgmManager = cgmManager
+    override init() {
+        super.init()
+        
         managerQueue.sync {
             self.manager = CBCentralManager(delegate: self, queue: managerQueue)
         }
     }
     
-    func scan(completion: @escaping (ScanItem) -> Void) {
+    func ensureConnected(completion: @escaping (NSError?) -> Void) {
+        if let _ = peripheral, let _ = peripheralManager {
+            completion(nil)
+        }
+        
+        if let peripheral = peripheral {
+            connect(peripheral: peripheral) { error in
+                if let error = error {
+                    completion(NSError(domain: error.localizedDescription, code: -1))
+                    return
+                }
+                
+                completion(nil)
+            }
+        }
+        
+        guard let bleUUIDString = cgmManager?.state.bleUUIDString else {
+            completion(NSError(domain: "No ble uuid available", code: -1))
+            return
+        }
+        
+        self.scan { result in
+            guard result.peripheral.identifier.uuidString == bleUUIDString else {
+                return
+            }
+            
+            self.connect(peripheral: result.peripheral) { error in
+                if let error = error {
+                    completion(NSError(domain: error.localizedDescription, code: -1))
+                    return
+                }
+                
+                completion(nil)
+            }
+        }
+    }
+    
+    private func scan(completion: @escaping (ScanItem) -> Void) {
         guard let manager = manager else {
             self.logger.error("No CBCentralManager available...")
             return
@@ -40,7 +78,7 @@ class BluetoothManager : NSObject {
         manager.scanForPeripherals(withServices: nil)
     }
     
-    func connect(peripheral: CBPeripheral, completion: @escaping (Result<Void, ConnectFailure>) -> Void) {
+    private func connect(peripheral: CBPeripheral, completion: @escaping (ConnectFailure?) -> Void) {
         guard let manager = manager else {
             self.logger.error("No CBCentralManager available...")
             return
@@ -84,6 +122,11 @@ extension BluetoothManager : CBCentralManagerDelegate {
             return
         }
         
+        guard let cgmManager = self.cgmManager else {
+            self.logger.error("No cgmManager available")
+            return
+        }
+        
         self.peripheral = peripheral
         self.peripheralManager = PeripheralManager(peripheral: peripheral, cgmManager: cgmManager, connectCompletion: connectCompletion)
         
@@ -94,6 +137,15 @@ extension BluetoothManager : CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         if let error = error {
             self.logger.error("Failure during disconnect: \(error.localizedDescription)")
+        }
+        
+        // Reconnect
+        self.ensureConnected { error in
+            if let error = error {
+                self.logger.error("Failed to reconnect: \(error.localizedDescription)")
+            }
+            
+            self.logger.info("Reconnect succesfull!")
         }
     }
 

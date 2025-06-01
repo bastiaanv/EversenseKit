@@ -17,7 +17,7 @@ class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
     private let cgmManager: EversenseCGMManager
-    private let connectCompletion: ((Result<Void, ConnectFailure>) -> Void)?
+    private let connectCompletion: ((ConnectFailure?) -> Void)?
     
     private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
     private let requestCharacteristicUUID = CBUUID(string: "6eb0f021-a7ba-7e7d-66c9-6d813f01d273")
@@ -42,13 +42,15 @@ class PeripheralManager: NSObject {
         self.security == .v1 || self.security == .v2
     }
     
-    init(peripheral: CBPeripheral, cgmManager: EversenseCGMManager, connectCompletion: @escaping (Result<Void, ConnectFailure>) -> Void) {
+    init(peripheral: CBPeripheral, cgmManager: EversenseCGMManager, connectCompletion: @escaping (ConnectFailure?) -> Void) {
         self.peripheral = peripheral
         self.cgmManager = cgmManager
         self.connectCompletion = connectCompletion
         
         // Need the MTU for the 365 transmitter
         self.maxPacketSize = self.peripheral.maximumWriteValueLength(for: .withoutResponse)
+        self.security = .none
+        super.init()
         
         self.peripheral.delegate = self
     }
@@ -106,14 +108,14 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         if let error = error {
             self.logger.error("Got error while discovering services: \(error.localizedDescription)")
-            self.connectCompletion?(.failure(.failedToDiscoverServices))
+            self.connectCompletion?(ConnectFailure.failedToDiscoverServices)
             return
         }
         
         self.service = peripheral.services?.first { $0.uuid == self.serviceUUID }
         guard let service = self.service else {
             self.logger.error("Service not found: \(peripheral.services?.map { $0.uuid.uuidString } ?? [])")
-            self.connectCompletion?(.failure(.failedToDiscoverServices))
+            self.connectCompletion?(ConnectFailure.failedToDiscoverServices)
             return
         }
         
@@ -124,58 +126,63 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
         if let error = error {
             self.logger.error("Got error while discovering characteristics: \(error.localizedDescription)")
-            self.connectCompletion?(.failure(.failedToDiscoverCharacteristics))
+            self.connectCompletion?(ConnectFailure.failedToDiscoverCharacteristics)
             return
         }
         
-        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicUUID }),
-           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicUUID }) {
+        Task {
+            if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicUUID }),
+               let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicUUID }) {
+                
+                self.security = .none
+                self.requestCharacteristic = requestCharacteristic
+                self.responseCharacteristic = responseCharacteristic
+                
+                self.logger.debug("[NONE security] Discovering completed -> Enabling notifing...")
+                peripheral.setNotifyValue(true, for: responseCharacteristic)
+                
+                // Response will be handled by didUpdateValueFor
+                let _: SaveBleBondingInformationResponse = try await self.write(SaveBleBondingInformationPacket())
+                return
+            }
             
-            self.security = .none
-            self.requestCharacteristic = requestCharacteristic
-            self.responseCharacteristic = responseCharacteristic
+            if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureUUID }),
+               let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureUUID }) {
+                
+                self.security = .v1
+                self.requestCharacteristic = requestCharacteristic
+                self.responseCharacteristic = responseCharacteristic
+                
+                self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
+                peripheral.setNotifyValue(true, for: responseCharacteristic)
+                
+                // TODO: Get fleetKey from API & send it
+                return
+            }
             
-            self.logger.debug("[NONE security] Discovering completed -> Enabling notifing...")
-            peripheral.setNotifyValue(true, for: responseCharacteristic)
-            return
+            if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureV2UUID }),
+               let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureV2UUID }) {
+                
+                self.security = .v2
+                self.requestCharacteristic = requestCharacteristic
+                self.responseCharacteristic = responseCharacteristic
+                
+                self.logger.debug("[V2 security] Discovering completed -> Enabling notifing...")
+                peripheral.setNotifyValue(true, for: responseCharacteristic)
+                
+                // TODO: Need to send whoAmI or sendStart command here
+                return
+            }
+            
+            self.logger.error("Characteristics could not found: \(service.characteristics ?? [])")
+            self.connectCompletion?(ConnectFailure.failedToDiscoverCharacteristics)
         }
-        
-        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureUUID }),
-           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureUUID }) {
-            
-            self.security = .v1
-            self.requestCharacteristic = requestCharacteristic
-            self.responseCharacteristic = responseCharacteristic
-            
-            self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
-            peripheral.setNotifyValue(true, for: responseCharacteristic)
-            
-            // TODO: Get fleetKey from API & send it
-            return
-        }
-        
-        if let requestCharacteristic = service.characteristics?.first(where: { $0.uuid == self.requestCharacteristicSecureV2UUID }),
-           let responseCharacteristic = service.characteristics?.first(where: { $0.uuid == self.responseCharacteristicSecureV2UUID }) {
-            
-            self.security = .v2
-            self.requestCharacteristic = requestCharacteristic
-            self.responseCharacteristic = responseCharacteristic
-            
-            self.logger.debug("[V2 security] Discovering completed -> Enabling notifing...")
-            peripheral.setNotifyValue(true, for: responseCharacteristic)
-            
-            // TODO: Need to send whoAmI or sendStart command here
-            return
-        }
-
-        self.logger.error("Characteristics could not found: \(service.characteristics ?? [])")
-        self.connectCompletion?(.failure(.failedToDiscoverCharacteristics))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
             self.logger.error("Received error on value update: \(error.localizedDescription)")
-            self.connectCompletion?(.failure(.unknown(error: error)))
+            self.connectCompletion?(ConnectFailure.unknown(error: error))
             return
         }
         
@@ -192,7 +199,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 return
             }
             
-            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: self.cgmManager)
+            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: self.cgmManager, connectCompletion: self.connectCompletion)
             return
         }
         

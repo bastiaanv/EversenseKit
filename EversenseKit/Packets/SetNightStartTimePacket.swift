@@ -24,7 +24,7 @@ class SetNightStartTimePacket: BasePacket {
         let minute = UInt8(Calendar.current.component(.minute, from: nightStartTime))
         
         return CommandOperations.writeTwoByteSerialFlashRegister(
-            memoryAddress: FlashMemory.nightStartTimeAddress,
+            memoryAddress: FlashMemory.nightStartTime,
             data: Data([hour, minute])
         )
     }

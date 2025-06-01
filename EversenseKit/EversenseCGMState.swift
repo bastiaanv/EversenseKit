@@ -11,6 +11,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public typealias RawValue = CGMManager.RawStateValue
     
     public init?(rawValue: RawValue) {
+        alarms = []
+        bleUUIDString = rawValue["bleUUIDString"] as? String
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
         model = rawValue["model"] as? String
         version = rawValue["version"] as? String
@@ -36,6 +38,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         sensorInsertion = rawValue["sensorInsertion"] as? Date
         hysteresisPercentage = rawValue["hysteresisPercentage"] as? UInt8 ?? 0
         hysteresisValueInMgDl = rawValue["hysteresisValueInMgDl"] as? UInt8 ?? 0
+        predictiveHysteresisPercentage = rawValue["predictiveHysteresisPercentage"] as? UInt8 ?? 0
+        predictiveHysteresisValueInMgDl = rawValue["predictiveHysteresisValueInMgDl"] as? UInt8 ?? 0
         isOneCalibrationPhase = rawValue["isOneCalibrationPhase"] as? Bool ?? false
         calibrationCount = rawValue["calibrationCount"] as? UInt16 ?? 0
         mepValue = rawValue["mepValue"] as? Float ?? 0
@@ -121,6 +125,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var rawValue: RawValue {
         var value: [String: Any] = [:]
         
+        value["bleUUIDString"] = bleUUIDString
         value["isSyncing"] = isSyncing
         value["model"] = model
         value["version"] = version
@@ -151,6 +156,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["sensorInsertion"] = sensorInsertion
         value["hysteresisPercentage"] = hysteresisPercentage
         value["hysteresisValueInMgDl"] = hysteresisValueInMgDl
+        value["predictiveHysteresisPercentage"] = predictiveHysteresisPercentage
+        value["predictiveHysteresisValueInMgDl"] = predictiveHysteresisValueInMgDl
         value["isOneCalibrationPhase"] = isOneCalibrationPhase
         value["calibrationCount"] = calibrationCount
         value["calibrationPhase"] = calibrationPhase.rawValue
@@ -200,6 +207,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         return value
     }
     
+    public var bleUUIDString: String?
     public var isSyncing: Bool
     public var model: String?
     public var version: String?
@@ -296,5 +304,27 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)
+    }
+    
+    public var is365: Bool {
+        false
+    }
+    
+    public var modelStr: String? {
+        if isUSXLorOUSXL2 {
+            return LocalizedString("Eversense XL - 6 months", comment: "Eversense XL (6months)")
+        }
+        
+        if is365 {
+            return LocalizedString("Eversense 365 - 1 year", comment: "Eversense 365 (1year)")
+        }
+        
+        return LocalizedString("Eversense - 3 months", comment: "Eversense (3months)")
+    }
+    
+    public var debugDescription: String {
+        return [
+            "TODO"
+        ].joined(separator: "\n")
     }
 }

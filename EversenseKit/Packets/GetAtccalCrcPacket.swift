@@ -34,10 +34,10 @@ class GetAtccalCrcPacket : BasePacket {
     }
     
     private func getCRCValue(_ arr: Data) -> UInt16 {
-        var crc: UInt16 = 0xFFFF
+        var crc: UInt32 = 0xFFFF
         
         for i2 in arr {
-            crc ^= UInt16(i2) << 8
+            crc ^= UInt32(i2) << 8
             
             for _ in 0..<8 {
                 if (crc & 32768) != 0 {
@@ -48,6 +48,6 @@ class GetAtccalCrcPacket : BasePacket {
             }
         }
         
-        return crc ^ 0
+        return UInt16(crc ^ 0)
     }
 }

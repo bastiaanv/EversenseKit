@@ -8,7 +8,7 @@
 class TransmitterStateSync {
     static let fakeAppVersion = "8.0.1"
     
-    static func fullSync(peripheralManager: PeripheralManager, cgmManager: EversenseCGMManager) {
+    static func fullSync(peripheralManager: PeripheralManager, cgmManager: EversenseCGMManager, connectCompletion: ((ConnectFailure?) -> Void)?) {
         let logger = EversenseLogger(category: "TransmitterStateSync")
         
         Task {
@@ -287,6 +287,8 @@ class TransmitterStateSync {
             
             cgmManager.state.isSyncing = false
             cgmManager.notifyStateDidChange()
+            
+            connectCompletion?(nil)
         }
     }
 }

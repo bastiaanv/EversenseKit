@@ -6,31 +6,77 @@
 //
 
 import LoopKit
+import HealthKit
 
 public class EversenseCGMManager: CGMManager {
+    private let logger = EversenseLogger(category: "CGMManager")
+    private let bluetoothManager: BluetoothManager
+    
     public var state: EversenseCGMState
+    public var rawState: RawStateValue {
+        self.state.rawValue
+    }
     
-    public var cgmManagerDelegate: (any LoopKit.CGMManagerDelegate)?
+    public var managedDataInterval: TimeInterval? {
+        return .hours(3)
+    }
     
-    public var providesBLEHeartbeat: Bool
+    public var providesBLEHeartbeat: Bool {
+        true
+    }
     
-    public var managedDataInterval: TimeInterval?
-    
-    public var shouldSyncToRemoteService: Bool
+    public var shouldSyncToRemoteService: Bool {
+        false
+    }
     
     public var glucoseDisplay: (any LoopKit.GlucoseDisplayable)?
     
-    public var cgmManagerStatus: LoopKit.CGMManagerStatus
-    
-    public var delegateQueue: DispatchQueue!
-    
-    public func fetchNewDataIfNeeded(_ completion: @escaping (LoopKit.CGMReadingResult) -> Void) {
-        <#code#>
+    public var cgmManagerStatus: LoopKit.CGMManagerStatus {
+        LoopKit.CGMManagerStatus(
+            hasValidSensorSession: false,
+            lastCommunicationDate: nil,
+            device: self.device
+        )
     }
     
-    public var managerIdentifier: String
+    private var device: HKDevice {
+        HKDevice(
+            name: self.state.modelStr,
+            manufacturer: "Senseonics",
+            model: nil,
+            hardwareVersion: nil,
+            firmwareVersion: self.state.version,
+            softwareVersion: self.state.extVersion,
+            localIdentifier: nil,
+            udiDeviceIdentifier: nil
+        )
+    }
     
-    public var localizedTitle: String
+    
+    public weak var cgmManagerDelegate: CGMManagerDelegate? {
+        get {
+            return delegate.delegate
+        }
+        set {
+            delegate.delegate = newValue
+        }
+    }
+
+    public var delegateQueue: DispatchQueue! {
+        get {
+            return delegate.queue
+        }
+        set {
+            delegate.queue = newValue
+        }
+    }
+
+    private let delegate = WeakSynchronizedDelegate<CGMManagerDelegate>()
+    
+    
+    public let managerIdentifier: String = "EversenseCGMManager"
+    
+    public let localizedTitle = "EverSense CGM: TODO"
     
     public required init?(rawState: RawStateValue) {
         guard let state = EversenseCGMState(rawValue: rawState) else {
@@ -38,15 +84,23 @@ public class EversenseCGMManager: CGMManager {
         }
         
         self.state = state
+        self.bluetoothManager = BluetoothManager()
+        self.bluetoothManager.cgmManager = self
     }
     
-    public var rawState: RawStateValue
+    
     
     public var isOnboarded: Bool {
         false
     }
     
-    public var debugDescription: String
+    public var debugDescription: String {
+        let lines = [
+            "## EverSense CGM:",
+            self.state.debugDescription
+        ]
+        return lines.joined(separator: "\n")
+    }
     
     public func acknowledgeAlert(alertIdentifier: LoopKit.Alert.AlertIdentifier, completion: @escaping ((any Error)?) -> Void) {
         completion(nil)
@@ -63,6 +117,35 @@ public class EversenseCGMManager: CGMManager {
 }
 
 extension EversenseCGMManager {
+    public func fetchNewDataIfNeeded(_ completion: @escaping (LoopKit.CGMReadingResult) -> Void) {
+        guard let cgmManagerDelegate = cgmManagerDelegate else {
+            completion(.error(NSError(domain: "No cgmManagerDelegate", code: -1)))
+            return
+        }
+        
+        self.bluetoothManager.ensureConnected { error in
+            if let internalError = error {
+                completion(.error(internalError))
+                return
+            }
+            
+            let startDate = cgmManagerDelegate.startDateToFilterNewData(for: self)
+        }
+    }
+    
+    private func scheduleGlucoseExtrator() {
+        Task {
+            do {
+                try await Task.sleep(for: .seconds(300))
+                // TODO: 
+            } catch {
+                self.logger.error("Catched error during glucose extractor: \(error)")
+            }
+            
+            self.scheduleGlucoseExtrator()
+        }
+    }
+    
     func notifyStateDidChange() {
         // TODO: Implement
     }

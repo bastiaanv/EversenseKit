@@ -20,13 +20,13 @@ class BinaryOperations {
     
     static func toDateComponents(data: Data, start: Int) -> DateComponents {
         let day = data[start] & 31
-        let year = (data[start+1] >> 1) + 2000
+        let year = Int(data[start+1] >> 1) + 2000
         var month = data[start] >> 5
         if (data[start+1] % 2 == 1) {
             month += 8
         }
         
-        return DateComponents(year: Int(year), month: Int(month), day: Int(day))
+        return DateComponents(year: year, month: Int(month), day: Int(day))
     }
     
     static func toTimeComponents(data: Data, start: Int) -> DateComponents {

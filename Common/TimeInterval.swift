@@ -77,4 +77,8 @@ extension TimeInterval {
         return hours / 24.0
     }
 
+    
+    func toNanoseconds() -> Int64 {
+        return Int64(self * 1_000_000_000)
+    }
 }

@@ -24,7 +24,7 @@ class SetDayStartTimePacket : BasePacket {
         let minute = UInt8(Calendar.current.component(.minute, from: dayStartTime))
         
         return CommandOperations.writeTwoByteSerialFlashRegister(
-            memoryAddress: FlashMemory.dayStartTimeAddress,
+            memoryAddress: FlashMemory.dayStartTime,
             data: Data([hour, minute])
         )
     }

@@ -152,9 +152,9 @@ enum PacketIds: UInt8 {
     
     func getDataStart() -> Int {
         switch self {
-        case .readSingleByteSerialFlashRegisterResponseId:
-        case .readTwoByteSerialFlashRegisterResponseId:
-        case .readFourByteSerialFlashRegisterResponseId:
+        case    .readSingleByteSerialFlashRegisterResponseId,
+                .readTwoByteSerialFlashRegisterResponseId,
+                .readFourByteSerialFlashRegisterResponseId:
             return 3
 
         default:
