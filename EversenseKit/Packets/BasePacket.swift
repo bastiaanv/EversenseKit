@@ -1,15 +1,8 @@
-//
-//  BasePacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 05/05/2025.
-//
-
 protocol BasePacket<T> {
     associatedtype T = AnyClass
-    
+
     var response: PacketIds { get }
-    
+
     func getRequestData() -> Data
     func parseResponse(data: Data) -> T
 }
@@ -18,22 +11,22 @@ extension BasePacket {
     var start: Int {
         response.getDataStart()
     }
-    
+
     func checkPacket(data: Data) -> Bool {
         // Check packetId
         guard data[0] == response.rawValue else {
             return false
         }
-        
+
         // Minlength of a packet is 3
         guard data.count >= 3 else {
             return false
         }
-        
+
         let packet = Data(data.dropLast(2))
         let calculatedChecksum = BinaryOperations.dataFrom16Bits(value: BinaryOperations.generateChecksumCRC16(data: packet))
-        
-        return calculatedChecksum == Data(data.subdata(in: data.count - 2..<data.count))
+
+        return calculatedChecksum == Data(data.subdata(in: data.count - 2 ..< data.count))
     }
 }
 
@@ -128,7 +121,7 @@ enum PacketIds: UInt8 {
     case setCurrentTransmitterDateAndTimeResponseId = 135
     case startSelfTestSequenceCommandId = 5
     case startSelfTestSequenceResponseId = 133
-// DISABLED SINCE IT HAS OVERLAP WITH OTHER COMMANDS
+    // DISABLED SINCE IT HAS OVERLAP WITH OTHER COMMANDS
 //    case testCommandChangeBatteryMonThresh = 42
 //    case testCommandForceGlucoseMeasurement = 24
 //    case testCommandId = 96
@@ -149,12 +142,12 @@ enum PacketIds: UInt8 {
     case writeSingleMiscEventLogRecordResponseId = 164
     case writeTwoByteSerialFlashRegisterCommandId = 45
     case writeTwoByteSerialFlashRegisterResponseId = 173
-    
+
     func getDataStart() -> Int {
         switch self {
-        case    .readSingleByteSerialFlashRegisterResponseId,
-                .readTwoByteSerialFlashRegisterResponseId,
-                .readFourByteSerialFlashRegisterResponseId:
+        case .readFourByteSerialFlashRegisterResponseId,
+             .readSingleByteSerialFlashRegisterResponseId,
+             .readTwoByteSerialFlashRegisterResponseId:
             return 3
 
         default:

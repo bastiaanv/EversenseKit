@@ -1,28 +1,21 @@
-//
-//  GetSignalStrengthRaw.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 05/05/2025.
-//
-
 struct GetSignalStrengthRawResponse {
     let value: SignalStrength
     let rawValue: UInt16
 }
 
-class GetSignalStrengthRawPacket : BasePacket {
+class GetSignalStrengthRawPacket: BasePacket {
     typealias T = GetSignalStrengthRawResponse
-    
+
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
-    
+
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.sensorFieldCurrentRaw)
+        CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.sensorFieldCurrentRaw)
     }
-    
+
     func parseResponse(data: Data) -> GetSignalStrengthRawResponse {
-        let value = UInt16(data[start]) | (UInt16(data[start+1]) << 8)
+        let value = UInt16(data[start]) | (UInt16(data[start + 1]) << 8)
         var signalStrength = SignalStrength.NoSignal
         if value >= SignalStrength.Excellent.threshold {
             signalStrength = SignalStrength.Excellent
@@ -35,7 +28,7 @@ class GetSignalStrengthRawPacket : BasePacket {
         } else if value >= SignalStrength.Poor.threshold {
             signalStrength = SignalStrength.Poor
         }
-        
+
         return GetSignalStrengthRawResponse(value: signalStrength, rawValue: value)
     }
 }

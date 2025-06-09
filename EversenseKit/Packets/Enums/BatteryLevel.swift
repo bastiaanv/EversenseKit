@@ -1,10 +1,3 @@
-//
-//  BatteryLevel.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 05/05/2025.
-//
-
 public enum BatteryLevel: UInt8 {
     case Percentage0 = 0
     case Percentage5 = 1

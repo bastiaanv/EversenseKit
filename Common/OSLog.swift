@@ -1,46 +1,38 @@
-//
-//  OSLog.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 13/05/2025.
-//
-
-import OSLog
 import Combine
+import OSLog
 
 class EversenseLogger {
     private let logger: Logger
     private let fileManager = FileManager.default
-    
-    
+
     init(category: String) {
         logger = Logger(subsystem: "com.nightscout.EverSenseKit", category: category)
     }
-    
+
     public func debug(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
         let message = "\(file.file) - \(function)#\(line): \(msg)"
-        self.logger.debug("\(message, privacy: .public)")
-        self.writeToFile(message, .info)
+        logger.debug("\(message, privacy: .public)")
+        writeToFile(message, .info)
     }
-    
+
     public func info(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
         let message = "\(file.file) - \(function)#\(line): \(msg)"
-        self.logger.info("\(message, privacy: .public)")
-        self.writeToFile(message, .info)
+        logger.info("\(message, privacy: .public)")
+        writeToFile(message, .info)
     }
-    
+
     public func warning(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
         let message = "\(file.file) - \(function)#\(line): \(msg)"
-        self.logger.warning("\(message, privacy: .public)")
-        self.writeToFile(message, .notice)
+        logger.warning("\(message, privacy: .public)")
+        writeToFile(message, .notice)
     }
-    
+
     public func error(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
         let message = "\(file.file) - \(function)#\(line): \(msg)"
-        self.logger.error("\(message, privacy: .public)")
-        self.writeToFile(message, .error)
+        logger.error("\(message, privacy: .public)")
+        writeToFile(message, .error)
     }
-    
+
     private func writeToFile(_ msg: String, _ type: OSLogEntryLog.Level) {
         if !fileManager.fileExists(atPath: logDir) {
             try? fileManager.createDirectory(
@@ -53,22 +45,22 @@ class EversenseLogger {
         if !fileManager.fileExists(atPath: logFile) {
             createFile(at: startOfDay)
         } else if let attributes = try? fileManager.attributesOfItem(atPath: logFile),
-               let creationDate = attributes[.creationDate] as? Date, creationDate < startOfDay
-            {
-                try? fileManager.removeItem(atPath: logFilePrev)
-                try? fileManager.moveItem(atPath: logFile, toPath: logFilePrev)
-                createFile(at: startOfDay)
+                  let creationDate = attributes[.creationDate] as? Date, creationDate < startOfDay
+        {
+            try? fileManager.removeItem(atPath: logFilePrev)
+            try? fileManager.moveItem(atPath: logFile, toPath: logFilePrev)
+            createFile(at: startOfDay)
         }
-        
+
         let logEntry = "[\(dateFormatter.string(from: Date())) \(getLevel(type))] \(msg)\n"
         let data = logEntry.data(using: .utf8)!
         try? data.append(fileURL: URL(fileURLWithPath: logFile))
     }
-    
+
     private var startOfDay: Date {
         Calendar.current.startOfDay(for: Date())
     }
-    
+
     private var logFile: String {
         getDocumentsDirectory().appendingPathComponent("eversense/eversense_log.txt").path
     }
@@ -86,17 +78,17 @@ class EversenseLogger {
         let documentsDirectory = paths[0]
         return documentsDirectory
     }
-    
+
     private var dateFormatter: DateFormatter {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return dateFormatter
     }
-    
+
     private func createFile(at date: Date) {
         fileManager.createFile(atPath: logFile, contents: nil, attributes: [.creationDate: date])
     }
-    
+
     func getDebugLogs() -> [URL] {
         var items: [URL] = []
 
@@ -110,7 +102,7 @@ class EversenseLogger {
 
         return items
     }
-    
+
     private func getLevel(_ type: OSLogEntryLog.Level) -> String {
         switch type {
         case .info:

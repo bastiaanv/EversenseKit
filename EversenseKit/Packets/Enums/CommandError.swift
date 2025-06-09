@@ -1,10 +1,3 @@
-//
-//  CommandError.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 13/05/2025.
-//
-
 enum CommandError: UInt16 {
     case notAllowed = 1
     case unused = 2

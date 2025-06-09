@@ -1,26 +1,18 @@
-//
-//  GetEveningCalibrationTimePacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 22/05/2025.
-//
-
-
 struct GetEveningCalibrationTimeResponse {
     let value: DateComponents
 }
 
-class GetEveningCalibrationTimePacket : BasePacket {
+class GetEveningCalibrationTimePacket: BasePacket {
     typealias T = GetEveningCalibrationTimeResponse
-    
+
     var response: PacketIds {
         PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
-    
+
     func getRequestData() -> Data {
-        return CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.eveningCalibrationTime)
+        CommandOperations.readTwoByteSerialFlashRegister(memoryAddress: FlashMemory.eveningCalibrationTime)
     }
-    
+
     func parseResponse(data: Data) -> GetEveningCalibrationTimeResponse {
         let components = DateComponents(
             timeZone: GMTTimezone,

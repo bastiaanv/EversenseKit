@@ -1,15 +1,8 @@
-//
-//  EversenseCGMState.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 15/05/2025.
-//
-
 import LoopKit
 
 public struct EversenseCGMState: RawRepresentable, Equatable {
     public typealias RawValue = CGMManager.RawStateValue
-    
+
     public init?(rawValue: RawValue) {
         alarms = []
         bleUUIDString = rawValue["bleUUIDString"] as? String
@@ -84,47 +77,57 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         accelerometerTemp = rawValue["accelerometerTemp"] as? UInt16 ?? 0
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
-        
+
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
         } else {
             calibrationPhase = .UNKNOWN
         }
-        
+
         if let rawMorningCalibration = rawValue["morningCalibrationTime"] as? Data {
-            morningCalibrationTime = DateComponents(timeZone: GMTTimezone, hour: Int(rawMorningCalibration[0]), minute: Int(rawMorningCalibration[1]), second: 0)
+            morningCalibrationTime = DateComponents(
+                timeZone: GMTTimezone,
+                hour: Int(rawMorningCalibration[0]),
+                minute: Int(rawMorningCalibration[1]),
+                second: 0
+            )
         } else {
             morningCalibrationTime = DateComponents()
         }
-        
+
         if let rawEveningCalibration = rawValue["eveningCalibrationTime"] as? Data {
-            eveningCalibrationTime = DateComponents(timeZone: GMTTimezone, hour: Int(rawEveningCalibration[0]), minute: Int(rawEveningCalibration[1]), second: 0)
+            eveningCalibrationTime = DateComponents(
+                timeZone: GMTTimezone,
+                hour: Int(rawEveningCalibration[0]),
+                minute: Int(rawEveningCalibration[1]),
+                second: 0
+            )
         } else {
             eveningCalibrationTime = DateComponents()
         }
-        
+
         if let rawSignalStrength = rawValue["signalStrength"] as? SignalStrength.RawValue {
             signalStrength = SignalStrength(rawValue: rawSignalStrength) ?? .NoSignal
         } else {
             signalStrength = .NoSignal
         }
-        
+
         if let rawBatteryPercentage = rawValue["batteryPercentage"] as? BatteryLevel.RawValue {
             batteryPercentage = BatteryLevel(rawValue: rawBatteryPercentage) ?? .Percentage0
         } else {
             batteryPercentage = .Percentage0
         }
-        
+
         if let rawRecentGlucoseTrend = rawValue["recentGlucoseTrend"] as? GlucoseTrend.RawValue {
             recentGlucoseTrend = GlucoseTrend(rawValue: rawRecentGlucoseTrend) ?? .flat
         } else {
             recentGlucoseTrend = .flat
         }
     }
-    
+
     public var rawValue: RawValue {
         var value: [String: Any] = [:]
-        
+
         value["bleUUIDString"] = bleUUIDString
         value["isSyncing"] = isSyncing
         value["model"] = model
@@ -147,8 +150,10 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["sensorSamplingInterval"] = sensorSamplingInterval
         value["delayBLEDisconnectionAlarm"] = delayBLEDisconnectionAlarm
         value["isDelayBLEDisconnectionAlarmSupported"] = isDelayBLEDisconnectionAlarmSupported
-        value["morningCalibrationTime"] = Data([UInt8(morningCalibrationTime.hour ?? 0), UInt8(morningCalibrationTime.minute ?? 0)])
-        value["eveningCalibrationTime"] = Data([UInt8(eveningCalibrationTime.hour ?? 0), UInt8(eveningCalibrationTime.minute ?? 0)])
+        value["morningCalibrationTime"] =
+            Data([UInt8(morningCalibrationTime.hour ?? 0), UInt8(morningCalibrationTime.minute ?? 0)])
+        value["eveningCalibrationTime"] =
+            Data([UInt8(eveningCalibrationTime.hour ?? 0), UInt8(eveningCalibrationTime.minute ?? 0)])
         value["lastCalibration"] = lastCalibration
         value["calibrationMinThreshold"] = calibrationMinThreshold
         value["calibrationMaxThreshold"] = calibrationMaxThreshold
@@ -203,10 +208,10 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["recentGlucoseInMgDl"] = recentGlucoseInMgDl
         value["recentGlucoseDateTime"] = recentGlucoseDateTime
         value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
-        
+
         return value
     }
-    
+
     public var bleUUIDString: String?
     public var isSyncing: Bool
     public var model: String?
@@ -215,18 +220,18 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var communicationProtocol: String?
     public var sensorId: String?
     public var unLinkedSensorId: String?
-    
+
     public var mmaFeatures: UInt8
     public var batteryVoltage: Double
     public var batteryPercentage: BatteryLevel
     public var algorithmFormatVersion: UInt16
     public var vibrateMode: Bool?
-    
+
     public var signalStrength: SignalStrength
     public var signalStrengthRaw: UInt16
-    
+
     var alarms: [TransmitterAlert]
-    
+
     public var dayStartTime: Date
     public var nightStartTime: Date
     public var warmingUpDuration: TimeInterval
@@ -235,59 +240,59 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var isDelayBLEDisconnectionAlarmSupported: Bool
     public var morningCalibrationTime: DateComponents
     public var eveningCalibrationTime: DateComponents
-    
+
     public var transmitterStart: Date?
     public var lastCalibration: Date?
     public var phaseStart: Date?
     public var sensorInsertion: Date?
-    
+
     public var hysteresisPercentage: UInt8
     public var hysteresisValueInMgDl: UInt8
     public var predictiveHysteresisPercentage: UInt8
     public var predictiveHysteresisValueInMgDl: UInt8
-    
+
     public var isOneCalibrationPhase: Bool
     public var calibrationPhase: CalibrationPhase
     public var calibrationCount: UInt16
     public var calibrationMinThreshold: UInt16
     public var calibrationMaxThreshold: UInt16
-    
+
     public var mepValue: Float
     public var mepRefChannelMetric: Float
     public var mepDriftMetric: Float
     public var mepLowRefMetric: Float
     public var mepSpike: Float
     public var eep24MSP: Float
-    
+
     public var lowGlucoseAlarmRepeatingDayTime: UInt8
     public var highGlucoseAlarmRepeatingDayTime: UInt8
     public var lowGlucoseAlarmRepeatingNightTime: UInt8
     public var highGlucoseAlarmRepeatingNightTime: UInt8
-    
+
     public var isClinicalMode: Bool
     public var clinicalModeDuration: TimeInterval?
-    
+
     public var lowGlucoseTargetInMgDl: UInt16
     public var highGlucoseTargetInMgDl: UInt16
     public var isGlucoseAlarmEnabled: Bool
     public var lowGlucoseAlarmInMgDl: UInt16
     public var highGlucoseAlarmInMgDl: UInt16
-    
+
     public var isPredictionEnabled: Bool
     public var isPredictionLowEnabled: Bool
     public var isPredictionHighEnabled: Bool
     public var predictionFallingInterval: TimeInterval?
     public var predictionRisingInterval: TimeInterval?
-    
+
     public var isRateEnabled: Bool
     public var isFallingRateEnabled: Bool
     public var isRisingRateEnabled: Bool
     public var rateFallingThreshold: Double?
     public var rateRisingThreshold: Double?
-    
+
     public var tempThresholdWarning: UInt8
     public var tempThresholdModeChange: UInt8
-    
+
     public var rawGlucoseValue1: UInt16
     public var rawGlucoseValue2: UInt16
     public var rawGlucoseValue3: UInt16
@@ -301,29 +306,29 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var recentGlucoseInMgDl: UInt16?
     public var recentGlucoseDateTime: Date?
     public var recentGlucoseTrend: GlucoseTrend
-    
+
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)
     }
-    
+
     public var is365: Bool {
         false
     }
-    
+
     public var modelStr: String? {
         if isUSXLorOUSXL2 {
             return LocalizedString("Eversense XL - 6 months", comment: "Eversense XL (6months)")
         }
-        
+
         if is365 {
             return LocalizedString("Eversense 365 - 1 year", comment: "Eversense 365 (1year)")
         }
-        
+
         return LocalizedString("Eversense - 3 months", comment: "Eversense (3months)")
     }
-    
+
     public var debugDescription: String {
-        return [
+        [
             "TODO"
         ].joined(separator: "\n")
     }

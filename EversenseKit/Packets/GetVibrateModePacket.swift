@@ -1,27 +1,20 @@
-//
-//  GetVibrateModePacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 22/05/2025.
-//
-
 struct GetVibrateModeResponse {
     let value: Bool?
 }
 
-class GetVibrateModePacket : BasePacket {
+class GetVibrateModePacket: BasePacket {
     typealias T = GetVibrateModeResponse
-    
+
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
     }
-    
+
     func getRequestData() -> Data {
-        return CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.vibrateMode)
+        CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.vibrateMode)
     }
-    
+
     func parseResponse(data: Data) -> GetVibrateModeResponse {
-        return GetVibrateModeResponse(
+        GetVibrateModeResponse(
             value: data[start] == 0 ? false : data[start] == 0x55 ? true : nil
         )
     }

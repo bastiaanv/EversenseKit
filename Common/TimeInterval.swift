@@ -1,36 +1,28 @@
-//
-//  TimeInterval.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 13/05/2025.
-//
-
 import Foundation
 
 extension TimeInterval {
-
     static func days(_ days: Double) -> TimeInterval {
-        return self.init(days: days)
+        self.init(days: days)
     }
 
     static func hours(_ hours: Double) -> TimeInterval {
-        return self.init(hours: hours)
+        self.init(hours: hours)
     }
 
     static func minutes(_ minutes: Int) -> TimeInterval {
-        return self.init(minutes: Double(minutes))
+        self.init(minutes: Double(minutes))
     }
 
     static func minutes(_ minutes: Double) -> TimeInterval {
-        return self.init(minutes: minutes)
+        self.init(minutes: minutes)
     }
 
     static func seconds(_ seconds: Double) -> TimeInterval {
-        return self.init(seconds)
+        self.init(seconds)
     }
 
     static func milliseconds(_ milliseconds: Double) -> TimeInterval {
-        return self.init(milliseconds / 1000)
+        self.init(milliseconds / 1000)
     }
 
     init(days: Double) {
@@ -54,31 +46,30 @@ extension TimeInterval {
     }
 
     var milliseconds: Double {
-        return self * 1000
+        self * 1000
     }
 
     init(hundredthsOfMilliseconds: Double) {
-        self.init(hundredthsOfMilliseconds / 100000)
+        self.init(hundredthsOfMilliseconds / 100_000)
     }
 
     var hundredthsOfMilliseconds: Double {
-        return self * 100000
+        self * 100_000
     }
 
     var minutes: Double {
-        return self / 60.0
+        self / 60.0
     }
 
     var hours: Double {
-        return minutes / 60.0
+        minutes / 60.0
     }
 
     var days: Double {
-        return hours / 24.0
+        hours / 24.0
     }
 
-    
     func toNanoseconds() -> Int64 {
-        return Int64(self * 1_000_000_000)
+        Int64(self * 1_000_000_000)
     }
 }

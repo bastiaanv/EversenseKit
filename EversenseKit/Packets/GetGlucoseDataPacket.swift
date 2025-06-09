@@ -1,38 +1,31 @@
-//
-//  GetGlucoseDataPacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 11/05/2025.
-//
-
 import LoopKit
 
 struct GetGlucoseDataResponse {
     let trend: GlucoseTrend?
 }
 
-class GetGlucoseDataPacket : BasePacket {
+class GetGlucoseDataPacket: BasePacket {
     typealias T = GetGlucoseDataResponse
-    
+
     var response: PacketIds {
         PacketIds.readSensorGlucoseResponseId
     }
-    
+
     func getRequestData() -> Data {
         var data = Data([8])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
-        
+
         return data
     }
-    
+
     func parseResponse(data: Data) -> GetGlucoseDataResponse {
         // TODO: Need to extra more data???
-        return GetGlucoseDataResponse(
-            trend: getTrend(value: data[start+13])
+        GetGlucoseDataResponse(
+            trend: getTrend(value: data[start + 13])
         )
     }
-    
+
     func getTrend(value: UInt8) -> GlucoseTrend? {
         switch value {
         case 0:

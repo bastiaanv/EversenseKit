@@ -1,32 +1,25 @@
-//
-//  SetAppVersionPacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 22/05/2025.
-//
-
 struct SetAppVersionResponse {}
 
 class SetAppVersionPacket: BasePacket {
     typealias T = SetAppVersionResponse
-    
+
     private let appVersion: Data
     var response: PacketIds {
         PacketIds.writeFourByteSerialFlashRegisterResponseId
     }
-    
+
     init(appVersion: Data) {
         self.appVersion = appVersion
     }
-    
+
     func getRequestData() -> Data {
-        return CommandOperations.writeFourByteSerialFlashRegister(memoryAddress: FlashMemory.appVersion, data: appVersion)
+        CommandOperations.writeFourByteSerialFlashRegister(memoryAddress: FlashMemory.appVersion, data: appVersion)
     }
-    
-    func parseResponse(data: Data) -> SetAppVersionResponse {
-        return SetAppVersionResponse()
+
+    func parseResponse(data _: Data) -> SetAppVersionResponse {
+        SetAppVersionResponse()
     }
-    
+
     public static func parseAppVersion(version: String) -> Data? {
         let splitted = version.split(separator: ".")
         guard let i0 = Int(splitted[0]), let i1 = Int(splitted[1]), let i2 = Int(splitted[2]) else {

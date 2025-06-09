@@ -1,10 +1,3 @@
-//
-//  TransmitterAlert.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 06/05/2025.
-//
-
 enum TransmitterAlert: UInt8 {
     case criticalFaultAlarm = 0
     case sensorRetiredAlarm = 1
@@ -72,19 +65,23 @@ enum TransmitterAlert: UInt8 {
     case batteryOptimization = 70
     case noAlarmActive = 71
     case numberOfMessages = 72
-    
+
     var canBlindGlucose: Bool {
         switch self {
-        case .lowGlucoseAlarm, .highGlucoseAlarm,
-                .lowGlucoseAlert, .highGlucoseAlert,
-                .predictiveLowAlarm, .predictiveHighAlarm,
-                .rateFallingAlarm, .rateRisingAlarm:
+        case .highGlucoseAlarm,
+             .highGlucoseAlert,
+             .lowGlucoseAlarm,
+             .lowGlucoseAlert,
+             .predictiveHighAlarm,
+             .predictiveLowAlarm,
+             .rateFallingAlarm,
+             .rateRisingAlarm:
             return true
         default:
             return false
         }
     }
-    
+
     var title: String {
         switch self {
         case .criticalFaultAlarm:

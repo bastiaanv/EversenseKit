@@ -1,12 +1,4 @@
-//
-//  MessageCoder.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 06/05/2025.
-//
-
-
-struct MessageCoder {
+enum MessageCoder {
     static func messageCodeForPredictiveAlertFlags(_ value: UInt8) -> TransmitterAlert? {
         switch value {
         case 1: return .predictiveLowAlarm

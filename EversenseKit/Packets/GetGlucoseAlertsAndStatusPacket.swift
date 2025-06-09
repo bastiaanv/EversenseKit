@@ -1,44 +1,37 @@
-//
-//  GetGlucoseAlertsAndStatusPacket.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 05/05/2025.
-//
-
 struct GetGlucoseAlertsAndStatusPacketResonse {
     let alarms: [TransmitterAlert]
 }
 
-class GetGlucoseAlertsAndStatusPacket : BasePacket {
+class GetGlucoseAlertsAndStatusPacket: BasePacket {
     typealias T = GetGlucoseAlertsAndStatusPacketResonse
-    
+
     private let STATUS_FLAG_COUNT = 13
-    
+
     var response: PacketIds {
         PacketIds.readSensorGlucoseAlertsAndStatusResponseId
     }
-    
+
     func getRequestData() -> Data {
         var data = Data([0x10])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
-        
+
         return data
     }
-    
+
     func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
-        var content = data.subdata(in: start+1..<data.count-start-2)
+        var content = data.subdata(in: start + 1 ..< data.count - start - 2)
         if content.count < STATUS_FLAG_COUNT {
             let prefix = Data(repeating: 0, count: content.count - STATUS_FLAG_COUNT)
             content = prefix + content
         }
-        
+
         if content.max() == 0 {
             return GetGlucoseAlertsAndStatusPacketResonse(alarms: [])
         }
-        
+
         var alarms: [TransmitterAlert] = []
-        
+
         if content[0] != 0, let mc = MessageCoder.messageCodeForGlucoseLevelAlarmFlags(content[0]), mc.canBlindGlucose {
             alarms.append(mc)
         }
@@ -83,20 +76,20 @@ class GetGlucoseAlertsAndStatusPacket : BasePacket {
             if let mc = MessageCoder.messageCodeForTransmitterEOLAlertFlags(content[11]), mc == .transmitterEOL396 {
                 alarms.append(.transmitterEOL396)
             }
-            
+
             if let mc = MessageCoder.messageCodeForSensorReadAlertFlags(content[6]), mc == .mspAlarm {
                 alarms.append(.mspAlarm)
             }
-            
+
             if let mc = MessageCoder.messageCodeForSensorReadAlertFlags(content[6]), mc == .mepAlarm {
                 alarms.append(.mepAlarm)
             }
-            
+
             if let mc = MessageCoder.messageCodeForSensorReplacementFlags(content[7]), mc == .sensorPrematureReplacementAlarm {
                 alarms.append(.sensorPrematureReplacementAlarm)
             }
         }
-        
+
         return GetGlucoseAlertsAndStatusPacketResonse(alarms: alarms)
     }
 }
