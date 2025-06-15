@@ -307,6 +307,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var recentGlucoseDateTime: Date?
     public var recentGlucoseTrend: GlucoseTrend
 
+    // Eversense 365 auth
+    public var username: String?
+    public var password: String?
+    public var accessToken: String?
+    public var accessTokenExpiration: Date?
+
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)
     }

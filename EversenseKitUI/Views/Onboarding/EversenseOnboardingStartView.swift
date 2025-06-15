@@ -53,7 +53,7 @@ struct EversenseOnboardingStart: View {
     private func formatter(_ index: Int) -> String {
         switch index {
         case 0:
-            return LocalizedString("Eversense - 3 months", comment: "Eversense (3months)")
+            return LocalizedString("Eversense E3 - 3 months", comment: "Eversense (3months)")
         case 1:
             return LocalizedString("Eversense XL - 6 months", comment: "Eversense XL (6months)")
         case 2:

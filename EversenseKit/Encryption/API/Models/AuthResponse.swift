@@ -1,4 +1,4 @@
-struct AuthResponse: Decodable {
+struct AuthResponse: Codable {
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case expiresIn = "expires_in"

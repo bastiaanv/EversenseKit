@@ -3,6 +3,7 @@ import SwiftUICore
 
 enum EversenseUIScreen {
     case onboardingStart
+    case onboardingAuth
 }
 
 class EversenseUIController: UINavigationController, CGMManagerOnboarding, CompletionNotifying, UINavigationControllerDelegate {
@@ -74,7 +75,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
 
                     case 2:
                         // Eversense 365
-                        self.navigateTo(.onboardingStart)
+                        self.navigateTo(.onboardingAuth)
                         return
                     default:
                         self.logger.error("Invalid transmitter type received: \(type)")
@@ -82,6 +83,10 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                 }
             )
             return hostingController(rootView: view)
+
+        case .onboardingAuth:
+            let viewModel = Eversense365AuthViewModel(cgmManager, {})
+            return hostingController(rootView: Eversense365Auth(viewModel: viewModel))
         }
     }
 

@@ -5,7 +5,7 @@ public class EversenseCGMManager: CGMManager {
     public static var pluginIdentifier: String = "EversenseKit"
 
     private let logger = EversenseLogger(category: "CGMManager")
-    private let bluetoothManager: BluetoothManager
+    internal let bluetoothManager: BluetoothManager
 
     public var state: EversenseCGMState
     public var rawState: RawStateValue {

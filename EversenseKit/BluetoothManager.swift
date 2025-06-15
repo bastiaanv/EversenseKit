@@ -57,7 +57,7 @@ class BluetoothManager: NSObject {
         }
     }
 
-    private func scan(completion: @escaping (ScanItem) -> Void) {
+    func scan(completion: @escaping (ScanItem) -> Void) {
         guard let manager = manager else {
             logger.error("No CBCentralManager available...")
             return
@@ -80,14 +80,23 @@ class BluetoothManager: NSObject {
         // Cleanup scan operation
         if scanCompletion != nil {
             scanCompletion = nil
-
-            if manager.isScanning {
-                manager.stopScan()
-            }
         }
+        
+        stopScan()
 
         connectCompletion = completion
         manager.connect(peripheral)
+    }
+    
+    internal func stopScan() {
+        guard let manager = manager else {
+            logger.error("No CBCentralManager available...")
+            return
+        }
+        
+        if manager.isScanning {
+            manager.stopScan()
+        }
     }
 }
 
