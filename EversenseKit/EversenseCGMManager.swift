@@ -115,7 +115,7 @@ extension EversenseCGMManager {
 
         bluetoothManager.ensureConnected { error in
             if let internalError = error {
-                completion(.error(internalError))
+                completion(.error(NSError(domain: internalError.describe, code: -1)))
                 return
             }
 

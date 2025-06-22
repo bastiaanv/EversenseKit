@@ -18,7 +18,21 @@
 		3EEE7B9B2DD3BF4900A75FE0 /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEE7B9A2DD3BF4700A75FE0 /* TimeInterval.swift */; };
 		3EEE7BA32DD3D85500A75FE0 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEE7BA22DD3D85400A75FE0 /* Data.swift */; };
 		3EFE22002DFF3FC400EEDE07 /* NavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EFE21FF2DFF3FC400EEDE07 /* NavigationLink.swift */; };
+		3EFE707C2E0840D000CF6B9E /* Crypto in Frameworks */ = {isa = PBXBuildFile; productRef = 3EFE707B2E0840D000CF6B9E /* Crypto */; };
+		3EFE707E2E0840D000CF6B9E /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = 3EFE707D2E0840D000CF6B9E /* _CryptoExtras */; };
+		3EFE70872E08434B00CF6B9E /* EversenseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E02C8AA2DC8DEA600108B7A /* EversenseKit.framework */; platformFilter = ios; };
+		3EFE708E2E08489200CF6B9E /* SecRandomNumberGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EFE708D2E08488C00CF6B9E /* SecRandomNumberGenerator.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3EFE70882E08434B00CF6B9E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E02C8A12DC8DEA600108B7A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E02C8A92DC8DEA600108B7A;
+			remoteInfo = EversenseKit;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		3E02C8BF2DC8DF7700108B7A /* Embed Frameworks */ = {
@@ -46,6 +60,8 @@
 		3EEE7B9A2DD3BF4700A75FE0 /* TimeInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
 		3EEE7BA22DD3D85400A75FE0 /* Data.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
 		3EFE21FF2DFF3FC400EEDE07 /* NavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLink.swift; sourceTree = "<group>"; };
+		3EFE70832E08434B00CF6B9E /* EversenseKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EversenseKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3EFE708D2E08488C00CF6B9E /* SecRandomNumberGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecRandomNumberGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -72,6 +88,11 @@
 			path = EversenseKitUI;
 			sourceTree = "<group>";
 		};
+		3EFE70842E08434B00CF6B9E /* EversenseKitTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EversenseKitTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,8 +100,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3EFE707E2E0840D000CF6B9E /* _CryptoExtras in Frameworks */,
+				3EFE707C2E0840D000CF6B9E /* Crypto in Frameworks */,
 				3E02C8BB2DC8DF7700108B7A /* LoopKit.framework in Frameworks */,
 				3E02C8BD2DC8DF7700108B7A /* LoopKitUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3EFE70802E08434B00CF6B9E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3EFE70872E08434B00CF6B9E /* EversenseKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +124,7 @@
 				3EEE7B942DD3BCF100A75FE0 /* Common */,
 				3E02C8AC2DC8DEA600108B7A /* EversenseKit */,
 				3E417D372DECD42B00D2BFB8 /* EversenseKitUI */,
+				3EFE70842E08434B00CF6B9E /* EversenseKitTests */,
 				3E02C8B82DC8DF7700108B7A /* Frameworks */,
 				3E02C8AB2DC8DEA600108B7A /* Products */,
 			);
@@ -102,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				3E02C8AA2DC8DEA600108B7A /* EversenseKit.framework */,
+				3EFE70832E08434B00CF6B9E /* EversenseKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,6 +151,7 @@
 		3EEE7B942DD3BCF100A75FE0 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				3EFE708D2E08488C00CF6B9E /* SecRandomNumberGenerator.swift */,
 				3E417D612DECDAE900D2BFB8 /* Bundle.swift */,
 				3E417D452DECD8B100D2BFB8 /* LocalizedString.swift */,
 				3ED9F00B2DD8C20D00FABC9E /* Date.swift */,
@@ -162,10 +196,35 @@
 			);
 			name = EversenseKit;
 			packageProductDependencies = (
+				3EFE707B2E0840D000CF6B9E /* Crypto */,
+				3EFE707D2E0840D000CF6B9E /* _CryptoExtras */,
 			);
 			productName = EversenseKit;
 			productReference = 3E02C8AA2DC8DEA600108B7A /* EversenseKit.framework */;
 			productType = "com.apple.product-type.framework";
+		};
+		3EFE70822E08434B00CF6B9E /* EversenseKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EFE708A2E08434B00CF6B9E /* Build configuration list for PBXNativeTarget "EversenseKitTests" */;
+			buildPhases = (
+				3EFE707F2E08434B00CF6B9E /* Sources */,
+				3EFE70802E08434B00CF6B9E /* Frameworks */,
+				3EFE70812E08434B00CF6B9E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3EFE70892E08434B00CF6B9E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3EFE70842E08434B00CF6B9E /* EversenseKitTests */,
+			);
+			name = EversenseKitTests;
+			packageProductDependencies = (
+			);
+			productName = EversenseKitTests;
+			productReference = 3EFE70832E08434B00CF6B9E /* EversenseKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -174,11 +233,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					3E02C8A92DC8DEA600108B7A = {
 						CreatedOnToolsVersion = 16.2;
 						LastSwiftMigration = 1620;
+					};
+					3EFE70822E08434B00CF6B9E = {
+						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
@@ -212,18 +275,29 @@
 			);
 			mainGroup = 3E02C8A02DC8DEA600108B7A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3EFE707A2E0840D000CF6B9E /* XCRemoteSwiftPackageReference "swift-crypto" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3E02C8AB2DC8DEA600108B7A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				3E02C8A92DC8DEA600108B7A /* EversenseKit */,
+				3EFE70822E08434B00CF6B9E /* EversenseKitTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		3E02C8A82DC8DEA600108B7A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3EFE70812E08434B00CF6B9E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -239,6 +313,7 @@
 			files = (
 				3EEE7B9B2DD3BF4900A75FE0 /* TimeInterval.swift in Sources */,
 				3EEE7BA32DD3D85500A75FE0 /* Data.swift in Sources */,
+				3EFE708E2E08489200CF6B9E /* SecRandomNumberGenerator.swift in Sources */,
 				3E417D462DECD8B100D2BFB8 /* LocalizedString.swift in Sources */,
 				3E417D622DECDAE900D2BFB8 /* Bundle.swift in Sources */,
 				3EEE7B962DD3BD4300A75FE0 /* OSLog.swift in Sources */,
@@ -247,7 +322,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3EFE707F2E08434B00CF6B9E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3EFE70892E08434B00CF6B9E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 3E02C8A92DC8DEA600108B7A /* EversenseKit */;
+			targetProxy = 3EFE70882E08434B00CF6B9E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3E02C8B12DC8DEA600108B7A /* Debug */ = {
@@ -457,6 +548,41 @@
 			};
 			name = Release;
 		};
+		3EFE708B2E08434B00CF6B9E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bastiaanv.EversenseKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3EFE708C2E08434B00CF6B9E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bastiaanv.EversenseKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -478,7 +604,40 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		3EFE708A2E08434B00CF6B9E /* Build configuration list for PBXNativeTarget "EversenseKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3EFE708B2E08434B00CF6B9E /* Debug */,
+				3EFE708C2E08434B00CF6B9E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3EFE707A2E0840D000CF6B9E /* XCRemoteSwiftPackageReference "swift-crypto" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-crypto.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.12.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3EFE707B2E0840D000CF6B9E /* Crypto */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFE707A2E0840D000CF6B9E /* XCRemoteSwiftPackageReference "swift-crypto" */;
+			productName = Crypto;
+		};
+		3EFE707D2E0840D000CF6B9E /* _CryptoExtras */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFE707A2E0840D000CF6B9E /* XCRemoteSwiftPackageReference "swift-crypto" */;
+			productName = _CryptoExtras;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3E02C8A12DC8DEA600108B7A /* Project object */;
 }

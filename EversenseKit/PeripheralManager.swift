@@ -10,7 +10,7 @@ class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
     private let cgmManager: EversenseCGMManager
-    private let connectCompletion: ((ConnectFailure?) -> Void)?
+    private var connectCompletion: ((ConnectFailure?) -> Void)?
 
     private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
     private let requestCharacteristicUUID = CBUUID(string: "6eb0f021-a7ba-7e7d-66c9-6d813f01d273")
@@ -56,11 +56,12 @@ class PeripheralManager: NSObject {
         let stream = AsyncThrowingStream<AnyClass, Error> { continuation in
             writeQueue[packet.response.rawValue] = continuation
 
-            if case security = .none {
-                peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
-            } else {
-                // TODO: Secure data write
-            }
+//            if case security = .none {
+//                peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+//            } else {
+//                // TODO: Secure data write
+//            }
+            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
         }
 
         return try await firstValue(from: stream)
@@ -152,7 +153,10 @@ extension PeripheralManager: CBPeripheralDelegate {
                 self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
                 peripheral.setNotifyValue(true, for: responseCharacteristic)
 
-                // TODO: Get fleetKey from API & send it
+                // Get fleetKey from API & send it
+                Task {
+                    await getFleetKey()
+                }
                 return
             }
 
@@ -180,7 +184,7 @@ extension PeripheralManager: CBPeripheralDelegate {
     func peripheral(_: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
             logger.error("Received error on value update: \(error.localizedDescription)")
-            connectCompletion?(ConnectFailure.unknown(error: error))
+            connectCompletion?(ConnectFailure.unknown(reason: "Received error on value update: \(error.localizedDescription)"))
             return
         }
 
@@ -198,6 +202,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             }
 
             TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
+            connectCompletion = nil
             return
         }
 
@@ -236,5 +241,82 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         stream.yield(response)
         stream.finish()
+    }
+}
+
+// Eversense 365 specific methods
+extension PeripheralManager {
+    private func getFleetKey() async {
+        if let fleetKey = cgmManager.state.fleetKey {
+            await writeAuth(fleetKey)
+            return
+        }
+        
+        do {
+            if let accessToken = cgmManager.state.accessToken, let expires = cgmManager.state.accessTokenExpiration, expires >= Date() {
+                let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: accessToken)
+                cgmManager.state.fleetKey = securityResponse.result.txFleetKey
+                cgmManager.notifyStateDidChange()
+                
+                await writeAuth(securityResponse.result.txFleetKey)
+                return
+            }
+            
+            if let username = cgmManager.state.username, let password = cgmManager.state.password {
+                let sessionResponse = try await AuthenticationApi.login(username: username, password: password)
+                cgmManager.state.accessToken = sessionResponse.accessToken
+                cgmManager.state.accessTokenExpiration = Date().addingTimeInterval(.seconds(Double(sessionResponse.expiresIn)))
+                
+                let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: sessionResponse.accessToken)
+                cgmManager.state.fleetKey = securityResponse.result.txFleetKey
+                cgmManager.notifyStateDidChange()
+                
+                await writeAuth(securityResponse.result.txFleetKey)
+                return
+            }
+            
+            logger.error("User is unauthenticated...")
+            connectCompletion?(.failedToFetchFleetKey(reason: "User is unauthenticated"))
+        } catch {
+            logger.error("Failed to fetch fleet key: \(error.localizedDescription)")
+            connectCompletion?(.failedToFetchFleetKey(reason: error.localizedDescription))
+        }
+    }
+    
+    private func writeAuth(_ fleetKey: String) async {
+        guard let result = CryptoUtil.generateSession(fleetKey: fleetKey) else {
+            logger.error("Failed to generate session key...")
+            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to generate session key..."))
+            return
+        }
+        
+        let (sessionKey, salt) = result
+        
+        var data = Data([0x06, 0x02, 0x80, 0x00]);
+        data.append(salt)
+        
+        let signature = CryptoUtil.generateSignature(sessionKey: sessionKey, data: data)
+        data.append(signature)
+        
+        let messages = EncodingOperations.split(data: EncodingOperations.encode(data: data))
+        
+        guard let characteristic = requestCharacteristic else {
+            logger.error("Failed to find request characteristic...")
+            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to find request characteristic..."))
+            return
+        }
+        
+        do {
+            for message in messages {
+                peripheral.writeValue(message, for: characteristic, type: .withResponse)
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
+            
+            logger.info("Auth has been written!")
+        } catch {
+            logger.error("Failed to await")
+            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to await"))
+            return
+        }
     }
 }

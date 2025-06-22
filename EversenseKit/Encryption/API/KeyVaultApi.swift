@@ -6,31 +6,25 @@ enum KeyVaultApi {
 
     static let logger = EversenseLogger(category: "KeyVaultApi")
 
-    static func getFleetSecret(accessToken: String) async -> SecureKeyResponse? {
+    static func getFleetSecret(accessToken: String) async throws -> SecureKeyResponse {
         guard let url = URL(string: "\(baseUrl)/GetTxFleetSecret?transmitterNo=\(transmitterNo)&clientNo=\(clientNo)") else {
             logger.error("Could not create URL...")
-            return nil
+            throw NSError(domain: "Could not create URL...", code: -1)
         }
 
-        do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.allHTTPHeaderFields = ["Authorization": "Bearer \(accessToken)"]
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.allHTTPHeaderFields = ["Authorization": "Bearer \(accessToken)"]
 
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                logger
-                    .error(
-                        "Got invalid response from KeyVault: \((response as? HTTPURLResponse)?.statusCode ?? -1) \(String(data: data, encoding: .utf8) ?? "No data")"
-                    )
-                return nil
-            }
-
-            return try! JSONDecoder().decode(SecureKeyResponse.self, from: data)
-        } catch {
-            logger.error("Failed to do request: \(error.localizedDescription)")
-            return nil
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            let message = "Got invalid response from KeyVault: \((response as? HTTPURLResponse)?.statusCode ?? -1) \(String(data: data, encoding: .utf8) ?? "No data")"
+            
+            logger.error(message)
+            throw NSError(domain: message, code: -1)
         }
+
+        return try! JSONDecoder().decode(SecureKeyResponse.self, from: data)
     }
 
     static func getFleetSecretV2(

@@ -77,6 +77,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         accelerometerTemp = rawValue["accelerometerTemp"] as? UInt16 ?? 0
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
+        
+        username = rawValue["username"] as? String
+        password = rawValue["password"] as? String
+        accessToken = rawValue["accessToken"] as? String
+        accessTokenExpiration = rawValue["accessTokenExpiration"] as? Date
+        fleetKey = rawValue["fleetKey"] as? String
 
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
@@ -208,6 +214,11 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["recentGlucoseInMgDl"] = recentGlucoseInMgDl
         value["recentGlucoseDateTime"] = recentGlucoseDateTime
         value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
+        value["username"] = username
+        value["password"] = password
+        value["accessToken"] = accessToken
+        value["accessTokenExpiration"] = accessTokenExpiration
+        value["fleetKey"] = fleetKey
 
         return value
     }
@@ -312,6 +323,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var password: String?
     public var accessToken: String?
     public var accessTokenExpiration: Date?
+    
+    public var fleetKey: String?
 
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)

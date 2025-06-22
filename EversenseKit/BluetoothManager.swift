@@ -6,7 +6,7 @@ class BluetoothManager: NSObject {
     public var cgmManager: EversenseCGMManager?
     private var manager: CBCentralManager?
 
-    private var peripheral: CBPeripheral?
+    internal var peripheral: CBPeripheral?
     private var peripheralManager: PeripheralManager?
 
     private var scanCompletion: ((ScanItem) -> Void)?
@@ -20,7 +20,7 @@ class BluetoothManager: NSObject {
         }
     }
 
-    func ensureConnected(completion: @escaping (NSError?) -> Void) {
+    func ensureConnected(completion: @escaping (ConnectFailure?) -> Void) {
         if let _ = peripheral, let _ = peripheralManager {
             completion(nil)
         }
@@ -28,7 +28,7 @@ class BluetoothManager: NSObject {
         if let peripheral = peripheral {
             connect(peripheral: peripheral) { error in
                 if let error = error {
-                    completion(NSError(domain: error.localizedDescription, code: -1))
+                    completion(error)
                     return
                 }
 
@@ -37,7 +37,7 @@ class BluetoothManager: NSObject {
         }
 
         guard let bleUUIDString = cgmManager?.state.bleUUIDString else {
-            completion(NSError(domain: "No ble uuid available", code: -1))
+            completion(.preconditionFailed(reason: "No ble uuid available"))
             return
         }
 
@@ -48,7 +48,7 @@ class BluetoothManager: NSObject {
 
             self.connect(peripheral: result.peripheral) { error in
                 if let error = error {
-                    completion(NSError(domain: error.localizedDescription, code: -1))
+                    completion(error)
                     return
                 }
 
@@ -148,7 +148,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
         // Reconnect
         ensureConnected { error in
             if let error = error {
-                self.logger.error("Failed to reconnect: \(error.localizedDescription)")
+                self.logger.error("Failed to reconnect: \(error.describe)")
             }
 
             self.logger.info("Reconnect succesfull!")
