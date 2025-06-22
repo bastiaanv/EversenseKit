@@ -81,19 +81,19 @@ class BluetoothManager: NSObject {
         if scanCompletion != nil {
             scanCompletion = nil
         }
-        
+
         stopScan()
 
         connectCompletion = completion
         manager.connect(peripheral)
     }
-    
+
     internal func stopScan() {
         guard let manager = manager else {
             logger.error("No CBCentralManager available...")
             return
         }
-        
+
         if manager.isScanning {
             manager.stopScan()
         }

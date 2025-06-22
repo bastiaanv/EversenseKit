@@ -18,8 +18,9 @@ enum KeyVaultApi {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-            let message = "Got invalid response from KeyVault: \((response as? HTTPURLResponse)?.statusCode ?? -1) \(String(data: data, encoding: .utf8) ?? "No data")"
-            
+            let message =
+                "Got invalid response from KeyVault: \((response as? HTTPURLResponse)?.statusCode ?? -1) \(String(data: data, encoding: .utf8) ?? "No data")"
+
             logger.error(message)
             throw NSError(domain: message, code: -1)
         }

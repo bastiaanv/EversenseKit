@@ -1,19 +1,12 @@
-//
-//  EversenseScanView.swift
-//  EversenseKit
-//
-//  Created by Bastiaan Verhaar on 15/06/2025.
-//
-
 import LoopKitUI
 import SwiftUI
 
 struct Eversense365ScanView: View {
     @Environment(\.isPresented) var isPresented
     @Environment(\.dismissAction) private var dismiss
-    
+
     @ObservedObject var viewModel: EversenseScanViewModel
-    
+
     var body: some View {
         VStack {
             HStack(alignment: .center, spacing: 0) {
@@ -25,7 +18,7 @@ struct Eversense365ScanView: View {
                 Spacer()
                 ActivityIndicator(isAnimating: .constant(true), style: .medium)
             }
-            
+
             Divider()
             content
         }
@@ -46,7 +39,7 @@ struct Eversense365ScanView: View {
             }
         }
     }
-    
+
     @ViewBuilder private var content: some View {
         List {
             ForEach($viewModel.results) { $result in
@@ -68,5 +61,4 @@ struct Eversense365ScanView: View {
         }
         .listStyle(.plain)
     }
-    
 }

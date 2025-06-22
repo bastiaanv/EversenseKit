@@ -251,30 +251,32 @@ extension PeripheralManager {
             await writeAuth(fleetKey)
             return
         }
-        
+
         do {
-            if let accessToken = cgmManager.state.accessToken, let expires = cgmManager.state.accessTokenExpiration, expires >= Date() {
+            if let accessToken = cgmManager.state.accessToken, let expires = cgmManager.state.accessTokenExpiration,
+               expires >= Date()
+            {
                 let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: accessToken)
                 cgmManager.state.fleetKey = securityResponse.result.txFleetKey
                 cgmManager.notifyStateDidChange()
-                
+
                 await writeAuth(securityResponse.result.txFleetKey)
                 return
             }
-            
+
             if let username = cgmManager.state.username, let password = cgmManager.state.password {
                 let sessionResponse = try await AuthenticationApi.login(username: username, password: password)
                 cgmManager.state.accessToken = sessionResponse.accessToken
                 cgmManager.state.accessTokenExpiration = Date().addingTimeInterval(.seconds(Double(sessionResponse.expiresIn)))
-                
+
                 let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: sessionResponse.accessToken)
                 cgmManager.state.fleetKey = securityResponse.result.txFleetKey
                 cgmManager.notifyStateDidChange()
-                
+
                 await writeAuth(securityResponse.result.txFleetKey)
                 return
             }
-            
+
             logger.error("User is unauthenticated...")
             connectCompletion?(.failedToFetchFleetKey(reason: "User is unauthenticated"))
         } catch {
@@ -282,36 +284,36 @@ extension PeripheralManager {
             connectCompletion?(.failedToFetchFleetKey(reason: error.localizedDescription))
         }
     }
-    
+
     private func writeAuth(_ fleetKey: String) async {
         guard let result = CryptoUtil.generateSession(fleetKey: fleetKey) else {
             logger.error("Failed to generate session key...")
             connectCompletion?(.failedToFetchFleetKey(reason: "Failed to generate session key..."))
             return
         }
-        
+
         let (sessionKey, salt) = result
-        
-        var data = Data([0x06, 0x02, 0x80, 0x00]);
+
+        var data = Data([0x06, 0x02, 0x80, 0x00])
         data.append(salt)
-        
+
         let signature = CryptoUtil.generateSignature(sessionKey: sessionKey, data: data)
         data.append(signature)
-        
+
         let messages = EncodingOperations.split(data: EncodingOperations.encode(data: data))
-        
+
         guard let characteristic = requestCharacteristic else {
             logger.error("Failed to find request characteristic...")
             connectCompletion?(.failedToFetchFleetKey(reason: "Failed to find request characteristic..."))
             return
         }
-        
+
         do {
             for message in messages {
                 peripheral.writeValue(message, for: characteristic, type: .withResponse)
                 try await Task.sleep(nanoseconds: 100_000_000) // 100ms
             }
-            
+
             logger.info("Auth has been written!")
         } catch {
             logger.error("Failed to await")

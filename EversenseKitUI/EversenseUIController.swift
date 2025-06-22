@@ -80,7 +80,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                         return
                     default:
                         self.logger.error("Invalid transmitter type received: \(type)")
-                    }   
+                    }
                 }
             )
             return hostingController(rootView: view)
@@ -88,7 +88,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
         case .onboardingAuth:
             let viewModel = Eversense365AuthViewModel(cgmManager, { self.navigateTo(.onboardingScan) })
             return hostingController(rootView: Eversense365Auth(viewModel: viewModel))
-            
+
         case .onboardingScan:
             let viewModel = EversenseScanViewModel(cgmManager, {})
             return hostingController(rootView: Eversense365ScanView(viewModel: viewModel))
