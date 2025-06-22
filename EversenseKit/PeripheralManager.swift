@@ -205,6 +205,22 @@ extension PeripheralManager: CBPeripheralDelegate {
             connectCompletion = nil
             return
         }
+        
+        if data[0] == PacketIds.authenticateResponseId.rawValue {
+            guard let packet = self.packet as? Authenticatev1Packet else {
+                logger.error("Unexpected authenticate response")
+                return
+            }
+            
+            guard packet.checkHmac(data: data) else {
+                logger.error("HMAC check failed...")
+                return
+            }
+            
+            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
+            connectCompletion = nil
+            return
+        }
 
         if data[0] == PacketIds.errorResponseId.rawValue {
             guard data.count >= 4 else {
@@ -293,14 +309,8 @@ extension PeripheralManager {
         }
 
         let (sessionKey, salt) = result
-
-        var data = Data([0x06, 0x02, 0x80, 0x00])
-        data.append(salt)
-
-        let signature = CryptoUtil.generateSignature(sessionKey: sessionKey, data: data)
-        data.append(signature)
-
-        let messages = EncodingOperations.split(data: EncodingOperations.encode(data: data))
+        packet = Authenticatev1Packet(sessionKey: sessionKey, salt: salt)
+        let messages = EncodingOperations.split(data: packet.getRequestData())
 
         guard let characteristic = requestCharacteristic else {
             logger.error("Failed to find request characteristic...")

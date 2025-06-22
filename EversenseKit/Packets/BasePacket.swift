@@ -31,6 +31,9 @@ extension BasePacket {
 }
 
 enum PacketIds: UInt8 {
+    case authenticateCommandId = 6
+    case authenticateResponseId = 70
+    case authenticateResponsev2Id = 11
     case assertSnoozeAgainsAlarmCommandId = 20
     case assertSnoozeAgainsAlarmResponseId = 148
     case calibrationAlertPush = 77
@@ -60,7 +63,6 @@ enum PacketIds: UInt8 {
     case pingCommandId = 1
     case pingResponseId = 129
     case rateAndPredictiveAlertPush = 66
-    case readAllAvailableSensorsCommandId = 6
     case readAllAvailableSensorsResponseId = 134
     case readAllSensorGlucoseAlertsInSpecifiedRangeCommandId = 113
     case readAllSensorGlucoseAlertsInSpecifiedRangeResponseId = 241
@@ -129,7 +131,6 @@ enum PacketIds: UInt8 {
     case testResponseId = 224
     case transmitterBatteryPush = 71
     case transmitterEOLPush = 74
-    case transmitterStatusPush = 70
     case writeFourByteSerialFlashRegisterCommandId = 47
     case writeFourByteSerialFlashRegisterResponseId = 175
     case writeNByteSerialFlashRegisterCommandId = 49
