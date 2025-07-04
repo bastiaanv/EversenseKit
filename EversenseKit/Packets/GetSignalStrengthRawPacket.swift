@@ -1,6 +1,11 @@
-struct GetSignalStrengthRawResponse {
+class GetSignalStrengthRawResponse {
     let value: SignalStrength
     let rawValue: UInt16
+
+    init(value: SignalStrength, rawValue: UInt16) {
+        self.value = value
+        self.rawValue = rawValue
+    }
 }
 
 class GetSignalStrengthRawPacket: BasePacket {

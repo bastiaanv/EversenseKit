@@ -1,5 +1,9 @@
-struct GetCommunicationProtocolVersionResponse {
+class GetCommunicationProtocolVersionResponse {
     let version: String
+
+    init(version: String) {
+        self.version = version
+    }
 }
 
 class GetCommunicationProtocolVersionPacket: BasePacket {

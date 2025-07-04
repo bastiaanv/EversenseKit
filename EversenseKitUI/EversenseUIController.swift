@@ -23,7 +23,11 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
         allowDebugFeatures _: Bool
     )
     {
-        self.cgmManager = cgmManager
+        if let cgmManager = cgmManager {
+            self.cgmManager = cgmManager
+        } else {
+            self.cgmManager = EversenseCGMManager(rawState: [:])
+        }
         self.colorPalette = colorPalette
         super.init(navigationBarClass: UINavigationBar.self, toolbarClass: UIToolbar.self)
     }

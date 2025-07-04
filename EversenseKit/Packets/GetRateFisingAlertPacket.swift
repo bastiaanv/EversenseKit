@@ -1,5 +1,9 @@
-struct GetRateRisingAlertResponse {
+class GetRateRisingAlertResponse {
     let value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
 }
 
 class GetRateRisingAlertPacket: BasePacket {

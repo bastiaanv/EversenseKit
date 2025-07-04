@@ -18,6 +18,7 @@ struct Eversense365ScanView: View {
                 Spacer()
                 ActivityIndicator(isAnimating: .constant(true), style: .medium)
             }
+            .padding(.horizontal)
 
             Divider()
             content

@@ -1,5 +1,9 @@
-struct GetAlgorithmParameterFormatVersionResponse {
+class GetAlgorithmParameterFormatVersionResponse {
     let value: UInt16
+
+    init(value: UInt16) {
+        self.value = value
+    }
 }
 
 class GetAlgorithmParameterFormatVersionPacket: BasePacket {

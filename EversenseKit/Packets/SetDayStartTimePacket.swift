@@ -1,4 +1,4 @@
-struct SetDayStartTimeResponse {}
+class SetDayStartTimeResponse {}
 
 class SetDayStartTimePacket: BasePacket {
     typealias T = SetDayStartTimeResponse

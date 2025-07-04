@@ -1,5 +1,9 @@
-struct GetEEP24MSPResponse {
+class GetEEP24MSPResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetEEP24MSPPacket: BasePacket {

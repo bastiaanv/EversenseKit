@@ -1,5 +1,9 @@
-struct GetRecentGlucoseValueResponse {
+class GetRecentGlucoseValueResponse {
     let valueInMgDl: UInt16
+
+    init(valueInMgDl: UInt16) {
+        self.valueInMgDl = valueInMgDl
+    }
 }
 
 class GetRecentGlucoseValuePacket: BasePacket {

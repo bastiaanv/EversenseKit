@@ -1,4 +1,4 @@
-struct PingResponse {}
+class PingResponse {}
 
 class PingPacket: BasePacket {
     typealias T = PingResponse

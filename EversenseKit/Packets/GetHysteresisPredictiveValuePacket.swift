@@ -1,5 +1,9 @@
-struct GetHysteresisPredictiveValueResponse {
+class GetHysteresisPredictiveValueResponse {
     let valueInMgDl: UInt8
+
+    init(valueInMgDl: UInt8) {
+        self.valueInMgDl = valueInMgDl
+    }
 }
 
 class GetHysteresisPredictiveValuePacket: BasePacket {

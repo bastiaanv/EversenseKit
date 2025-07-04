@@ -33,11 +33,11 @@ enum KeyVaultApi {
         serialNumber: String,
         nonce: String,
         flags: Bool,
-        uniqueId: String
+        kpClientUniqueId: String
     ) async -> SecureKeyResponse? {
         guard let url =
             URL(
-                string: "\(baseUrl)/GetTxCertificate?txSerialNumber=\(serialNumber)&clientNo=\(clientNo)&nonce=\(nonce)&tx_flags=\(flags)&client_type=\(clientType)&kp_client_unique_id=\(uniqueId)"
+                string: "\(baseUrl)/GetTxCertificate?txSerialNumber=\(serialNumber)&clientNo=\(clientNo)&nonce=\(nonce)&tx_flags=\(flags)&client_type=\(clientType)&kp_client_unique_id=\(kpClientUniqueId)"
             )
         else {
             logger.error("Could not create URL...")
@@ -58,6 +58,7 @@ enum KeyVaultApi {
                 return nil
             }
 
+            logger.info("Fleet secret: \(String(data: data, encoding: .utf8) ?? "No data")")
             return try! JSONDecoder().decode(SecureKeyResponse.self, from: data)
         } catch {
             logger.error("Failed to do request: \(error.localizedDescription)")

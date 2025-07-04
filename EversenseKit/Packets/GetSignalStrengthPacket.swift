@@ -1,5 +1,9 @@
-struct GetSignalStrengthResponse {
+class GetSignalStrengthResponse {
     let value: SignalStrength
+
+    init(value: SignalStrength) {
+        self.value = value
+    }
 }
 
 class GetSignalStrengthPacket: BasePacket {

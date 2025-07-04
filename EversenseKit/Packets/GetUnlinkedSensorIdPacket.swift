@@ -1,5 +1,9 @@
-struct GetUnlinkedSensorIdResponse {
+class GetUnlinkedSensorIdResponse {
     let value: String?
+
+    init(value: String?) {
+        self.value = value
+    }
 }
 
 class GetUnlinkedSensorIdPacket: BasePacket {

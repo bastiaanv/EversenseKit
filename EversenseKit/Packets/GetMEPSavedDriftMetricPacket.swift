@@ -1,5 +1,9 @@
-struct GetMEPSavedDriftMetricResponse {
+class GetMEPSavedDriftMetricResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetMEPSavedDriftMetricPacket: BasePacket {

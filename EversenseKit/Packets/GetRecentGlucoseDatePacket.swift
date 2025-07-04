@@ -1,5 +1,9 @@
-struct GetRecentGlucoseDateResponse {
+class GetRecentGlucoseDateResponse {
     let date: DateComponents
+
+    init(date: DateComponents) {
+        self.date = date
+    }
 }
 
 class GetRecentGlucoseDatePacket: BasePacket {

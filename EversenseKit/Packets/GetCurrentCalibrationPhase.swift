@@ -1,5 +1,9 @@
-struct GetCurrentCalibrationPhaseResponse {
+class GetCurrentCalibrationPhaseResponse {
     let phase: CalibrationPhase
+
+    init(phase: CalibrationPhase) {
+        self.phase = phase
+    }
 }
 
 class GetCurrentCalibrationPhasePacket: BasePacket {

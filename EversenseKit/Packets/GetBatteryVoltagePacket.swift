@@ -1,5 +1,9 @@
-struct GetBatteryVoltageResponse {
+class GetBatteryVoltageResponse {
     let value: Double
+
+    init(value: Double) {
+        self.value = value
+    }
 }
 
 class GetBatteryVoltagePacket: BasePacket {

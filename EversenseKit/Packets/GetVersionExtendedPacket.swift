@@ -1,5 +1,9 @@
-struct GetVersionExtendedResponse {
+class GetVersionExtendedResponse {
     let extVersion: String
+
+    init(extVersion: String) {
+        self.extVersion = extVersion
+    }
 }
 
 class GetVersionExtendedPacket: BasePacket {

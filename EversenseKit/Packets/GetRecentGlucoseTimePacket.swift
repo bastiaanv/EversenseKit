@@ -1,5 +1,9 @@
-struct GetRecentGlucoseTimeResponse {
+class GetRecentGlucoseTimeResponse {
     let time: DateComponents
+
+    init(time: DateComponents) {
+        self.time = time
+    }
 }
 
 class GetRecentGlucoseTimePacket: BasePacket {

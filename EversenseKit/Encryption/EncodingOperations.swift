@@ -1,6 +1,6 @@
 enum EncodingOperations {
-    public static func encode(data: Data, splitLength: Int = 20) -> Data {
-        let chunkSize = splitLength - 2
+    public static func encode(data: Data, chunkSize: Int = 20) -> Data {
+        let chunkSize = chunkSize - 2
         let totalChunks = (data.count / chunkSize) + 1
         var result = Data()
         var currentIndex = 0

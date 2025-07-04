@@ -29,6 +29,14 @@ enum CryptoUtil {
         return (sessionKey, salt)
     }
 
+    static func generateKeyPair() -> (Data, Data, Data) {
+        let privateKey = P256.KeyAgreement.PrivateKey()
+        let publicKey = privateKey.publicKey
+        let clientId = Data.randomSecure(length: 32)
+
+        return (privateKey.rawRepresentation, publicKey.rawRepresentation, clientId)
+    }
+
     static func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
         let result = HMAC<SHA256>.authenticationCode(for: data, using: sessionKey)
         return Data(result).subdata(in: 0 ..< 8)

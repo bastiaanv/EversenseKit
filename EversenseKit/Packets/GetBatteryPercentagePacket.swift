@@ -1,5 +1,9 @@
-struct GetBatteryPercentageResponse {
+class GetBatteryPercentageResponse {
     let value: BatteryLevel
+
+    init(value: BatteryLevel) {
+        self.value = value
+    }
 }
 
 class GetBatteryPercentagePacket: BasePacket {

@@ -1,5 +1,9 @@
-struct GetGlucoseAlarmEnabledResponse {
+class GetGlucoseAlarmEnabledResponse {
     let value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
 }
 
 class GetGlucoseAlarmEnabledPacket: BasePacket {

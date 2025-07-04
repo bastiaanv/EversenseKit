@@ -1,5 +1,9 @@
-struct GetVersionResponse {
+class GetVersionResponse {
     let version: String
+
+    init(version: String) {
+        self.version = version
+    }
 }
 
 class GetVersionPacket: BasePacket {

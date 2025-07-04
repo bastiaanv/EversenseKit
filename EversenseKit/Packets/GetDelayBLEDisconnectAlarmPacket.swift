@@ -1,5 +1,9 @@
-struct GetDelayBLEDisconnectAlarmResponse {
+class GetDelayBLEDisconnectAlarmResponse {
     let value: TimeInterval
+
+    init(value: TimeInterval) {
+        self.value = value
+    }
 }
 
 class GetDelayBLEDisconnectAlarmPacket: BasePacket {

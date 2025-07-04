@@ -1,5 +1,9 @@
-struct GetHysteresisValueResponse {
+class GetHysteresisValueResponse {
     let valueInMgDl: UInt8
+
+    init(valueInMgDl: UInt8) {
+        self.valueInMgDl = valueInMgDl
+    }
 }
 
 class GetHysteresisValuePacket: BasePacket {

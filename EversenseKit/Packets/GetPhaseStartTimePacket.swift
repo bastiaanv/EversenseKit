@@ -1,5 +1,9 @@
-struct GetPhaseStartTimeResponse {
+class GetPhaseStartTimeResponse {
     let time: DateComponents
+
+    init(time: DateComponents) {
+        self.time = time
+    }
 }
 
 class GetPhaseStartTimePacket: BasePacket {

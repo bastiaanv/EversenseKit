@@ -1,4 +1,4 @@
-struct SaveBleBondingInformationResponse {}
+class SaveBleBondingInformationResponse {}
 
 class SaveBleBondingInformationPacket: BasePacket {
     typealias T = SaveBleBondingInformationResponse
@@ -8,6 +8,7 @@ class SaveBleBondingInformationPacket: BasePacket {
     }
 
     func getRequestData() -> Data {
+        // 697f1c
         var data = Data([PacketIds.saveBLEBondingInformationCommandId.rawValue])
         let checksum = BinaryOperations.dataFrom16Bits(value: BinaryOperations.generateChecksumCRC16(data: data))
         data.append(checksum)

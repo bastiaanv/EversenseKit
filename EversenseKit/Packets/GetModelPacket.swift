@@ -1,5 +1,9 @@
-struct GetModelResponse {
+class GetModelResponse {
     let model: String
+
+    init(model: String) {
+        self.model = model
+    }
 }
 
 class GetModelPacket: BasePacket {

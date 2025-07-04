@@ -1,7 +1,13 @@
-struct GetAtccalCrcResponse {
+class GetAtccalCrcResponse {
     let crc: UInt16
     let calcCrc: UInt16
     let isValid: Bool
+
+    init(crc: UInt16, calcCrc: UInt16, isValid: Bool) {
+        self.crc = crc
+        self.calcCrc = calcCrc
+        self.isValid = isValid
+    }
 }
 
 class GetAtccalCrcPacket: BasePacket {

@@ -12,7 +12,7 @@ class PeripheralManager: NSObject {
     private let cgmManager: EversenseCGMManager
     private var connectCompletion: ((ConnectFailure?) -> Void)?
 
-    private let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
+    public static let serviceUUID = CBUUID(string: "c3230001-9308-47ae-ac12-3d030892a211")
     private let requestCharacteristicUUID = CBUUID(string: "6eb0f021-a7ba-7e7d-66c9-6d813f01d273")
     private let requestCharacteristicSecureUUID = CBUUID(string: "6eb0f025-bd60-7aaa-25a7-0029573f4f23")
     private let requestCharacteristicSecureV2UUID = CBUUID(string: "c3230002-9308-47ae-ac12-3d030892a211")
@@ -26,7 +26,7 @@ class PeripheralManager: NSObject {
 
     private var packet: (any BasePacket)?
     private var writeTimeoutTask: Task<Void, Never>?
-    private var writeQueue: [UInt8: AsyncThrowingStream<AnyClass, Error>.Continuation] = [:]
+    private var writeQueue: [UInt8: AsyncThrowingStream<AnyObject, Error>.Continuation] = [:]
 
     private let maxPacketSize: Int
     private var security: SecurityType
@@ -53,21 +53,30 @@ class PeripheralManager: NSObject {
             throw NSError(domain: "Command already running", code: 0)
         }
 
-        let stream = AsyncThrowingStream<AnyClass, Error> { continuation in
+        self.packet = packet
+        let stream = AsyncThrowingStream<AnyObject, Error> { continuation in
             writeQueue[packet.response.rawValue] = continuation
-
-//            if case security = .none {
-//                peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
-//            } else {
-//                // TODO: Secure data write
-//            }
-            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
         }
 
+        let data = packet.getRequestData()
+        if case security = .none {
+            logger.debug("[RAW] Writing data -> \(data.hexString())")
+            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+        } else {
+            let encodedMessage = EncodingOperations.encode(data: packet.getRequestData(), chunkSize: maxPacketSize)
+            logger.debug("[ENCODED] Writing data -> \(encodedMessage.hexString())")
+
+            for message in EncodingOperations.split(data: encodedMessage, chunkSize: maxPacketSize) {
+                peripheral.writeValue(message, for: characteristic, type: .withoutResponse)
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
+        }
+
+        startTimeoutTimer(packet: packet)
         return try await firstValue(from: stream)
     }
 
-    private func firstValue<T>(from stream: AsyncThrowingStream<AnyClass, Error>) async throws -> T {
+    private func firstValue<T>(from stream: AsyncThrowingStream<AnyObject, Error>) async throws -> T {
         for try await value in stream {
             if let value = value as? T {
                 return value
@@ -75,13 +84,13 @@ class PeripheralManager: NSObject {
 
             throw NSError(domain: "Got invalid data type", code: 0)
         }
-        throw NSError(domain: "Got no response. Most likely an encryption issue", code: 0)
+        throw NSError(domain: "Got no response", code: 0)
     }
 
     private func startTimeoutTimer(packet: any BasePacket) {
         writeTimeoutTask = Task {
             do {
-                try await Task.sleep(nanoseconds: UInt64(.seconds(2)) * 1_000_000_000)
+                try await Task.sleep(nanoseconds: UInt64(.seconds(5)) * 1_000_000_000)
                 guard let stream = self.writeQueue[packet.response.rawValue] else {
                     // We did what we must, so exist and be happy :)
                     return
@@ -106,7 +115,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
 
-        self.service = peripheral.services?.first { $0.uuid == self.serviceUUID }
+        self.service = peripheral.services?.first { $0.uuid == PeripheralManager.serviceUUID }
         guard let service = self.service else {
             logger.error("Service not found: \(peripheral.services?.map(\.uuid.uuidString) ?? [])")
             connectCompletion?(ConnectFailure.failedToDiscoverServices)
@@ -133,30 +142,8 @@ extension PeripheralManager: CBPeripheralDelegate {
                 self.requestCharacteristic = requestCharacteristic
                 self.responseCharacteristic = responseCharacteristic
 
-                self.logger.debug("[NONE security] Discovering completed -> Enabling notifing...")
+                self.logger.debug("[NONE security] Discovering completed -> Enabling notifing & send bleBondingInformation...")
                 peripheral.setNotifyValue(true, for: responseCharacteristic)
-
-                // Response will be handled by didUpdateValueFor
-                let _: SaveBleBondingInformationResponse = try await self.write(SaveBleBondingInformationPacket())
-                return
-            }
-
-            if let requestCharacteristic = service.characteristics?
-                .first(where: { $0.uuid == self.requestCharacteristicSecureUUID }),
-                let responseCharacteristic = service.characteristics?
-                .first(where: { $0.uuid == self.responseCharacteristicSecureUUID })
-            {
-                self.security = .v1
-                self.requestCharacteristic = requestCharacteristic
-                self.responseCharacteristic = responseCharacteristic
-
-                self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
-                peripheral.setNotifyValue(true, for: responseCharacteristic)
-
-                // Get fleetKey from API & send it
-                Task {
-                    await getFleetKey()
-                }
                 return
             }
 
@@ -171,13 +158,44 @@ extension PeripheralManager: CBPeripheralDelegate {
 
                 self.logger.debug("[V2 security] Discovering completed -> Enabling notifing...")
                 peripheral.setNotifyValue(true, for: responseCharacteristic)
+                return
+            }
 
-                // TODO: Need to send whoAmI or sendStart command here
+            if let requestCharacteristic = service.characteristics?
+                .first(where: { $0.uuid == self.requestCharacteristicSecureUUID }),
+                let responseCharacteristic = service.characteristics?
+                .first(where: { $0.uuid == self.responseCharacteristicSecureUUID })
+            {
+                self.security = .v1
+                self.requestCharacteristic = requestCharacteristic
+                self.responseCharacteristic = responseCharacteristic
+
+                self.logger.debug("[V1 security] Discovering completed -> Enabling notifing...")
+                peripheral.setNotifyValue(true, for: responseCharacteristic)
                 return
             }
 
             self.logger.error("Characteristics could not found: \(service.characteristics ?? [])")
             self.connectCompletion?(ConnectFailure.failedToDiscoverCharacteristics)
+        }
+    }
+
+    func peripheral(_: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
+        if let error = error {
+            logger.error("Failed to enable notify for \(characteristic.uuid.uuidString): \(error.localizedDescription)")
+        } else {
+            logger.info("Successfully enabled notify for \(characteristic.uuid.uuidString)")
+
+            Task {
+                switch security {
+                case .none:
+                    await writeNoneSecurity()
+                case .v1:
+                    await getFleetKey()
+                case .v2:
+                    await writeWhoAmI()
+                }
+            }
         }
     }
 
@@ -188,15 +206,25 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
 
-        guard let data = characteristic.value else {
+        guard var data = characteristic.value else {
             logger.warning("Empty data received")
             return
         }
 
         logger.debug("Received data: \(data.hexString())")
 
+        if security != .none {
+            logger.debug("Stripping header from received data")
+            data = data.subdata(in: 3 ..< data.count)
+        }
+
+        if data[0] == PacketIds.keepAlivePush.rawValue {
+            logger.debug("Got keep alive message")
+            return
+        }
+
         if data[0] == PacketIds.saveBLEBondingInformationResponseId.rawValue {
-            guard SaveBleBondingInformationPacket().checkPacket(data: data) else {
+            guard SaveBleBondingInformationPacket().checkPacket(data: data, doChecksum: true) else {
                 logger.error("Checksum failed for SaveBleBondingInformationPacket - \(data.hexString())")
                 return
             }
@@ -205,18 +233,18 @@ extension PeripheralManager: CBPeripheralDelegate {
             connectCompletion = nil
             return
         }
-        
+
         if data[0] == PacketIds.authenticateResponseId.rawValue {
             guard let packet = self.packet as? Authenticatev1Packet else {
                 logger.error("Unexpected authenticate response")
                 return
             }
-            
+
             guard packet.checkHmac(data: data) else {
                 logger.error("HMAC check failed...")
                 return
             }
-            
+
             TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
             connectCompletion = nil
             return
@@ -240,12 +268,16 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         // Parse normal packet
-        guard let packet = self.packet, packet.checkPacket(data: data),
-              let response = packet.parseResponse(data: data.subdata(in: 1 ..< data.count - 2)) as? AnyClass
-        else {
+        guard let packet = self.packet, packet.checkPacket(data: data, doChecksum: security == .none) else {
             logger.warning("Received invalid response, invalid response code or checksum failed - data: \(data.hexString())")
             return
         }
+
+        if security == .none {
+            data = data.subdata(in: 1 ..< data.count - 2)
+        }
+
+        let response = packet.parseResponse(data: data) as AnyObject
 
         guard let stream = writeQueue[packet.response.rawValue] else {
             logger.warning("No pending write for response code \(packet.response.rawValue) - data: \(data.hexString())")
@@ -262,6 +294,15 @@ extension PeripheralManager: CBPeripheralDelegate {
 
 // Eversense 365 specific methods
 extension PeripheralManager {
+    private func writeNoneSecurity() async {
+        do {
+            let _: SaveBleBondingInformationResponse = try await write(SaveBleBondingInformationPacket())
+        } catch {
+            logger.error("Failed to SaveBleBondingInformationResponse: \(error.localizedDescription)")
+            connectCompletion?(.failedToFetchFleetKey(reason: error.localizedDescription))
+        }
+    }
+
     private func getFleetKey() async {
         if let fleetKey = cgmManager.state.fleetKey {
             await writeAuth(fleetKey)
@@ -302,32 +343,61 @@ extension PeripheralManager {
     }
 
     private func writeAuth(_ fleetKey: String) async {
-        guard let result = CryptoUtil.generateSession(fleetKey: fleetKey) else {
+        guard let (sessionKey, salt) = CryptoUtil.generateSession(fleetKey: fleetKey) else {
             logger.error("Failed to generate session key...")
             connectCompletion?(.failedToFetchFleetKey(reason: "Failed to generate session key..."))
             return
         }
 
-        let (sessionKey, salt) = result
-        packet = Authenticatev1Packet(sessionKey: sessionKey, salt: salt)
-        let messages = EncodingOperations.split(data: packet.getRequestData())
+        do {
+            let _: Authenticatev1Response = try await write(Authenticatev1Packet(sessionKey: sessionKey, salt: salt))
+        } catch {
+            logger.error("Failed to write Auth v1 - \(error.localizedDescription)")
+            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to write Auth v1 - \(error.localizedDescription)"))
+            return
+        }
+    }
 
-        guard let characteristic = requestCharacteristic else {
-            logger.error("Failed to find request characteristic...")
-            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to find request characteristic..."))
+    private func writeWhoAmI() async {
+        if cgmManager.state.publicKeyV2 == nil || cgmManager.state.privateKeyV2 == nil || cgmManager.state.clientIdV2 == nil {
+            let (newPublicKey, newPrivateKey, newClientId) = CryptoUtil.generateKeyPair()
+            cgmManager.state.publicKeyV2 = newPublicKey
+            cgmManager.state.privateKeyV2 = newPrivateKey
+            cgmManager.state.clientIdV2 = newClientId
+        }
+
+        guard
+            let accessToken = cgmManager.state.accessToken,
+            let clientId = cgmManager.state.clientIdV2,
+            let publicKey = cgmManager.state.publicKeyV2
+        else {
+            logger.error("Failed to generate key pair")
             return
         }
 
         do {
-            for message in messages {
-                peripheral.writeValue(message, for: characteristic, type: .withResponse)
-                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            logger.info("Sending WhoAmI")
+            let authResponse: AuthenticateV2Response = try await write(AuthenticateV2Packet(clientId: clientId))
+            let fleetSecret = await KeyVaultApi.getFleetSecretV2(
+                accessToken: accessToken,
+                serialNumber: authResponse.serialNumber,
+                nonce: authResponse.nonce,
+                flags: authResponse.flags,
+                kpClientUniqueId: publicKey.subdata(in: 27 ..< publicKey.count).base64EncodedString()
+            )
+            
+            guard let fleetSecret = fleetSecret,
+                  fleetSecret.status == "Success",
+                  let certificate = fleetSecret.result.certificate,
+                  let kpTxUniqueId = fleetSecret.result.kpTxUniqueId
+            else {
+                logger.error("FleetSecret is empty or is missing information...")
+                return
             }
 
-            logger.info("Auth has been written!")
         } catch {
-            logger.error("Failed to await")
-            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to await"))
+            logger.error("Failed to write Auth v2 - \(error.localizedDescription)")
+            connectCompletion?(.failedToFetchFleetKey(reason: "Failed to write Auth v2 - \(error.localizedDescription)"))
             return
         }
     }

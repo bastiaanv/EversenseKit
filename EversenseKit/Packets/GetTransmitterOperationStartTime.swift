@@ -1,5 +1,9 @@
-struct GetTransmitterOperationStartTimeResponse {
+class GetTransmitterOperationStartTimeResponse {
     let time: DateComponents
+
+    init(time: DateComponents) {
+        self.time = time
+    }
 }
 
 class GetTransmitterOperationStartTime: BasePacket {

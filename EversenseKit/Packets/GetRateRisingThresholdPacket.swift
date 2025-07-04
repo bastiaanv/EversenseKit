@@ -1,5 +1,9 @@
-struct GetRateRisingThresholdResponse {
+class GetRateRisingThresholdResponse {
     let value: Double
+
+    init(value: Double) {
+        self.value = value
+    }
 }
 
 class GetRateRisingThresholdPacket: BasePacket {

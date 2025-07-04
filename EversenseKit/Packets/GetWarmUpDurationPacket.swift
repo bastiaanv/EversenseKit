@@ -1,5 +1,9 @@
-struct GetWarmUpDurationResponse {
+class GetWarmUpDurationResponse {
     let value: TimeInterval
+
+    init(value: TimeInterval) {
+        self.value = value
+    }
 }
 
 class GetWarmUpDurationPacket: BasePacket {

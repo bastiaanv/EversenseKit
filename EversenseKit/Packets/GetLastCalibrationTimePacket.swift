@@ -1,5 +1,9 @@
-struct GetLastCalibrationTimeResponse {
+class GetLastCalibrationTimeResponse {
     let time: DateComponents
+
+    init(time: DateComponents) {
+        self.time = time
+    }
 }
 
 class GetLastCalibrationTimePacket: BasePacket {

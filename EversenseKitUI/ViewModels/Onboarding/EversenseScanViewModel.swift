@@ -13,6 +13,8 @@ class EversenseScanViewModel: ObservableObject {
     @Published var connectingTo: String = ""
     @Published var error: String = ""
 
+    private let logger = EversenseLogger(category: "ScanViewModel")
+
     private var actualResults: [ScanItem] = []
 
     private let cgmManager: EversenseCGMManager?
@@ -20,10 +22,13 @@ class EversenseScanViewModel: ObservableObject {
     init(_ cgmManager: EversenseCGMManager?, _ nextStep: @escaping () -> Void) {
         self.cgmManager = cgmManager
         self.nextStep = nextStep
+
+        start()
     }
 
     func start() {
         guard let cgmManager = cgmManager else {
+            logger.error("No cgmManager...")
             return
         }
 
@@ -32,11 +37,13 @@ class EversenseScanViewModel: ObservableObject {
                 return
             }
 
-            self.results.append(ScanResultItem(
-                name: item.name,
-                bleIdentifier: item.peripheral.identifier.uuidString
-            ))
-            self.actualResults.append(item)
+            DispatchQueue.main.async {
+                self.results.append(ScanResultItem(
+                    name: item.name,
+                    bleIdentifier: item.peripheral.identifier.uuidString
+                ))
+                self.actualResults.append(item)
+            }
         }
     }
 
@@ -55,6 +62,9 @@ class EversenseScanViewModel: ObservableObject {
             return
         }
 
+        logger.info("Connecting to \(scanItem.name)...")
+
+        isConnecting = true
         connectingTo = scanItem.name
         cgmManager.bluetoothManager.peripheral = scanItem.peripheral
 
@@ -62,6 +72,8 @@ class EversenseScanViewModel: ObservableObject {
             if let error = error {
                 DispatchQueue.main.async {
                     self.error = error.describe
+                    self.isConnecting = false
+                    self.connectingTo = ""
                     return
                 }
                 return

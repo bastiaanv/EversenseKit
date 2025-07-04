@@ -1,5 +1,9 @@
-struct GetCompletedCalibrationsCountResponse {
+class GetCompletedCalibrationsCountResponse {
     let value: UInt16
+
+    init(value: UInt16) {
+        self.value = value
+    }
 }
 
 class GetCompletedCalibrationsCountPacket: BasePacket {

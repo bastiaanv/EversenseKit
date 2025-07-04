@@ -1,5 +1,9 @@
-struct GetCalibrationMaxThresholdResponse {
+class GetCalibrationMaxThresholdResponse {
     let value: UInt16
+
+    init(value: UInt16) {
+        self.value = value
+    }
 }
 
 class GetCalibrationMaxThresholdPacket: BasePacket {

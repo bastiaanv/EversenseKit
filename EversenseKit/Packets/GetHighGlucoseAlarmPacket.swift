@@ -1,5 +1,9 @@
-struct GetHighGlucoseAlarmResponse {
+class GetHighGlucoseAlarmResponse {
     let valueInMgDl: UInt16
+
+    init(valueInMgDl: UInt16) {
+        self.valueInMgDl = valueInMgDl
+    }
 }
 
 class GetHighGlucoseAlarmPacket: BasePacket {

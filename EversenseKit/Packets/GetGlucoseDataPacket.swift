@@ -1,7 +1,11 @@
 import LoopKit
 
-struct GetGlucoseDataResponse {
+class GetGlucoseDataResponse {
     let trend: GlucoseTrend?
+
+    init(trend: GlucoseTrend?) {
+        self.trend = trend
+    }
 }
 
 class GetGlucoseDataPacket: BasePacket {

@@ -1,5 +1,9 @@
-struct GetGlucoseAlertsAndStatusPacketResonse {
+class GetGlucoseAlertsAndStatusPacketResonse {
     let alarms: [TransmitterAlert]
+
+    init(alarms: [TransmitterAlert]) {
+        self.alarms = alarms
+    }
 }
 
 class GetGlucoseAlertsAndStatusPacket: BasePacket {

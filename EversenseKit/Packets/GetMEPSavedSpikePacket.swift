@@ -1,5 +1,9 @@
-struct GetMEPSavedSpikeResponse {
+class GetMEPSavedSpikeResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetMEPSavedSpikePacket: BasePacket {

@@ -1,5 +1,9 @@
-struct GetSensorInsertionTimeResponse {
+class GetSensorInsertionTimeResponse {
     let time: DateComponents
+
+    init(time: DateComponents) {
+        self.time = time
+    }
 }
 
 class GetSensorInsertionTimePacket: BasePacket {

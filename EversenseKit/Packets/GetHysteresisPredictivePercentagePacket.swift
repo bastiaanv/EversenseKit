@@ -1,5 +1,9 @@
-struct GetHysteresisPredictivePercentageResponse {
+class GetHysteresisPredictivePercentageResponse {
     let value: UInt8
+
+    init(value: UInt8) {
+        self.value = value
+    }
 }
 
 class GetHysteresisPredictivePercentagePacket: BasePacket {

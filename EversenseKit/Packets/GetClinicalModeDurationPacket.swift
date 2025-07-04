@@ -1,5 +1,9 @@
-struct GetClinicalModeDurationResponse {
+class GetClinicalModeDurationResponse {
     let value: TimeInterval
+
+    init(value: TimeInterval) {
+        self.value = value
+    }
 }
 
 class GetClinicalModeDurationPacket: BasePacket {

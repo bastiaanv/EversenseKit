@@ -1,5 +1,9 @@
-struct GetMEPSavedLowRefMetricResponse {
+class GetMEPSavedLowRefMetricResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetMEPSavedLowRefMetricPacket: BasePacket {

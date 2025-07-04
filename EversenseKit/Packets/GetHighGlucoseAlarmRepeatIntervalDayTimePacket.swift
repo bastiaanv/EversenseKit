@@ -1,5 +1,9 @@
-struct GetHighGlucoseAlarmRepeatIntervalDayTimeResponse {
+class GetHighGlucoseAlarmRepeatIntervalDayTimeResponse {
     let value: UInt8
+
+    init(value: UInt8) {
+        self.value = value
+    }
 }
 
 class GetHighGlucoseAlarmRepeatIntervalDayTimePacket: BasePacket {

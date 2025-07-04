@@ -12,7 +12,7 @@ extension BasePacket {
         response.getDataStart()
     }
 
-    func checkPacket(data: Data) -> Bool {
+    func checkPacket(data: Data, doChecksum: Bool) -> Bool {
         // Check packetId
         guard data[0] == response.rawValue else {
             return false
@@ -21,6 +21,10 @@ extension BasePacket {
         // Minlength of a packet is 3
         guard data.count >= 3 else {
             return false
+        }
+
+        if !doChecksum {
+            return true
         }
 
         let packet = Data(data.dropLast(2))
@@ -33,7 +37,8 @@ extension BasePacket {
 enum PacketIds: UInt8 {
     case authenticateCommandId = 6
     case authenticateResponseId = 70
-    case authenticateResponsev2Id = 11
+    case authenticateV2CommandId = 9
+    case authenticateV2ResponseId = 11
     case assertSnoozeAgainsAlarmCommandId = 20
     case assertSnoozeAgainsAlarmResponseId = 148
     case calibrationAlertPush = 77
@@ -104,7 +109,7 @@ enum PacketIds: UInt8 {
     case readSinglePatientEventResponseId = 155
     case readSingleSensorGlucoseAlertRecordCommandId = 17
     case readSingleSensorGlucoseAlertRecordResponseId = 145
-    case readSingleSensorGlucoseDataRecordCommandId = 9
+//    case readSingleSensorGlucoseDataRecordCommandId = 9
     case readSingleSensorGlucoseDataRecordResponseId = 137
     case readTwoByteSerialFlashRegisterCommandId = 44
     case readTwoByteSerialFlashRegisterResponseId = 172

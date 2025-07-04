@@ -1,5 +1,9 @@
-struct GetPredictiveAlertsResponse {
+class GetPredictiveAlertsResponse {
     let value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
 }
 
 class GetPredictiveAlertsPacket: BasePacket {

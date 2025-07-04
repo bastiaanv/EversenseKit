@@ -1,5 +1,9 @@
-struct GetClinicalModeResponse {
+class GetClinicalModeResponse {
     let value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
 }
 
 class GetClinicalModePacket: BasePacket {

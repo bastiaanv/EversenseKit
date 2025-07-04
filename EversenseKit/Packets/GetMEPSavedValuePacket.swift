@@ -1,5 +1,9 @@
-struct GetMEPSavedValueResponse {
+class GetMEPSavedValueResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetMEPSavedValuePacket: BasePacket {

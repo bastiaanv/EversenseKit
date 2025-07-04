@@ -1,5 +1,9 @@
-struct GetPhaseStartDateResponse {
+class GetPhaseStartDateResponse {
     let date: DateComponents
+
+    init(date: DateComponents) {
+        self.date = date
+    }
 }
 
 class GetPhaseStartDatePacket: BasePacket {

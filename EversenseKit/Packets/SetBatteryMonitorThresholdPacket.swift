@@ -1,4 +1,4 @@
-struct SetBatteryMonitorThresholdResponse {}
+class SetBatteryMonitorThresholdResponse {}
 
 class SetBatteryMonitorThresholdPacket: BasePacket {
     typealias T = SetBatteryMonitorThresholdResponse
@@ -18,7 +18,7 @@ class SetBatteryMonitorThresholdPacket: BasePacket {
         var data = Data([0x60, 0x2A, tempThresholdWarning, tempThresholdModeChange])
         let crc = BinaryOperations.dataFrom16Bits(value: BinaryOperations.generateChecksumCRC16(data: data))
 
-        data.append(data)
+        data.append(crc)
         return data
     }
 

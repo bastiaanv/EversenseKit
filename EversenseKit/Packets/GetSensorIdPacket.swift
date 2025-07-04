@@ -1,5 +1,9 @@
-struct GetSensorIdResponse {
+class GetSensorIdResponse {
     let value: String?
+
+    init(value: String?) {
+        self.value = value
+    }
 }
 
 class GetSensorIdPacket: BasePacket {

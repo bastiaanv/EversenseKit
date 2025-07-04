@@ -1,5 +1,9 @@
-struct GetMmaFeaturesResponse {
+class GetMmaFeaturesResponse {
     let value: UInt8
+
+    init(value: UInt8) {
+        self.value = value
+    }
 }
 
 class GetMmaFeaturesPacket: BasePacket {

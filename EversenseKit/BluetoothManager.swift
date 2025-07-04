@@ -68,7 +68,9 @@ class BluetoothManager: NSObject {
         }
 
         scanCompletion = completion
-        manager.scanForPeripherals(withServices: nil)
+        manager.scanForPeripherals(withServices: [PeripheralManager.serviceUUID])
+
+        logger.info("Started scanning!")
     }
 
     private func connect(peripheral: CBPeripheral, completion: @escaping (ConnectFailure?) -> Void) {
@@ -106,15 +108,14 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManager(
         _: CBCentralManager,
         didDiscover peripheral: CBPeripheral,
-        advertisementData _: [String: Any],
+        advertisementData: [String: Any],
         rssi: NSNumber
     ) {
         guard let name = peripheral.name, let scanCompletion = self.scanCompletion else {
             return
         }
 
-        // TODO: Add uuid check (parseUUIDs java method)
-
+        logger.info("Device found! \(name), \(advertisementData)")
         scanCompletion(.init(name: name, rssi: rssi.intValue, peripheral: peripheral))
     }
 

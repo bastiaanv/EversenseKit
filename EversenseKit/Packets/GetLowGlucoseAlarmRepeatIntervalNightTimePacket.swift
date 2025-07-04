@@ -1,5 +1,9 @@
-struct GetLowGlucoseAlarmRepeatIntervalNightTimeResponse {
+class GetLowGlucoseAlarmRepeatIntervalNightTimeResponse {
     let value: UInt8
+
+    init(value: UInt8) {
+        self.value = value
+    }
 }
 
 class GetLowGlucoseAlarmRepeatIntervalNightTimePacket: BasePacket {

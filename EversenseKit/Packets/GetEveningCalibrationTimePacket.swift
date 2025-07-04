@@ -1,5 +1,9 @@
-struct GetEveningCalibrationTimeResponse {
+class GetEveningCalibrationTimeResponse {
     let value: DateComponents
+
+    init(value: DateComponents) {
+        self.value = value
+    }
 }
 
 class GetEveningCalibrationTimePacket: BasePacket {

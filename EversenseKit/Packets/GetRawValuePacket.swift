@@ -1,5 +1,9 @@
-struct GetRawValueResponse {
+class GetRawValueResponse {
     let value: UInt16
+
+    init(value: UInt16) {
+        self.value = value
+    }
 }
 
 class GetRawValuePacket: BasePacket {

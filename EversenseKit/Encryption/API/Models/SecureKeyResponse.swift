@@ -36,7 +36,7 @@ struct SecureKeyResult: Decodable {
         kpTxId = try container.decodeIfPresent(String.self, forKey: .KpTxId)
         kpTxUniqueId = try container.decodeIfPresent(String.self, forKey: .KpTxUniqueId)
         txFlag = try container.decodeIfPresent(Bool.self, forKey: .tx_flag)
-        txFleetKey = try container.decode(String.self, forKey: .TxFleetKey)
+        txFleetKey = try container.decodeIfPresent(String.self, forKey: .TxFleetKey)
         txKeyVersion = try container.decodeIfPresent(String.self, forKey: .TxKeyVersion)
     }
 
@@ -47,6 +47,6 @@ struct SecureKeyResult: Decodable {
     let kpTxId: String?
     let kpTxUniqueId: String?
     let txFlag: Bool?
-    let txFleetKey: String
+    let txFleetKey: String?
     let txKeyVersion: String?
 }

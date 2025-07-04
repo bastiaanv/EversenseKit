@@ -1,5 +1,9 @@
-struct GetTransmitterOperationStartDateResponse {
+class GetTransmitterOperationStartDateResponse {
     let date: DateComponents
+
+    init(date: DateComponents) {
+        self.date = date
+    }
 }
 
 class GetTransmitterOperationStartDate: BasePacket {

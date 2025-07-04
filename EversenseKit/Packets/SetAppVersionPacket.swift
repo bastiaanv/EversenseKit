@@ -1,4 +1,4 @@
-struct SetAppVersionResponse {}
+class SetAppVersionResponse {}
 
 class SetAppVersionPacket: BasePacket {
     typealias T = SetAppVersionResponse

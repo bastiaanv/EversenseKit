@@ -1,5 +1,9 @@
-struct GetAccelerometerTempResponse {
+class GetAccelerometerTempResponse {
     let value: UInt16
+
+    init(value: UInt16) {
+        self.value = value
+    }
 }
 
 class GetAccelerometerTempPacket: BasePacket {

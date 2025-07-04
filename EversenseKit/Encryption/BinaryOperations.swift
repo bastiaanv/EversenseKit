@@ -1,14 +1,14 @@
 enum BinaryOperations {
     static func dataFrom16Bits(value: UInt16) -> Data {
-        value > 255 ? Data([UInt8(value), UInt8(value >> 8)]) : Data([UInt8(value), 0])
+        value > 255 ? Data([UInt8(value & 255), UInt8((value >> 8) & 255)]) : Data([UInt8(value), 0])
     }
 
     static func dataFrom24Bits(value: UInt32) -> Data {
-        Data([UInt8(value), UInt8(value >> 8), UInt8(value >> 16)])
+        Data([UInt8(value & 255), UInt8((value >> 8) & 255), UInt8((value >> 16) & 255)])
     }
 
     static func dataFrom32Bits(value: UInt32) -> Data {
-        Data([UInt8(value), UInt8(value >> 8), UInt8(value >> 16), UInt8(value >> 24)])
+        Data([UInt8(value & 255), UInt8((value >> 8) & 255), UInt8((value >> 16) & 255), UInt8((value >> 24) & 255)])
     }
 
     static func toDateComponents(data: Data, start: Int) -> DateComponents {

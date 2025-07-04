@@ -1,5 +1,9 @@
-struct GetIsOneCalPhaseResponse {
+class GetIsOneCalPhaseResponse {
     let value: Bool
+
+    init(value: Bool) {
+        self.value = value
+    }
 }
 
 class GetIsOneCalPhasePacket: BasePacket {

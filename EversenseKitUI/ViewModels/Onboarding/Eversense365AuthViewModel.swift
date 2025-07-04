@@ -2,8 +2,8 @@ import LoopKit
 import SwiftUI
 
 class Eversense365AuthViewModel: ObservableObject {
-    @Published var username: String = ""
-    @Published var password: String = ""
+    @Published var username: String = "bastiankpn7800@gmail.com"
+    @Published var password: String = "pirfi9-sibkam-vIqnic"
     @Published var error: String = ""
     @Published var isLoading: Bool = false
 
@@ -28,7 +28,9 @@ class Eversense365AuthViewModel: ObservableObject {
                     cgmManager.notifyStateDidChange()
                 }
 
-                nextStep()
+                await MainActor.run {
+                    self.nextStep()
+                }
             } catch {
                 await MainActor.run {
                     self.error = error.localizedDescription

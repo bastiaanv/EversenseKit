@@ -1,4 +1,4 @@
-struct SetNightStartTimeResponse {}
+class SetNightStartTimeResponse {}
 
 class SetNightStartTimePacket: BasePacket {
     typealias T = SetNightStartTimeResponse

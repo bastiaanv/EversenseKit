@@ -1,5 +1,9 @@
-struct GetMEPSavedRefChannelMetricResponse {
+class GetMEPSavedRefChannelMetricResponse {
     let value: Float
+
+    init(value: Float) {
+        self.value = value
+    }
 }
 
 class GetMEPSavedRefChannelMetricPacket: BasePacket {

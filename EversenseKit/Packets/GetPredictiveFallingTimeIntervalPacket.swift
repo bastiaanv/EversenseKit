@@ -1,5 +1,9 @@
-struct GetPredictiveFallingTimeIntervalResponse {
+class GetPredictiveFallingTimeIntervalResponse {
     let value: TimeInterval
+
+    init(value: TimeInterval) {
+        self.value = value
+    }
 }
 
 class GetPredictiveFallingTimeIntervalPacket: BasePacket {

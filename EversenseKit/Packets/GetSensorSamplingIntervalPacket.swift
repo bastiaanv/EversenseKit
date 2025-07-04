@@ -1,5 +1,9 @@
-struct GetSensorSamplingIntervalResponse {
+class GetSensorSamplingIntervalResponse {
     let value: TimeInterval
+
+    init(value: TimeInterval) {
+        self.value = value
+    }
 }
 
 class GetSensorSamplingIntervalPacket: BasePacket {
