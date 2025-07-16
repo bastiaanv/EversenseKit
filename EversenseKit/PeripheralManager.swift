@@ -286,6 +286,7 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         writeTimeoutTask?.cancel()
         writeTimeoutTask = nil
+        writeQueue[packet.response.rawValue] = nil
 
         stream.yield(response)
         stream.finish()
@@ -314,10 +315,15 @@ extension PeripheralManager {
                expires >= Date()
             {
                 let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: accessToken)
-                cgmManager.state.fleetKey = securityResponse.result.txFleetKey
+                guard let txFleetKey = securityResponse.result.txFleetKey else {
+                    logger.error("Failed to fetch fleet key")
+                    connectCompletion?(.failedToFetchFleetKey(reason: "Failed to fetch fleet key"))
+                    return
+                }
+                cgmManager.state.fleetKey = txFleetKey
                 cgmManager.notifyStateDidChange()
 
-                await writeAuth(securityResponse.result.txFleetKey)
+                await writeAuth(txFleetKey)
                 return
             }
 
@@ -327,10 +333,15 @@ extension PeripheralManager {
                 cgmManager.state.accessTokenExpiration = Date().addingTimeInterval(.seconds(Double(sessionResponse.expiresIn)))
 
                 let securityResponse = try await KeyVaultApi.getFleetSecret(accessToken: sessionResponse.accessToken)
-                cgmManager.state.fleetKey = securityResponse.result.txFleetKey
+                guard let txFleetKey = securityResponse.result.txFleetKey else {
+                    logger.error("Failed to fetch fleet key")
+                    connectCompletion?(.failedToFetchFleetKey(reason: "Failed to fetch fleet key"))
+                    return
+                }
+                cgmManager.state.fleetKey = txFleetKey
                 cgmManager.notifyStateDidChange()
 
-                await writeAuth(securityResponse.result.txFleetKey)
+                await writeAuth(txFleetKey)
                 return
             }
 
@@ -360,7 +371,7 @@ extension PeripheralManager {
 
     private func writeWhoAmI() async {
         if cgmManager.state.publicKeyV2 == nil || cgmManager.state.privateKeyV2 == nil || cgmManager.state.clientIdV2 == nil {
-            let (newPublicKey, newPrivateKey, newClientId) = CryptoUtil.generateKeyPair()
+            let (newPrivateKey, newPublicKey, newClientId) = CryptoUtil.generateKeyPair()
             cgmManager.state.publicKeyV2 = newPublicKey
             cgmManager.state.privateKeyV2 = newPrivateKey
             cgmManager.state.clientIdV2 = newClientId
@@ -377,23 +388,58 @@ extension PeripheralManager {
 
         do {
             logger.info("Sending WhoAmI")
-            let authResponse: AuthenticateV2Response = try await write(AuthenticateV2Packet(clientId: clientId))
-            let fleetSecret = await KeyVaultApi.getFleetSecretV2(
-                accessToken: accessToken,
-                serialNumber: authResponse.serialNumber,
-                nonce: authResponse.nonce,
-                flags: authResponse.flags,
-                kpClientUniqueId: publicKey.subdata(in: 27 ..< publicKey.count).base64EncodedString()
-            )
-            
-            guard let fleetSecret = fleetSecret,
-                  fleetSecret.status == "Success",
-                  let certificate = fleetSecret.result.certificate,
-                  let kpTxUniqueId = fleetSecret.result.kpTxUniqueId
-            else {
-                logger.error("FleetSecret is empty or is missing information...")
-                return
+            let whoAmIResponse: AuthenticateV2Response =
+                try await write(AuthenticateV2Packet(type: AuthType.WhoAmI, secret: clientId))
+
+            if cgmManager.state.certificateV2 == nil ||
+                cgmManager.state.fleetKeyPublicKeyV2 == nil ||
+                cgmManager.state.noneV2 == nil ||
+                cgmManager.state.noneV2 != whoAmIResponse.nonce
+            {
+                logger
+                    .debug(
+                        "Fetching certificate, local nonce: \(cgmManager.state.noneV2?.hexString() ?? "nil"), received nonce: \(whoAmIResponse.nonce.hexString())"
+                    )
+
+                logger.debug("public key full: \(publicKey.hexString())")
+                logger.debug("public key: \(publicKey.subdata(in: 27 ..< publicKey.count).hexString())")
+                logger.debug("Public key length: \(publicKey.subdata(in: 27 ..< publicKey.count).count)")
+                let fleetSecret = await KeyVaultApi.getFleetSecretV2(
+                    accessToken: accessToken,
+                    serialNumber: whoAmIResponse.serialNumber.base64Safe(),
+                    nonce: whoAmIResponse.nonce.base64Safe(),
+                    flags: whoAmIResponse.flags,
+                    kpClientUniqueId: publicKey.subdata(in: 27 ..< publicKey.count).base64Safe()
+                )
+
+                guard let fleetSecret = fleetSecret,
+                      fleetSecret.status == "Success",
+                      let certificate = fleetSecret.result.certificate,
+                      let kpTxUniqueId = fleetSecret.result.kpTxUniqueId,
+                      let decryptedPublicKey = CryptoUtil.decryptPublicKey(fleetKey: kpTxUniqueId)
+                else {
+                    logger.error("FleetSecret is empty or is missing information...")
+                    return
+                }
+
+                cgmManager.state.certificateV2 = certificate
+                cgmManager.state.fleetKeyPublicKeyV2 = decryptedPublicKey.rawRepresentation
+                cgmManager.state.noneV2 = whoAmIResponse.nonce
+            } else {
+                logger.info("Skipping online keyVault call, certificate already set")
             }
+
+            return
+
+//            guard let certificate = cgmManager.state.certificateV2, let certificateData = Data(hexString: certificate) else {
+//                logger.error("No certificate available...")
+//                return
+//            }
+//
+//            logger.debug("Sending IDENTITY...")
+//            let identityResponse: AuthenticateV2Response =
+//                try await write(AuthenticateV2Packet(type: AuthType.Identity, secret: certificateData))
+//            logger.debug("Identity status: \(identityResponse.status)")
 
         } catch {
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")

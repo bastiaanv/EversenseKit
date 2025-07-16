@@ -1,5 +1,7 @@
 import _CryptoExtras
 import Crypto
+import Foundation
+import Security
 
 enum CryptoUtil {
     private static let logger = EversenseLogger(category: "CryptoUtil")
@@ -34,7 +36,7 @@ enum CryptoUtil {
         let publicKey = privateKey.publicKey
         let clientId = Data.randomSecure(length: 32)
 
-        return (privateKey.rawRepresentation, publicKey.rawRepresentation, clientId)
+        return (privateKey.derRepresentation, publicKey.derRepresentation, clientId)
     }
 
     static func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
@@ -47,6 +49,34 @@ enum CryptoUtil {
             return try P256.KeyAgreement.PublicKey(pemRepresentation: publicKey)
         } catch {
             logger.error("Failed to load public key: \(error)")
+            return nil
+        }
+    }
+
+    public static func decryptPublicKey(fleetKey: String) -> P256.KeyAgreement.PublicKey? {
+        guard let b64Encoded = fleetKey.data(using: .utf8), let encryptedBytes = Data(base64Encoded: b64Encoded) else {
+            logger.error("Failed to base64 decode public key: \(fleetKey)")
+            return nil
+        }
+
+        var decryptedData = Data()
+        do {
+            let iv = try AES._CBC.IV(ivBytes: aesIV)
+            decryptedData = try AES._CBC.decrypt(
+                encryptedBytes,
+                using: aesKey,
+                iv: iv
+            )
+        } catch {
+            logger.error("Failed to decrypt public key: \(error.localizedDescription)")
+            return nil
+        }
+
+        do {
+            let publicKeyData = Data(decryptedData[0 ..< 64])
+            return try P256.KeyAgreement.PublicKey(rawRepresentation: publicKeyData)
+        } catch {
+            logger.error("public key is not in pem represenation: \(error)")
             return nil
         }
     }

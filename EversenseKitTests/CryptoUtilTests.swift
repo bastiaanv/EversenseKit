@@ -24,9 +24,15 @@ struct CryptoUtilTests {
         data.append(salt)
 
         let signature = CryptoUtil.generateSignature(sessionKey: sessionKey, data: data)
-        #expect(signature != nil)
-
         data.append(signature)
         #expect(data.count == 20)
+    }
+
+    @Test func decryptPublicKey() async throws {
+        let kpTxUniqueId =
+            "7vfAhYwjC+VFzA5Fe59OcYnnUMgVR6BJDa2KHl6AE2q2lLbgONl4HfJljN0AQwKtstDVWm3MFznKn2LgUn5q/bQ+gEojFjXOmiImFE3WZYENm5QK9Z4WszGQRT+WOrwLv0nNGY2AgDdlcRwmIk1Kp3ACXddzJFZB+KEQ3djAQS5zD+4unyhZUAHjg8CBk7tc"
+
+        let result = CryptoUtil.decryptPublicKey(fleetKey: kpTxUniqueId)
+        #expect(result != nil)
     }
 }

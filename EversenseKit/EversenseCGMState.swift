@@ -328,6 +328,9 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var publicKeyV2: Data?
     public var privateKeyV2: Data?
     public var clientIdV2: Data?
+    public var noneV2: Data?
+    public var certificateV2: String?
+    public var fleetKeyPublicKeyV2: Data?
 
     public var isUSXLorOUSXL2: Bool {
         !(mmaFeatures == 0 || mmaFeatures == 255 || mmaFeatures < 1)
