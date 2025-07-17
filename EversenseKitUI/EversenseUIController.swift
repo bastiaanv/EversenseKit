@@ -94,7 +94,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
             return hostingController(rootView: Eversense365Auth(viewModel: viewModel))
 
         case .onboardingScan:
-            let viewModel = EversenseScanViewModel(cgmManager, {})
+            let viewModel = EversenseScanViewModel(cgmManager, { self.logger.info("Completed scan!") })
             return hostingController(rootView: Eversense365ScanView(viewModel: viewModel))
         }
     }

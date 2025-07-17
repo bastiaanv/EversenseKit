@@ -96,7 +96,12 @@ enum FlashMemory: UInt32 {
 enum CommandOperations {
     static func readFourByteSerialFlashRegister(memoryAddress: FlashMemory) -> Data {
         var data =
-            Data([0x2E, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16)])
+            Data([
+                0x2E,
+                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+            ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
 
@@ -105,7 +110,12 @@ enum CommandOperations {
 
     static func readTwoByteSerialFlashRegister(memoryAddress: FlashMemory) -> Data {
         var data =
-            Data([0x2C, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16)])
+            Data([
+                0x2C,
+                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+            ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
 
@@ -114,7 +124,12 @@ enum CommandOperations {
 
     static func readSingleByteSerialFlashRegister(memoryAddress: FlashMemory) -> Data {
         var data =
-            Data([0x2A, UInt8(memoryAddress.rawValue), UInt8(memoryAddress.rawValue >> 8), UInt8(memoryAddress.rawValue >> 16)])
+            Data([
+                0x2A,
+                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+            ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
 
@@ -124,9 +139,9 @@ enum CommandOperations {
     static func writeFourByteSerialFlashRegister(memoryAddress: FlashMemory, data: Data) -> Data {
         var data = Data([
             0x2F,
-            UInt8(memoryAddress.rawValue),
-            UInt8(memoryAddress.rawValue >> 8),
-            UInt8(memoryAddress.rawValue >> 16),
+            UInt8(memoryAddress.rawValue & 0xFF),
+            UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+            UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
             data[0],
             data[1],
             data[2],
@@ -142,9 +157,9 @@ enum CommandOperations {
         var data =
             Data([
                 0x2D,
-                UInt8(memoryAddress.rawValue),
-                UInt8(memoryAddress.rawValue >> 8),
-                UInt8(memoryAddress.rawValue >> 16),
+                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
                 data[0],
                 data[1]
             ])

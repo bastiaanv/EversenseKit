@@ -85,19 +85,19 @@ enum TransmitterStateSync {
                 }
 
                 // Get hysteresis
-                let hysteresisPercentage: GetHysteresisPercentageResponse = try await peripheralManager
-                    .write(GetHysteresisPercentagePacket())
-                let hysteresisValue: GetHysteresisValueResponse = try await peripheralManager.write(GetHysteresisValuePacket())
-                cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
-                cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
-
-                // Get predictive hysteresis
-                let predictiveHysteresisPercentage: GetHysteresisPredictivePercentageResponse = try await peripheralManager
-                    .write(GetHysteresisPredictivePercentagePacket())
-                let predictiveHysteresisValue: GetHysteresisPredictiveValueResponse = try await peripheralManager
-                    .write(GetHysteresisPredictiveValuePacket())
-                cgmManager.state.predictiveHysteresisPercentage = predictiveHysteresisPercentage.value
-                cgmManager.state.predictiveHysteresisValueInMgDl = predictiveHysteresisValue.valueInMgDl
+//                let hysteresisPercentage: GetHysteresisPercentageResponse = try await peripheralManager
+//                    .write(GetHysteresisPercentagePacket())
+//                let hysteresisValue: GetHysteresisValueResponse = try await peripheralManager.write(GetHysteresisValuePacket())
+//                cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
+//                cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
+//
+//                // Get predictive hysteresis
+//                let predictiveHysteresisPercentage: GetHysteresisPredictivePercentageResponse = try await peripheralManager
+//                    .write(GetHysteresisPredictivePercentagePacket())
+//                let predictiveHysteresisValue: GetHysteresisPredictiveValueResponse = try await peripheralManager
+//                    .write(GetHysteresisPredictiveValuePacket())
+//                cgmManager.state.predictiveHysteresisPercentage = predictiveHysteresisPercentage.value
+//                cgmManager.state.predictiveHysteresisValueInMgDl = predictiveHysteresisValue.valueInMgDl
 
                 // Get algorithm format version
                 let algorithmFormatVersion: GetAlgorithmParameterFormatVersionResponse = try await peripheralManager
@@ -105,16 +105,16 @@ enum TransmitterStateSync {
                 cgmManager.state.algorithmFormatVersion = algorithmFormatVersion.value
 
                 // Get transmitter starting moment
-                if cgmManager.state.isUSXLorOUSXL2 {
-                    let transmitterStartDate: GetTransmitterOperationStartDateResponse = try await peripheralManager
-                        .write(GetTransmitterOperationStartDate())
-                    let transmitterStartTime: GetTransmitterOperationStartTimeResponse = try await peripheralManager
-                        .write(GetTransmitterOperationStartTime())
-                    cgmManager.state.transmitterStart = Date.fromComponents(
-                        date: transmitterStartDate.date,
-                        time: transmitterStartTime.time
-                    )
-                }
+//                if cgmManager.state.isUSXLorOUSXL2 {
+//                    let transmitterStartDate: GetTransmitterOperationStartDateResponse = try await peripheralManager
+//                        .write(GetTransmitterOperationStartDate())
+//                    let transmitterStartTime: GetTransmitterOperationStartTimeResponse = try await peripheralManager
+//                        .write(GetTransmitterOperationStartTime())
+//                    cgmManager.state.transmitterStart = Date.fromComponents(
+//                        date: transmitterStartDate.date,
+//                        time: transmitterStartTime.time
+//                    )
+//                }
 
                 // Get communication protocol version
                 let communicationProtocol: GetCommunicationProtocolVersionResponse = try await peripheralManager
@@ -165,17 +165,6 @@ enum TransmitterStateSync {
                     date: insertionDate.date,
                     time: insertionTime.time
                 )
-
-                // Get clinical mode
-                let isClinicalMode: GetClinicalModeResponse = try await peripheralManager.write(GetClinicalModePacket())
-                cgmManager.state.isClinicalMode = isClinicalMode.value
-
-                if isClinicalMode.value {
-                    // Get clinical mode duration (if activated)
-                    let clinicalModeDuration: GetClinicalModeDurationResponse = try await peripheralManager
-                        .write(GetClinicalModeDurationPacket())
-                    cgmManager.state.clinicalModeDuration = clinicalModeDuration.value
-                }
 
                 // Get BLE disconnect alarm -> possible we get no reply, this feature might not be supported
                 do {
@@ -277,18 +266,6 @@ enum TransmitterStateSync {
                 cgmManager.state.signalStrength = rawSignalStrength.value
                 cgmManager.state.signalStrengthRaw = rawSignalStrength.rawValue
 
-                // Do Crc check
-                let crcCheck: GetAtccalCrcResponse = try await peripheralManager.write(GetAtccalCrcPacket())
-                if !crcCheck.isValid {
-                    logger.warning("CRC check failed - CRC: \(crcCheck.crc), Calculated CRC: \(crcCheck.calcCrc)")
-                }
-
-                // Set Battery monitor threshold
-                let _: SetBatteryMonitorThresholdResponse = try await peripheralManager.write(SetBatteryMonitorThresholdPacket(
-                    tempThresholdWarning: cgmManager.state.tempThresholdWarning,
-                    tempThresholdModeChange: cgmManager.state.tempThresholdModeChange
-                ))
-
                 // Get Raw & Glucose data
                 let rawValue1: GetRawValueResponse = try await peripheralManager
                     .write(GetRawValuePacket(memory: FlashMemory.rawValue1))
@@ -333,6 +310,9 @@ enum TransmitterStateSync {
                     time: recentGlucoseTime.time
                 )
                 cgmManager.state.recentGlucoseTrend = glucoseData.trend ?? .flat
+
+                logger.info("recentGlucoseInMgDl: \(cgmManager.state.recentGlucoseInMgDl ?? 0)")
+                logger.info("recentGlucoseDateTime: \(cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)")
             } catch {
                 logger.error("Something went wrong during full sync: \(error)")
             }

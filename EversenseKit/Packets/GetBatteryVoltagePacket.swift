@@ -10,7 +10,7 @@ class GetBatteryVoltagePacket: BasePacket {
     typealias T = GetBatteryVoltageResponse
 
     var response: PacketIds {
-        PacketIds.readTwoByteSerialFlashRegisterCommandId
+        PacketIds.readTwoByteSerialFlashRegisterResponseId
     }
 
     func getRequestData() -> Data {

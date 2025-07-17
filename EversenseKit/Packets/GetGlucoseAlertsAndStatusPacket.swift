@@ -26,7 +26,7 @@ class GetGlucoseAlertsAndStatusPacket: BasePacket {
     func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
         var content = data.subdata(in: start + 1 ..< data.count - start - 2)
         if content.count < STATUS_FLAG_COUNT {
-            let prefix = Data(repeating: 0, count: content.count - STATUS_FLAG_COUNT)
+            let prefix = Data(repeating: 0, count: STATUS_FLAG_COUNT - content.count)
             content = prefix + content
         }
 

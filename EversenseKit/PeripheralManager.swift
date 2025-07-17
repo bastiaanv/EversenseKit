@@ -61,9 +61,9 @@ class PeripheralManager: NSObject {
         let data = packet.getRequestData()
         if case security = .none {
             logger.debug("[RAW] Writing data -> \(data.hexString())")
-            peripheral.writeValue(packet.getRequestData(), for: characteristic, type: .withResponse)
+            peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
         } else {
-            let encodedMessage = EncodingOperations.encode(data: packet.getRequestData(), chunkSize: maxPacketSize)
+            let encodedMessage = EncodingOperations.encode(data: data, chunkSize: maxPacketSize)
             logger.debug("[ENCODED] Writing data -> \(encodedMessage.hexString())")
 
             for message in EncodingOperations.split(data: encodedMessage, chunkSize: maxPacketSize) {
@@ -180,6 +180,12 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
     }
 
+    func peripheral(_: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: (any Error)?) {
+        if let error = error {
+            logger.error("Failed to write to uuid: \(characteristic.uuid.uuidString) - Error: \(error.localizedDescription)")
+        }
+    }
+
     func peripheral(_: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
         if let error = error {
             logger.error("Failed to enable notify for \(characteristic.uuid.uuidString): \(error.localizedDescription)")
@@ -220,17 +226,6 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         if data[0] == PacketIds.keepAlivePush.rawValue {
             logger.debug("Got keep alive message")
-            return
-        }
-
-        if data[0] == PacketIds.saveBLEBondingInformationResponseId.rawValue {
-            guard SaveBleBondingInformationPacket().checkPacket(data: data, doChecksum: true) else {
-                logger.error("Checksum failed for SaveBleBondingInformationPacket - \(data.hexString())")
-                return
-            }
-
-            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
-            connectCompletion = nil
             return
         }
 
@@ -298,6 +293,9 @@ extension PeripheralManager {
     private func writeNoneSecurity() async {
         do {
             let _: SaveBleBondingInformationResponse = try await write(SaveBleBondingInformationPacket())
+
+            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
+            connectCompletion = nil
         } catch {
             logger.error("Failed to SaveBleBondingInformationResponse: \(error.localizedDescription)")
             connectCompletion?(.failedToFetchFleetKey(reason: error.localizedDescription))

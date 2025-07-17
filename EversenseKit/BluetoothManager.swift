@@ -87,6 +87,7 @@ class BluetoothManager: NSObject {
         stopScan()
 
         connectCompletion = completion
+
         manager.connect(peripheral)
     }
 
