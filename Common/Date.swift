@@ -12,9 +12,23 @@ extension Date {
         return addingTimeInterval(delta)
     }
 
-    static func fromComponents(date: DateComponents, time: DateComponents) -> Date {
+    static func nowWithTimezone() -> Date {
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: Date())
         var full = DateComponents()
-        full.timeZone = GMTTimezone
+        full.timeZone = TimeZone.current
+        full.year = components.year
+        full.month = components.month
+        full.day = components.day
+        full.hour = components.hour
+        full.minute = components.minute
+        full.second = components.second
+
+        return Calendar.current.date(from: full)!
+    }
+
+    static func fromComponents(date: DateComponents, time: DateComponents, timezone: TimeZone? = nil) -> Date {
+        var full = DateComponents()
+        full.timeZone = timezone ?? GMTTimezone
         full.year = date.year
         full.month = date.month
         full.day = date.day
@@ -26,12 +40,12 @@ extension Date {
     }
 
     static var defaultDayStartTime: Date {
-        var components = DateComponents(timeZone: TimeZone.current, hour: 8, minute: 0)
+        let components = DateComponents(timeZone: TimeZone.current, hour: 8, minute: 0)
         return Calendar.current.date(from: components)!
     }
 
     static var defaultNightStartTime: Date {
-        var components = DateComponents(timeZone: TimeZone.current, hour: 20, minute: 0)
+        let components = DateComponents(timeZone: TimeZone.current, hour: 20, minute: 0)
         return Calendar.current.date(from: components)!
     }
 }

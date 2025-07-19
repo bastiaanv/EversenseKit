@@ -34,7 +34,7 @@ public class EversenseCGMManager: CGMManager {
         )
     }
 
-    private var device: HKDevice {
+    internal var device: HKDevice {
         HKDevice(
             name: state.modelStr,
             manufacturer: "Senseonics",
@@ -82,7 +82,7 @@ public class EversenseCGMManager: CGMManager {
     }
 
     public var isOnboarded: Bool {
-        false
+        state.isOnboarded
     }
 
     public var debugDescription: String {
@@ -107,36 +107,73 @@ public class EversenseCGMManager: CGMManager {
 }
 
 extension EversenseCGMManager {
-    public func fetchNewDataIfNeeded(_ completion: @escaping (LoopKit.CGMReadingResult) -> Void) {
+    public func fetchNewDataIfNeeded(_ completion: @escaping (CGMReadingResult) -> Void) {
+        logger.debug("fetchNewDataIfNeeded called but we don't continue")
+        completion(.noData)
+    }
+
+    /// Responsible for handling fetching Glucose data when ready
+    func heartbeathOperation() {
+        if let recentTime = state.recentGlucoseDateTime, recentTime >= Date().addingTimeInterval(.minutes(-5)) {
+            logger.debug("Skipping fetching new data as last fetch was less than 5 minutes ago - \(recentTime)")
+            return
+        }
+
         guard let cgmManagerDelegate = cgmManagerDelegate else {
-            completion(.error(NSError(domain: "No cgmManagerDelegate", code: -1)))
+            logger.error("No cgmManagerDelegate")
             return
         }
 
         bluetoothManager.ensureConnected { error in
             if let internalError = error {
-                completion(.error(NSError(domain: internalError.describe, code: -1)))
+                self.logger.error("Failed to connect to CGM: \(internalError.describe)")
                 return
             }
 
-            let startDate = cgmManagerDelegate.startDateToFilterNewData(for: self)
-        }
-    }
-
-    private func scheduleGlucoseExtrator() {
-        Task {
             do {
-                try await Task.sleep(for: .seconds(300))
-                // TODO:
-            } catch {
-                self.logger.error("Catched error during glucose extractor: \(error)")
-            }
+                let recentGlucoseValue: GetRecentGlucoseValueResponse = try await self.bluetoothManager
+                    .write(GetRecentGlucoseValuePacket())
+                let recentGlucoseDate: GetRecentGlucoseDateResponse = try await self.bluetoothManager
+                    .write(GetRecentGlucoseDatePacket())
+                let recentGlucoseTime: GetRecentGlucoseTimeResponse = try await self.bluetoothManager
+                    .write(GetRecentGlucoseTimePacket())
 
-            self.scheduleGlucoseExtrator()
+                let dateTime = Date.fromComponents(
+                    date: recentGlucoseDate.date,
+                    time: recentGlucoseTime.time
+                )
+
+                self.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
+                self.state.recentGlucoseDateTime = dateTime
+
+                cgmManagerDelegate.cgmManager(self, hasNew: .newData([
+                    NewGlucoseSample(
+                        cgmManager: self,
+                        value: recentGlucoseValue.valueInMgDl,
+                        dateTime: dateTime
+                    )
+                ]))
+
+                if let peripheralManager = self.bluetoothManager.peripheralManager {
+                    TransmitterStateSync.fullSync(
+                        peripheralManager: peripheralManager,
+                        cgmManager: self,
+                        connectCompletion: nil
+                    )
+                }
+
+            } catch {
+                self.logger.error("Failed to fetch recent Glucose: \(error.localizedDescription)")
+            }
         }
     }
 
     func notifyStateDidChange() {
-        // TODO: Implement
+        guard let cgmManagerDelegate = cgmManagerDelegate else {
+            logger.warning("Skip notifying delegate as no delegate set...")
+            return
+        }
+
+        cgmManagerDelegate.cgmManagerDidUpdateState(self)
     }
 }

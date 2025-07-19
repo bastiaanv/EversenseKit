@@ -30,6 +30,36 @@ enum BinaryOperations {
         return DateComponents(hour: Int(hour), minute: Int(minute), second: Int(second))
     }
 
+    static func toDateArray(date: Date) -> Data {
+        let year = UInt8(Calendar.current.component(.year, from: date) - 2000)
+        let month = UInt8(Calendar.current.component(.month, from: date))
+        let day = UInt8(Calendar.current.component(.day, from: date))
+
+        let byte1 = (month << 5) | day
+        let byte2 = (year << 1) | (month >= 8 ? 1 : 0)
+        return Data([byte1, byte2])
+    }
+
+    static func toTimeArray(date: Date) -> Data {
+        let hour = UInt8(Calendar.current.component(.hour, from: date))
+        let minute = UInt8(Calendar.current.component(.minute, from: date))
+        let seconds = UInt8(Calendar.current.component(.second, from: date))
+
+        let byte1 = ((minute & 7) << 5) | (seconds / 2)
+        let byte2 = (hour << 3) | ((minute & 56) >> 3)
+        return Data([byte1, byte2])
+    }
+
+    static func toTimeZoneArray() -> Data {
+        let offset = TimeInterval(Double(TimeZone.current.secondsFromGMT()))
+        let hour = UInt8(offset.hours)
+        let minute = UInt8(offset.minutes) % 60
+
+        let byte1 = ((minute & 7) << 5)
+        let byte2 = (hour << 3) | ((minute & 56) >> 3)
+        return Data([byte1, byte2])
+    }
+
     static func generateChecksumCRC16(data: Data) -> UInt16 {
         var crc: UInt16 = 65535
 

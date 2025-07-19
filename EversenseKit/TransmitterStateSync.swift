@@ -13,6 +13,13 @@ enum TransmitterStateSync {
                 cgmManager.state.isSyncing = true
                 cgmManager.notifyStateDidChange()
 
+                let currentDateTime: GetCurrentDateTimeResponse = try await peripheralManager.write(GetCurrentDateTimePacket())
+                let timeDifference = currentDateTime.datetime.timeIntervalSince1970 - Date.nowWithTimezone().timeIntervalSince1970
+                if abs(timeDifference) >= TimeInterval.minutes(2) {
+                    logger.info("Updating transmitter datetime -> difference \(timeDifference) sec")
+                    let _: SetCurrentDateTimeResponse = try await peripheralManager.write(SetCurrentDateTimePacket())
+                }
+
                 // Get MMA Features
                 let mmaResponse: GetMmaFeaturesResponse = try await peripheralManager.write(GetMmaFeaturesPacket())
                 cgmManager.state.mmaFeatures = mmaResponse.value
@@ -122,21 +129,21 @@ enum TransmitterStateSync {
                 cgmManager.state.communicationProtocol = communicationProtocol.version
 
                 // Get MEPMSP information
-                let mepValue: GetMEPSavedValueResponse = try await peripheralManager.write(GetMEPSavedValuePacket())
-                let mepRefChannelMetric: GetMEPSavedRefChannelMetricResponse = try await peripheralManager
-                    .write(GetMEPSavedRefChannelMetricPacket())
-                let mepDriftMetric: GetMEPSavedDriftMetricResponse = try await peripheralManager
-                    .write(GetMEPSavedDriftMetricPacket())
-                let mepLowRefMetric: GetMEPSavedLowRefMetricResponse = try await peripheralManager
-                    .write(GetMEPSavedLowRefMetricPacket())
-                let mepSpike: GetMEPSavedSpikeResponse = try await peripheralManager.write(GetMEPSavedSpikePacket())
-                let eep24MSP: GetEEP24MSPResponse = try await peripheralManager.write(GetEEP24MSPPacket())
-                cgmManager.state.mepValue = mepValue.value
-                cgmManager.state.mepRefChannelMetric = mepRefChannelMetric.value
-                cgmManager.state.mepDriftMetric = mepDriftMetric.value
-                cgmManager.state.mepLowRefMetric = mepLowRefMetric.value
-                cgmManager.state.mepSpike = mepSpike.value
-                cgmManager.state.eep24MSP = eep24MSP.value
+//                let mepValue: GetMEPSavedValueResponse = try await peripheralManager.write(GetMEPSavedValuePacket())
+//                let mepRefChannelMetric: GetMEPSavedRefChannelMetricResponse = try await peripheralManager
+//                    .write(GetMEPSavedRefChannelMetricPacket())
+//                let mepDriftMetric: GetMEPSavedDriftMetricResponse = try await peripheralManager
+//                    .write(GetMEPSavedDriftMetricPacket())
+//                let mepLowRefMetric: GetMEPSavedLowRefMetricResponse = try await peripheralManager
+//                    .write(GetMEPSavedLowRefMetricPacket())
+//                let mepSpike: GetMEPSavedSpikeResponse = try await peripheralManager.write(GetMEPSavedSpikePacket())
+//                let eep24MSP: GetEEP24MSPResponse = try await peripheralManager.write(GetEEP24MSPPacket())
+//                cgmManager.state.mepValue = mepValue.value
+//                cgmManager.state.mepRefChannelMetric = mepRefChannelMetric.value
+//                cgmManager.state.mepDriftMetric = mepDriftMetric.value
+//                cgmManager.state.mepLowRefMetric = mepLowRefMetric.value
+//                cgmManager.state.mepSpike = mepSpike.value
+//                cgmManager.state.eep24MSP = eep24MSP.value
 
                 // Get glucose alarm repeat interval - SKIPPING day/night start time, since we just wrote them
                 let lowAlarmRepeatingDay: GetLowGlucoseAlarmRepeatIntervalDayTimeResponse = try await peripheralManager
@@ -267,52 +274,52 @@ enum TransmitterStateSync {
                 cgmManager.state.signalStrengthRaw = rawSignalStrength.rawValue
 
                 // Get Raw & Glucose data
-                let rawValue1: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue1))
-                let rawValue2: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue2))
-                let rawValue3: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue3))
-                let rawValue4: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue4))
-                let rawValue5: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue5))
-                let rawValue6: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue6))
-                let rawValue7: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue7))
-                let rawValue8: GetRawValueResponse = try await peripheralManager
-                    .write(GetRawValuePacket(memory: FlashMemory.rawValue8))
-                let acceleroValues: GetAccelerometerValuesResponse = try await peripheralManager
-                    .write(GetAccelerometerValuesPacket())
-                let acceleroTemp: GetAccelerometerTempResponse = try await peripheralManager.write(GetAccelerometerTempPacket())
-                let recentGlucoseDate: GetRecentGlucoseDateResponse = try await peripheralManager
-                    .write(GetRecentGlucoseDatePacket())
-                let recentGlucoseTime: GetRecentGlucoseTimeResponse = try await peripheralManager
-                    .write(GetRecentGlucoseTimePacket())
-                let recentGlucoseValue: GetRecentGlucoseValueResponse = try await peripheralManager
-                    .write(GetRecentGlucoseValuePacket())
-                let glucoseData: GetGlucoseDataResponse = try await peripheralManager.write(GetGlucoseDataPacket())
-
-                cgmManager.state.rawGlucoseValue1 = rawValue1.value
-                cgmManager.state.rawGlucoseValue2 = rawValue2.value
-                cgmManager.state.rawGlucoseValue3 = rawValue3.value
-                cgmManager.state.rawGlucoseValue4 = rawValue4.value
-                cgmManager.state.rawGlucoseValue5 = rawValue5.value
-                cgmManager.state.rawGlucoseValue6 = rawValue6.value
-                cgmManager.state.rawGlucoseValue7 = rawValue7.value
-                cgmManager.state.rawGlucoseValue8 = rawValue8.value
-                cgmManager.state.accelerometerValue = acceleroValues.value
-                cgmManager.state.accelerometerTemp = acceleroTemp.value
-                cgmManager.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
-                cgmManager.state.recentGlucoseDateTime = Date.fromComponents(
-                    date: recentGlucoseDate.date,
-                    time: recentGlucoseTime.time
-                )
-                cgmManager.state.recentGlucoseTrend = glucoseData.trend ?? .flat
-
-                logger.info("recentGlucoseInMgDl: \(cgmManager.state.recentGlucoseInMgDl ?? 0)")
-                logger.info("recentGlucoseDateTime: \(cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)")
+//                let rawValue1: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue1))
+//                let rawValue2: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue2))
+//                let rawValue3: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue3))
+//                let rawValue4: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue4))
+//                let rawValue5: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue5))
+//                let rawValue6: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue6))
+//                let rawValue7: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue7))
+//                let rawValue8: GetRawValueResponse = try await peripheralManager
+//                    .write(GetRawValuePacket(memory: FlashMemory.rawValue8))
+//                let acceleroValues: GetAccelerometerValuesResponse = try await peripheralManager
+//                    .write(GetAccelerometerValuesPacket())
+//                let acceleroTemp: GetAccelerometerTempResponse = try await peripheralManager.write(GetAccelerometerTempPacket())
+//                let recentGlucoseDate: GetRecentGlucoseDateResponse = try await peripheralManager
+//                    .write(GetRecentGlucoseDatePacket())
+//                let recentGlucoseTime: GetRecentGlucoseTimeResponse = try await peripheralManager
+//                    .write(GetRecentGlucoseTimePacket())
+//                let recentGlucoseValue: GetRecentGlucoseValueResponse = try await peripheralManager
+//                    .write(GetRecentGlucoseValuePacket())
+//                let glucoseData: GetGlucoseDataResponse = try await peripheralManager.write(GetGlucoseDataPacket())
+//
+//                cgmManager.state.rawGlucoseValue1 = rawValue1.value
+//                cgmManager.state.rawGlucoseValue2 = rawValue2.value
+//                cgmManager.state.rawGlucoseValue3 = rawValue3.value
+//                cgmManager.state.rawGlucoseValue4 = rawValue4.value
+//                cgmManager.state.rawGlucoseValue5 = rawValue5.value
+//                cgmManager.state.rawGlucoseValue6 = rawValue6.value
+//                cgmManager.state.rawGlucoseValue7 = rawValue7.value
+//                cgmManager.state.rawGlucoseValue8 = rawValue8.value
+//                cgmManager.state.accelerometerValue = acceleroValues.value
+//                cgmManager.state.accelerometerTemp = acceleroTemp.value
+//                cgmManager.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
+//                cgmManager.state.recentGlucoseDateTime = Date.fromComponents(
+//                    date: recentGlucoseDate.date,
+//                    time: recentGlucoseTime.time
+//                )
+//                cgmManager.state.recentGlucoseTrend = glucoseData.trend ?? .flat
+//
+//                logger.info("recentGlucoseInMgDl: \(cgmManager.state.recentGlucoseInMgDl ?? 0)")
+//                logger.info("recentGlucoseDateTime: \(cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)")
             } catch {
                 logger.error("Something went wrong during full sync: \(error)")
             }

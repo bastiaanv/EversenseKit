@@ -7,7 +7,7 @@ class BluetoothManager: NSObject {
     private var manager: CBCentralManager?
 
     internal var peripheral: CBPeripheral?
-    private var peripheralManager: PeripheralManager?
+    internal var peripheralManager: PeripheralManager?
 
     private var scanCompletion: ((ScanItem) -> Void)?
     private var connectCompletion: ((ConnectFailure?) -> Void)?
@@ -20,9 +20,16 @@ class BluetoothManager: NSObject {
         }
     }
 
-    func ensureConnected(completion: @escaping (ConnectFailure?) -> Void) {
+    func ensureConnected(completionAsync: @escaping (ConnectFailure?) async -> Void) {
+        let completion = { (_ result: ConnectFailure?) -> Void in
+            Task {
+                await completionAsync(result)
+            }
+        }
+
         if let _ = peripheral, let _ = peripheralManager {
             completion(nil)
+            return
         }
 
         if let peripheral = peripheral {
@@ -34,6 +41,7 @@ class BluetoothManager: NSObject {
 
                 completion(nil)
             }
+            return
         }
 
         guard let bleUUIDString = cgmManager?.state.bleUUIDString else {
@@ -46,6 +54,7 @@ class BluetoothManager: NSObject {
                 return
             }
 
+            self.peripheral = result.peripheral
             self.connect(peripheral: result.peripheral) { error in
                 if let error = error {
                     completion(error)
@@ -55,6 +64,14 @@ class BluetoothManager: NSObject {
                 completion(nil)
             }
         }
+    }
+
+    func write<T>(_ packet: any BasePacket) async throws -> T {
+        guard let peripheralManager = peripheralManager else {
+            throw NSError(domain: "Not connected", code: -1)
+        }
+
+        return try await peripheralManager.write(packet)
     }
 
     func scan(completion: @escaping (ScanItem) -> Void) {
@@ -74,6 +91,7 @@ class BluetoothManager: NSObject {
     }
 
     private func connect(peripheral: CBPeripheral, completion: @escaping (ConnectFailure?) -> Void) {
+        logger.debug("Connecting to: \(peripheral.name ?? "Unknown")")
         guard let manager = manager else {
             logger.error("No CBCentralManager available...")
             return
@@ -104,7 +122,9 @@ class BluetoothManager: NSObject {
 }
 
 extension BluetoothManager: CBCentralManagerDelegate {
-    func centralManagerDidUpdateState(_: CBCentralManager) {}
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        logger.debug("State update: \(central.state)")
+    }
 
     func centralManager(
         _: CBCentralManager,
@@ -130,6 +150,9 @@ extension BluetoothManager: CBCentralManagerDelegate {
             logger.error("No cgmManager available")
             return
         }
+
+        cgmManager.state.bleUUIDString = peripheral.identifier.uuidString
+        cgmManager.notifyStateDidChange()
 
         self.peripheral = peripheral
         peripheralManager = PeripheralManager(

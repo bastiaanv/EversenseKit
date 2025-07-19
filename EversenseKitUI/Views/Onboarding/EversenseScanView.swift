@@ -48,7 +48,7 @@ struct Eversense365ScanView: View {
                     HStack {
                         Text($result.name.wrappedValue)
                         Spacer()
-                        if !$viewModel.isConnecting.wrappedValue {
+                        if !viewModel.isConnecting {
                             NavigationLink.empty
                         } else if $result.name.wrappedValue == viewModel.connectingTo {
                             ActivityIndicator(isAnimating: .constant(true), style: .medium)
@@ -56,7 +56,7 @@ struct Eversense365ScanView: View {
                     }
                     .padding(.horizontal)
                 }
-                .disabled($viewModel.isConnecting.wrappedValue)
+                .disabled(viewModel.isConnecting)
                 .buttonStyle(.plain)
             }
         }

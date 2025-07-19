@@ -6,6 +6,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public init?(rawValue: RawValue) {
         alarms = []
         bleUUIDString = rawValue["bleUUIDString"] as? String
+        isOnboarded = rawValue["isOnboarded"] as? Bool ?? false
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
         model = rawValue["model"] as? String
         version = rawValue["version"] as? String
@@ -135,6 +136,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         var value: [String: Any] = [:]
 
         value["bleUUIDString"] = bleUUIDString
+        value["isOnboarded"] = isOnboarded
         value["isSyncing"] = isSyncing
         value["model"] = model
         value["version"] = version
@@ -224,6 +226,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     }
 
     public var bleUUIDString: String?
+    public var isOnboarded: Bool
     public var isSyncing: Bool
     public var model: String?
     public var version: String?

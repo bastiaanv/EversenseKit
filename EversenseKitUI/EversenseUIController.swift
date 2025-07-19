@@ -5,6 +5,8 @@ enum EversenseUIScreen {
     case onboardingStart
     case onboardingAuth
     case onboardingScan
+
+    case settings
 }
 
 class EversenseUIController: UINavigationController, CGMManagerOnboarding, CompletionNotifying, UINavigationControllerDelegate {
@@ -53,11 +55,11 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
     }
 
     private func getInitialScreen() -> EversenseUIScreen {
-        if cgmManager == nil {
+        guard let cgmManager = cgmManager else {
             return .onboardingStart
         }
 
-        return .onboardingStart
+        return cgmManager.state.isOnboarded ? .settings : .onboardingStart
     }
 
     private func hostingController<Content: View>(rootView: Content) -> DismissibleHostingController<some View> {
@@ -94,8 +96,37 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
             return hostingController(rootView: Eversense365Auth(viewModel: viewModel))
 
         case .onboardingScan:
-            let viewModel = EversenseScanViewModel(cgmManager, { self.logger.info("Completed scan!") })
+            let completion = {
+                if let cgmManager = self.cgmManager {
+                    cgmManager.state.isOnboarded = true
+                    cgmManager.notifyStateDidChange()
+
+                    if let cgmManagerOnboardingDelegate = self.cgmManagerOnboardingDelegate {
+                        cgmManagerOnboardingDelegate.cgmManagerOnboarding(didCreateCGMManager: cgmManager)
+                    } else {
+                        self.logger.warning("Not onboarded -> no onboardDelegate...")
+                    }
+                }
+            }
+
+            if let cgmManager = self.cgmManager, let cgmManagerOnboardingDelegate = self.cgmManagerOnboardingDelegate {
+                cgmManagerOnboardingDelegate.cgmManagerOnboarding(didOnboardCGMManager: cgmManager)
+            }
+
+            let viewModel = EversenseScanViewModel(cgmManager, completion)
             return hostingController(rootView: Eversense365ScanView(viewModel: viewModel))
+
+        case .settings:
+            let deleteCgm = {
+                guard let cgmManager = self.cgmManager, let cgmManagerDelegate = cgmManager.cgmManagerDelegate else {
+                    return
+                }
+
+                cgmManagerDelegate.cgmManagerWantsDeletion(cgmManager)
+                self.completionDelegate?.completionNotifyingDidComplete(self)
+            }
+            let viewModel = EversenseSettingsViewModel(cgmManager: cgmManager, deleteCgm: deleteCgm)
+            return hostingController(rootView: EversenseSettings(viewModel: viewModel))
         }
     }
 

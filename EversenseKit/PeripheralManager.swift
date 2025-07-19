@@ -226,6 +226,7 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         if data[0] == PacketIds.keepAlivePush.rawValue {
             logger.debug("Got keep alive message")
+            cgmManager.heartbeathOperation()
             return
         }
 
