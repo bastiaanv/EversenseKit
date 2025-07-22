@@ -74,13 +74,12 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
             let view = EversenseOnboardingStart(
                 nextAction: { type in
                     switch type {
-                    case 0,
-                         1:
+                    case 0:
                         // Eversense or Eversense XL
                         self.navigateTo(.onboardingScan)
                         return
 
-                    case 2:
+                    case 1:
                         // Eversense 365
                         self.navigateTo(.onboardingAuth)
                         return

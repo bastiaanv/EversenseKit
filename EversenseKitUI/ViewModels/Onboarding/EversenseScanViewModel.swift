@@ -9,7 +9,6 @@ struct ScanResultItem: Identifiable {
 
 class EversenseScanViewModel: ObservableObject {
     @Published var results: [ScanResultItem] = []
-    @Published var isConnecting: Bool = false
     @Published var connectingTo: String = ""
     @Published var error: String = ""
 
@@ -64,7 +63,6 @@ class EversenseScanViewModel: ObservableObject {
 
         logger.info("Connecting to \(scanItem.name)...")
 
-        isConnecting = true
         connectingTo = scanItem.name
         cgmManager.bluetoothManager.peripheral = scanItem.peripheral
 
@@ -72,7 +70,6 @@ class EversenseScanViewModel: ObservableObject {
             if let error = error {
                 await MainActor.run {
                     self.error = error.describe
-                    self.isConnecting = false
                     self.connectingTo = ""
                     return
                 }

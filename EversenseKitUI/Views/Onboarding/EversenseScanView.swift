@@ -10,8 +10,12 @@ struct Eversense365ScanView: View {
     var body: some View {
         VStack {
             HStack(alignment: .center, spacing: 0) {
+                Text(LocalizedString(
+                    "Make sure your Eversense is resetted and put into pairing mode. Please read the manual to learn how to do this.",
+                    comment: "Scanning hint"
+                ))
                 Text(
-                    !viewModel.isConnecting ?
+                    viewModel.connectingTo.isEmpty ?
                         LocalizedString("Scanning", comment: "Scanning text") :
                         LocalizedString("Connecting", comment: "Connecting text")
                 )
@@ -26,7 +30,7 @@ struct Eversense365ScanView: View {
         .listStyle(InsetGroupedListStyle())
         .edgesIgnoringSafeArea(.bottom)
         .navigationBarHidden(false)
-        .navigationTitle(LocalizedString("Find your Eversense", comment: "Login header"))
+        .navigationTitle(LocalizedString("Find your Eversense", comment: "Scanning header"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(LocalizedString("Cancel", comment: "Cancel button title"), action: {
@@ -48,7 +52,7 @@ struct Eversense365ScanView: View {
                     HStack {
                         Text($result.name.wrappedValue)
                         Spacer()
-                        if !viewModel.isConnecting {
+                        if viewModel.connectingTo.isEmpty {
                             NavigationLink.empty
                         } else if $result.name.wrappedValue == viewModel.connectingTo {
                             ActivityIndicator(isAnimating: .constant(true), style: .medium)
@@ -56,7 +60,7 @@ struct Eversense365ScanView: View {
                     }
                     .padding(.horizontal)
                 }
-                .disabled(viewModel.isConnecting)
+                .disabled(!viewModel.connectingTo.isEmpty)
                 .buttonStyle(.plain)
             }
         }

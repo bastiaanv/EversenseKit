@@ -151,6 +151,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
             return
         }
 
+        cgmManager.state.bleNameString = peripheral.name ?? ""
         cgmManager.state.bleUUIDString = peripheral.identifier.uuidString
         cgmManager.notifyStateDidChange()
 

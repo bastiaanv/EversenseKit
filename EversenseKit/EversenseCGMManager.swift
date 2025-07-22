@@ -131,6 +131,7 @@ extension EversenseCGMManager {
             }
 
             do {
+                let glucoseData: GetGlucoseDataResponse = try await self.bluetoothManager.write(GetGlucoseDataPacket())
                 let recentGlucoseValue: GetRecentGlucoseValueResponse = try await self.bluetoothManager
                     .write(GetRecentGlucoseValuePacket())
                 let recentGlucoseDate: GetRecentGlucoseDateResponse = try await self.bluetoothManager
@@ -150,15 +151,15 @@ extension EversenseCGMManager {
                     NewGlucoseSample(
                         cgmManager: self,
                         value: recentGlucoseValue.valueInMgDl,
+                        trend: glucoseData.trend ?? .flat,
                         dateTime: dateTime
                     )
                 ]))
 
                 if let peripheralManager = self.bluetoothManager.peripheralManager {
-                    TransmitterStateSync.fullSync(
+                    await TransmitterStateSync.fullSync(
                         peripheralManager: peripheralManager,
-                        cgmManager: self,
-                        connectCompletion: nil
+                        cgmManager: self
                     )
                 }
 

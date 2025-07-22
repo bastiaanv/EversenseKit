@@ -5,6 +5,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public init?(rawValue: RawValue) {
         alarms = []
+        bleNameString = rawValue["bleNameString"] as? String ?? ""
         bleUUIDString = rawValue["bleUUIDString"] as? String
         isOnboarded = rawValue["isOnboarded"] as? Bool ?? false
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
@@ -66,16 +67,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         signalStrengthRaw = rawValue["signalStrengthRaw"] as? UInt16 ?? 0
         tempThresholdWarning = rawValue["tempThresholdWarning"] as? UInt8 ?? 68
         tempThresholdModeChange = rawValue["tempThresholdModeChange"] as? UInt8 ?? 52
-        rawGlucoseValue1 = rawValue["rawGlucoseValue1"] as? UInt16 ?? 0
-        rawGlucoseValue2 = rawValue["rawGlucoseValue2"] as? UInt16 ?? 0
-        rawGlucoseValue3 = rawValue["rawGlucoseValue3"] as? UInt16 ?? 0
-        rawGlucoseValue4 = rawValue["rawGlucoseValue4"] as? UInt16 ?? 0
-        rawGlucoseValue5 = rawValue["rawGlucoseValue5"] as? UInt16 ?? 0
-        rawGlucoseValue6 = rawValue["rawGlucoseValue6"] as? UInt16 ?? 0
-        rawGlucoseValue7 = rawValue["rawGlucoseValue7"] as? UInt16 ?? 0
-        rawGlucoseValue8 = rawValue["rawGlucoseValue8"] as? UInt16 ?? 0
-        accelerometerValue = rawValue["accelerometerValue"] as? UInt16 ?? 0
-        accelerometerTemp = rawValue["accelerometerTemp"] as? UInt16 ?? 0
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
 
@@ -130,11 +121,18 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         } else {
             recentGlucoseTrend = .flat
         }
+
+        if let rawSecurity = rawValue["security"] as? SecurityType.RawValue {
+            security = SecurityType(rawValue: rawSecurity) ?? .none
+        } else {
+            security = .none
+        }
     }
 
     public var rawValue: RawValue {
         var value: [String: Any] = [:]
 
+        value["bleNameString"] = bleNameString
         value["bleUUIDString"] = bleUUIDString
         value["isOnboarded"] = isOnboarded
         value["isSyncing"] = isSyncing
@@ -203,19 +201,10 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["rateRisingThreshold"] = rateRisingThreshold
         value["tempThresholdWarning"] = tempThresholdWarning
         value["tempThresholdModeChange"] = tempThresholdModeChange
-        value["rawGlucoseValue1"] = rawGlucoseValue1
-        value["rawGlucoseValue2"] = rawGlucoseValue2
-        value["rawGlucoseValue3"] = rawGlucoseValue3
-        value["rawGlucoseValue4"] = rawGlucoseValue4
-        value["rawGlucoseValue5"] = rawGlucoseValue5
-        value["rawGlucoseValue6"] = rawGlucoseValue6
-        value["rawGlucoseValue7"] = rawGlucoseValue7
-        value["rawGlucoseValue8"] = rawGlucoseValue8
-        value["accelerometerValue"] = accelerometerValue
-        value["accelerometerTemp"] = accelerometerTemp
         value["recentGlucoseInMgDl"] = recentGlucoseInMgDl
         value["recentGlucoseDateTime"] = recentGlucoseDateTime
         value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
+        value["security"] = security.rawValue
         value["username"] = username
         value["password"] = password
         value["accessToken"] = accessToken
@@ -226,6 +215,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     }
 
     public var bleUUIDString: String?
+    public var bleNameString: String
     public var isOnboarded: Bool
     public var isSyncing: Bool
     public var model: String?
@@ -307,21 +297,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var tempThresholdWarning: UInt8
     public var tempThresholdModeChange: UInt8
 
-    public var rawGlucoseValue1: UInt16
-    public var rawGlucoseValue2: UInt16
-    public var rawGlucoseValue3: UInt16
-    public var rawGlucoseValue4: UInt16
-    public var rawGlucoseValue5: UInt16
-    public var rawGlucoseValue6: UInt16
-    public var rawGlucoseValue7: UInt16
-    public var rawGlucoseValue8: UInt16
-    public var accelerometerValue: UInt16
-    public var accelerometerTemp: UInt16
     public var recentGlucoseInMgDl: UInt16?
     public var recentGlucoseDateTime: Date?
     public var recentGlucoseTrend: GlucoseTrend
 
-    // Eversense 365 auth
+    // Eversense 365
+    public var security: SecurityType = .none
     public var username: String?
     public var password: String?
     public var accessToken: String?
@@ -340,19 +321,15 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     }
 
     public var is365: Bool {
-        false
+        !(security == .none)
     }
 
     public var modelStr: String? {
-        if isUSXLorOUSXL2 {
-            return LocalizedString("Eversense XL - 6 months", comment: "Eversense XL (6months)")
-        }
-
         if is365 {
             return LocalizedString("Eversense 365 - 1 year", comment: "Eversense 365 (1year)")
         }
 
-        return LocalizedString("Eversense - 3 months", comment: "Eversense (3months)")
+        return LocalizedString("Eversense E3", comment: "Eversense E3")
     }
 
     public var debugDescription: String {

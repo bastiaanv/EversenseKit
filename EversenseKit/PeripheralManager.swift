@@ -1,6 +1,6 @@
 import CoreBluetooth
 
-enum SecurityType {
+public enum SecurityType: UInt8 {
     case none
     case v1
     case v2
@@ -29,11 +29,6 @@ class PeripheralManager: NSObject {
     private var writeQueue: [UInt8: AsyncThrowingStream<AnyObject, Error>.Continuation] = [:]
 
     private let maxPacketSize: Int
-    private var security: SecurityType
-
-    public var isTransmitter365: Bool {
-        security == .v1 || security == .v2
-    }
 
     init(peripheral: CBPeripheral, cgmManager: EversenseCGMManager, connectCompletion: @escaping (ConnectFailure?) -> Void) {
         self.peripheral = peripheral
@@ -42,7 +37,7 @@ class PeripheralManager: NSObject {
 
         // Need the MTU for the 365 transmitter
         maxPacketSize = self.peripheral.maximumWriteValueLength(for: .withoutResponse)
-        security = .none
+        cgmManager.state.security = .none
         super.init()
 
         self.peripheral.delegate = self
@@ -59,7 +54,7 @@ class PeripheralManager: NSObject {
         }
 
         let data = packet.getRequestData()
-        if case security = .none {
+        if case cgmManager.state.security = .none {
             logger.debug("[RAW] Writing data -> \(data.hexString())")
             peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
         } else {
@@ -138,7 +133,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                let responseCharacteristic = service.characteristics?
                .first(where: { $0.uuid == self.responseCharacteristicUUID })
             {
-                self.security = .none
+                cgmManager.state.security = .none
                 self.requestCharacteristic = requestCharacteristic
                 self.responseCharacteristic = responseCharacteristic
 
@@ -152,7 +147,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 let responseCharacteristic = service.characteristics?
                 .first(where: { $0.uuid == self.responseCharacteristicSecureV2UUID })
             {
-                self.security = .v2
+                cgmManager.state.security = .v2
                 self.requestCharacteristic = requestCharacteristic
                 self.responseCharacteristic = responseCharacteristic
 
@@ -166,7 +161,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 let responseCharacteristic = service.characteristics?
                 .first(where: { $0.uuid == self.responseCharacteristicSecureUUID })
             {
-                self.security = .v1
+                cgmManager.state.security = .v1
                 self.requestCharacteristic = requestCharacteristic
                 self.responseCharacteristic = responseCharacteristic
 
@@ -193,7 +188,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             logger.info("Successfully enabled notify for \(characteristic.uuid.uuidString)")
 
             Task {
-                switch security {
+                switch cgmManager.state.security {
                 case .none:
                     await writeNoneSecurity()
                 case .v1:
@@ -219,7 +214,7 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         logger.debug("Received data: \(data.hexString())")
 
-        if security != .none {
+        if cgmManager.state.security != .none {
             logger.debug("Stripping header from received data")
             data = data.subdata(in: 3 ..< data.count)
         }
@@ -227,22 +222,6 @@ extension PeripheralManager: CBPeripheralDelegate {
         if data[0] == PacketIds.keepAlivePush.rawValue {
             logger.debug("Got keep alive message")
             cgmManager.heartbeathOperation()
-            return
-        }
-
-        if data[0] == PacketIds.authenticateResponseId.rawValue {
-            guard let packet = self.packet as? Authenticatev1Packet else {
-                logger.error("Unexpected authenticate response")
-                return
-            }
-
-            guard packet.checkHmac(data: data) else {
-                logger.error("HMAC check failed...")
-                return
-            }
-
-            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
-            connectCompletion = nil
             return
         }
 
@@ -264,12 +243,13 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         // Parse normal packet
-        guard let packet = self.packet, packet.checkPacket(data: data, doChecksum: security == .none) else {
+        let isE3 = cgmManager.state.security == .none
+        guard let packet = self.packet, packet.checkPacket(data: data, doChecksum: isE3) else {
             logger.warning("Received invalid response, invalid response code or checksum failed - data: \(data.hexString())")
             return
         }
 
-        if security == .none {
+        if isE3 {
             data = data.subdata(in: 1 ..< data.count - 2)
         }
 
@@ -295,7 +275,8 @@ extension PeripheralManager {
         do {
             let _: SaveBleBondingInformationResponse = try await write(SaveBleBondingInformationPacket())
 
-            TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager, connectCompletion: connectCompletion)
+            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+            connectCompletion?(nil)
             connectCompletion = nil
         } catch {
             logger.error("Failed to SaveBleBondingInformationResponse: \(error.localizedDescription)")
@@ -361,6 +342,10 @@ extension PeripheralManager {
 
         do {
             let _: Authenticatev1Response = try await write(Authenticatev1Packet(sessionKey: sessionKey, salt: salt))
+
+            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+            connectCompletion?(nil)
+            connectCompletion = nil
         } catch {
             logger.error("Failed to write Auth v1 - \(error.localizedDescription)")
             connectCompletion?(.failedToFetchFleetKey(reason: "Failed to write Auth v1 - \(error.localizedDescription)"))
@@ -439,6 +424,10 @@ extension PeripheralManager {
 //            let identityResponse: AuthenticateV2Response =
 //                try await write(AuthenticateV2Packet(type: AuthType.Identity, secret: certificateData))
 //            logger.debug("Identity status: \(identityResponse.status)")
+
+//            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+//            connectCompletion?(nil)
+//            connectCompletion = nil
 
         } catch {
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")
