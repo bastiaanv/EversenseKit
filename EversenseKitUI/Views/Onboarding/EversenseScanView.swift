@@ -14,13 +14,6 @@ struct Eversense365ScanView: View {
                     "Make sure your Eversense is resetted and put into pairing mode. Please read the manual to learn how to do this.",
                     comment: "Scanning hint"
                 ))
-                Text(
-                    viewModel.connectingTo.isEmpty ?
-                        LocalizedString("Scanning", comment: "Scanning text") :
-                        LocalizedString("Connecting", comment: "Connecting text")
-                )
-                Spacer()
-                ActivityIndicator(isAnimating: .constant(true), style: .medium)
             }
             .padding(.horizontal)
 

@@ -31,18 +31,9 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         calibrationMaxThreshold = rawValue["calibrationMaxThreshold"] as? UInt16 ?? 0
         phaseStart = rawValue["phaseStart"] as? Date
         sensorInsertion = rawValue["sensorInsertion"] as? Date
-        hysteresisPercentage = rawValue["hysteresisPercentage"] as? UInt8 ?? 0
-        hysteresisValueInMgDl = rawValue["hysteresisValueInMgDl"] as? UInt8 ?? 0
-        predictiveHysteresisPercentage = rawValue["predictiveHysteresisPercentage"] as? UInt8 ?? 0
-        predictiveHysteresisValueInMgDl = rawValue["predictiveHysteresisValueInMgDl"] as? UInt8 ?? 0
+        oneCalibrationPhaseExists = rawValue["oneCalibrationPhaseExists"] as? Bool ?? false
         isOneCalibrationPhase = rawValue["isOneCalibrationPhase"] as? Bool ?? false
         calibrationCount = rawValue["calibrationCount"] as? UInt16 ?? 0
-        mepValue = rawValue["mepValue"] as? Float ?? 0
-        mepRefChannelMetric = rawValue["mepRefChannelMetric"] as? Float ?? 0
-        mepDriftMetric = rawValue["mepDriftMetric"] as? Float ?? 0
-        mepLowRefMetric = rawValue["mepLowRefMetric"] as? Float ?? 0
-        mepSpike = rawValue["mepSpike"] as? Float ?? 0
-        eep24MSP = rawValue["eep24MSP"] as? Float ?? 0
         lowGlucoseAlarmRepeatingDayTime = rawValue["lowGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
         highGlucoseAlarmRepeatingDayTime = rawValue["highGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
         lowGlucoseAlarmRepeatingNightTime = rawValue["lowGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
@@ -165,19 +156,10 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["calibrationMaxThreshold"] = calibrationMaxThreshold
         value["phaseStart"] = phaseStart
         value["sensorInsertion"] = sensorInsertion
-        value["hysteresisPercentage"] = hysteresisPercentage
-        value["hysteresisValueInMgDl"] = hysteresisValueInMgDl
-        value["predictiveHysteresisPercentage"] = predictiveHysteresisPercentage
-        value["predictiveHysteresisValueInMgDl"] = predictiveHysteresisValueInMgDl
+        value["oneCalibrationPhaseExists"] = oneCalibrationPhaseExists
         value["isOneCalibrationPhase"] = isOneCalibrationPhase
         value["calibrationCount"] = calibrationCount
         value["calibrationPhase"] = calibrationPhase.rawValue
-        value["mepValue"] = mepValue
-        value["mepRefChannelMetric"] = mepRefChannelMetric
-        value["mepDriftMetric"] = mepDriftMetric
-        value["mepLowRefMetric"] = mepLowRefMetric
-        value["mepSpike"] = mepSpike
-        value["eep24MSP"] = eep24MSP
         value["lowGlucoseAlarmRepeatingDayTime"] = lowGlucoseAlarmRepeatingDayTime
         value["highGlucoseAlarmRepeatingDayTime"] = highGlucoseAlarmRepeatingDayTime
         value["lowGlucoseAlarmRepeatingNightTime"] = lowGlucoseAlarmRepeatingNightTime
@@ -250,23 +232,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var phaseStart: Date?
     public var sensorInsertion: Date?
 
-    public var hysteresisPercentage: UInt8
-    public var hysteresisValueInMgDl: UInt8
-    public var predictiveHysteresisPercentage: UInt8
-    public var predictiveHysteresisValueInMgDl: UInt8
-
+    public var oneCalibrationPhaseExists: Bool
     public var isOneCalibrationPhase: Bool
     public var calibrationPhase: CalibrationPhase
     public var calibrationCount: UInt16
     public var calibrationMinThreshold: UInt16
     public var calibrationMaxThreshold: UInt16
-
-    public var mepValue: Float
-    public var mepRefChannelMetric: Float
-    public var mepDriftMetric: Float
-    public var mepLowRefMetric: Float
-    public var mepSpike: Float
-    public var eep24MSP: Float
 
     public var lowGlucoseAlarmRepeatingDayTime: UInt8
     public var highGlucoseAlarmRepeatingDayTime: UInt8

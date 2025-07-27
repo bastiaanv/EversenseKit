@@ -4,6 +4,7 @@ import SwiftUI
 struct EversenseSettings: View {
     @Environment(\.dismissAction) private var dismiss
     @Environment(\.guidanceColors) private var guidanceColors
+    @EnvironmentObject private var displayGlucosePreference: DisplayGlucosePreference
 
     @ObservedObject var viewModel: EversenseSettingsViewModel
 
@@ -50,7 +51,7 @@ struct EversenseSettings: View {
                         calibarationTimer
                     }
 
-                    ProgressView(value: 0.65)
+                    ProgressView(value: viewModel.nextCalibrationProcess)
                         .scaleEffect(x: 1, y: 4, anchor: .center)
                         .padding(.top, 2)
                 }
@@ -68,20 +69,31 @@ struct EversenseSettings: View {
                 comment: "The information section"
             ))) {
                 SectionItem(
+                    title: LocalizedString("Current phase", comment: "current phase"),
+                    value: viewModel.currentPhase
+                )
+                SectionItem(
                     title: LocalizedString("Recent glucose", comment: "last reading"),
-                    value: "8.7 mmol/L"
+                    value: displayGlucosePreference.format(viewModel.lastMeasurement)
                 )
                 SectionItem(
                     title: LocalizedString("Recent glucose time", comment: "last reading"),
-                    value: viewModel.lastGlucoseTimestamp
+                    value: viewModel.lastMeasurementDatetime
                 )
                 SectionItem(
-                    title: LocalizedString("Last calibration time", comment: "last reading"),
-                    value: viewModel.lastGlucoseTimestamp
+                    title: LocalizedString("Last calibration time", comment: "last calibration"),
+                    value: viewModel.lastCalibrationDatetime
+                )
+                SectionItem(
+                    title: LocalizedString("Next calibration time", comment: "next calibration"),
+                    value: viewModel.nextCalibrationDatetime
                 )
             }
 
             Section {
+                Button(action: viewModel.readGlucose) {
+                    Text(LocalizedString("Force sync", comment: "TEMP"))
+                }
                 Button(action: {
                     viewModel.showingDeleteConfirmation = true
                 }) {
@@ -100,7 +112,7 @@ struct EversenseSettings: View {
 
     @ViewBuilder private var transmitterState: some View {
         VStack(alignment: .leading) {
-            Text(LocalizedString("Transmitter State", comment: "Transmitter state"))
+            Text(LocalizedString("State", comment: "Transmitter state"))
                 .fontWeight(.heavy)
                 .fixedSize()
             Text("Operational") // TODO:
@@ -111,7 +123,7 @@ struct EversenseSettings: View {
 
     @ViewBuilder private var transmitterSerial: some View {
         VStack(alignment: .trailing) {
-            Text(LocalizedString("Transmitter Name", comment: "Transmitter name"))
+            Text(LocalizedString("Name", comment: "Transmitter name"))
                 .fontWeight(.heavy)
                 .fixedSize()
             Text(viewModel.transmitterName)
@@ -123,7 +135,7 @@ struct EversenseSettings: View {
     @ViewBuilder private var calibarationTimer: some View {
         HStack(alignment: .bottom) {
             Group {
-                Text("7") // TODO:
+                Text("\(viewModel.nextCalibrationHours, specifier: "%.0f")")
                     .font(.system(size: 28))
                     .fontWeight(.heavy)
                     .foregroundColor(.primary)
@@ -131,7 +143,7 @@ struct EversenseSettings: View {
                     .foregroundColor(.secondary)
             }
             Group {
-                Text("22") // TODO:
+                Text("\(viewModel.nextCalibrationMinutes, specifier: "%.0f")")
                     .font(.system(size: 28))
                     .fontWeight(.heavy)
                     .foregroundColor(.primary)

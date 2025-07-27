@@ -73,12 +73,19 @@ enum TransmitterStateSync {
             )
 
             // Get current calibration phase
-            let isOneCalPhase: GetIsOneCalPhaseResponse = try await peripheralManager.write(GetIsOneCalPhasePacket())
+            do {
+                let isOneCalPhase: GetIsOneCalPhaseResponse = try await peripheralManager.write(GetIsOneCalPhasePacket())
+
+                cgmManager.state.oneCalibrationPhaseExists = true
+                cgmManager.state.isOneCalibrationPhase = isOneCalPhase.value
+            } catch {
+                cgmManager.state.oneCalibrationPhaseExists = false
+            }
+
             let calibrationCount: GetCompletedCalibrationsCountResponse = try await peripheralManager
                 .write(GetCompletedCalibrationsCountPacket())
             let calibrationPhase: GetCurrentCalibrationPhaseResponse = try await peripheralManager
                 .write(GetCurrentCalibrationPhasePacket())
-            cgmManager.state.isOneCalibrationPhase = isOneCalPhase.value
             cgmManager.state.calibrationCount = calibrationCount.value
             cgmManager.state.calibrationPhase = calibrationPhase.phase
 
@@ -89,59 +96,15 @@ enum TransmitterStateSync {
                 cgmManager.state.warmingUpDuration = warmingUpDuration.value
             }
 
-            // Get hysteresis
-//                let hysteresisPercentage: GetHysteresisPercentageResponse = try await peripheralManager
-//                    .write(GetHysteresisPercentagePacket())
-//                let hysteresisValue: GetHysteresisValueResponse = try await peripheralManager.write(GetHysteresisValuePacket())
-//                cgmManager.state.hysteresisPercentage = hysteresisPercentage.value
-//                cgmManager.state.hysteresisValueInMgDl = hysteresisValue.valueInMgDl
-//
-//                // Get predictive hysteresis
-//                let predictiveHysteresisPercentage: GetHysteresisPredictivePercentageResponse = try await peripheralManager
-//                    .write(GetHysteresisPredictivePercentagePacket())
-//                let predictiveHysteresisValue: GetHysteresisPredictiveValueResponse = try await peripheralManager
-//                    .write(GetHysteresisPredictiveValuePacket())
-//                cgmManager.state.predictiveHysteresisPercentage = predictiveHysteresisPercentage.value
-//                cgmManager.state.predictiveHysteresisValueInMgDl = predictiveHysteresisValue.valueInMgDl
-
             // Get algorithm format version
             let algorithmFormatVersion: GetAlgorithmParameterFormatVersionResponse = try await peripheralManager
                 .write(GetAlgorithmParameterFormatVersionPacket())
             cgmManager.state.algorithmFormatVersion = algorithmFormatVersion.value
 
-            // Get transmitter starting moment
-//                if cgmManager.state.isUSXLorOUSXL2 {
-//                    let transmitterStartDate: GetTransmitterOperationStartDateResponse = try await peripheralManager
-//                        .write(GetTransmitterOperationStartDate())
-//                    let transmitterStartTime: GetTransmitterOperationStartTimeResponse = try await peripheralManager
-//                        .write(GetTransmitterOperationStartTime())
-//                    cgmManager.state.transmitterStart = Date.fromComponents(
-//                        date: transmitterStartDate.date,
-//                        time: transmitterStartTime.time
-//                    )
-//                }
-
             // Get communication protocol version
             let communicationProtocol: GetCommunicationProtocolVersionResponse = try await peripheralManager
                 .write(GetCommunicationProtocolVersionPacket())
             cgmManager.state.communicationProtocol = communicationProtocol.version
-
-            // Get MEPMSP information
-//                let mepValue: GetMEPSavedValueResponse = try await peripheralManager.write(GetMEPSavedValuePacket())
-//                let mepRefChannelMetric: GetMEPSavedRefChannelMetricResponse = try await peripheralManager
-//                    .write(GetMEPSavedRefChannelMetricPacket())
-//                let mepDriftMetric: GetMEPSavedDriftMetricResponse = try await peripheralManager
-//                    .write(GetMEPSavedDriftMetricPacket())
-//                let mepLowRefMetric: GetMEPSavedLowRefMetricResponse = try await peripheralManager
-//                    .write(GetMEPSavedLowRefMetricPacket())
-//                let mepSpike: GetMEPSavedSpikeResponse = try await peripheralManager.write(GetMEPSavedSpikePacket())
-//                let eep24MSP: GetEEP24MSPResponse = try await peripheralManager.write(GetEEP24MSPPacket())
-//                cgmManager.state.mepValue = mepValue.value
-//                cgmManager.state.mepRefChannelMetric = mepRefChannelMetric.value
-//                cgmManager.state.mepDriftMetric = mepDriftMetric.value
-//                cgmManager.state.mepLowRefMetric = mepLowRefMetric.value
-//                cgmManager.state.mepSpike = mepSpike.value
-//                cgmManager.state.eep24MSP = eep24MSP.value
 
             // Get glucose alarm repeat interval - SKIPPING day/night start time, since we just wrote them
             let lowAlarmRepeatingDay: GetLowGlucoseAlarmRepeatIntervalDayTimeResponse = try await peripheralManager

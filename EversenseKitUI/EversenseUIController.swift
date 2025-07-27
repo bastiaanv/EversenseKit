@@ -15,6 +15,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
     var cgmManagerOnboardingDelegate: LoopKitUI.CGMManagerOnboardingDelegate?
     var completionDelegate: LoopKitUI.CompletionDelegate?
     var cgmManager: EversenseCGMManager?
+    var displayGlucosePreference: DisplayGlucosePreference
 
     var colorPalette: LoopUIColorPalette
     var screenStack = [EversenseUIScreen]()
@@ -22,6 +23,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
     init(
         cgmManager: EversenseCGMManager? = nil,
         colorPalette: LoopUIColorPalette,
+        displayGlucosePreference: DisplayGlucosePreference,
         allowDebugFeatures _: Bool
     )
     {
@@ -31,6 +33,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
             self.cgmManager = EversenseCGMManager(rawState: [:])
         }
         self.colorPalette = colorPalette
+        self.displayGlucosePreference = displayGlucosePreference
         super.init(navigationBarClass: UINavigationBar.self, toolbarClass: UIToolbar.self)
     }
 
@@ -65,6 +68,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
     private func hostingController<Content: View>(rootView: Content) -> DismissibleHostingController<some View> {
         let rootView = rootView
             .environment(\.appName, Bundle.main.bundleDisplayName)
+            .environmentObject(displayGlucosePreference)
         return DismissibleHostingController(content: rootView, colorPalette: colorPalette)
     }
 
@@ -75,7 +79,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                 nextAction: { type in
                     switch type {
                     case 0:
-                        // Eversense or Eversense XL
+                        // Eversense E3
                         self.navigateTo(.onboardingScan)
                         return
 

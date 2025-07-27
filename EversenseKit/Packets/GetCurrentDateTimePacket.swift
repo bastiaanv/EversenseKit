@@ -34,7 +34,7 @@ class GetCurrentDateTimePacket: BasePacket {
             offset *= -1
         }
 
-        let timezone = TimeZone(secondsFromGMT: Int(offset))
+        let timezone = TimeZone(secondsFromGMT: Int(offset)) ?? TimeZone.current
         return GetCurrentDateTimeResponse(
             datetime: Date.fromComponents(
                 date: date,

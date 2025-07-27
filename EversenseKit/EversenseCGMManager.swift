@@ -1,6 +1,10 @@
 import HealthKit
 import LoopKit
 
+protocol StateObserver: AnyObject {
+    func stateDidUpdate(_ state: EversenseCGMState)
+}
+
 public class EversenseCGMManager: CGMManager {
     public static var pluginIdentifier: String = "EversenseKit"
 
@@ -66,6 +70,7 @@ public class EversenseCGMManager: CGMManager {
     }
 
     private let delegate = WeakSynchronizedDelegate<CGMManagerDelegate>()
+    private let stateObservers = WeakSynchronizedSet<StateObserver>()
 
     public let managerIdentifier: String = "EversenseCGMManager"
 
@@ -93,6 +98,10 @@ public class EversenseCGMManager: CGMManager {
         return lines.joined(separator: "\n")
     }
 
+    func addStateObserver(state: StateObserver, queue: DispatchQueue) {
+        stateObservers.insert(state, queue: queue)
+    }
+
     public func acknowledgeAlert(alertIdentifier _: LoopKit.Alert.AlertIdentifier, completion: @escaping ((any Error)?) -> Void) {
         completion(nil)
     }
@@ -113,8 +122,8 @@ extension EversenseCGMManager {
     }
 
     /// Responsible for handling fetching Glucose data when ready
-    func heartbeathOperation() {
-        if let recentTime = state.recentGlucoseDateTime, recentTime >= Date().addingTimeInterval(.minutes(-5)) {
+    func heartbeathOperation(force: Bool = false) {
+        if !force, let recentTime = state.recentGlucoseDateTime, recentTime >= Date().addingTimeInterval(.minutes(-5)) {
             logger.debug("Skipping fetching new data as last fetch was less than 5 minutes ago - \(recentTime)")
             return
         }
@@ -170,6 +179,10 @@ extension EversenseCGMManager {
     }
 
     func notifyStateDidChange() {
+        stateObservers.forEach { observer in
+            observer.stateDidUpdate(self.state)
+        }
+
         guard let cgmManagerDelegate = cgmManagerDelegate else {
             logger.warning("Skip notifying delegate as no delegate set...")
             return

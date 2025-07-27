@@ -28,7 +28,7 @@ extension Date {
 
     static func fromComponents(date: DateComponents, time: DateComponents, timezone: TimeZone? = nil) -> Date {
         var full = DateComponents()
-        full.timeZone = timezone ?? GMTTimezone
+        full.timeZone = timezone
         full.year = date.year
         full.month = date.month
         full.day = date.day
