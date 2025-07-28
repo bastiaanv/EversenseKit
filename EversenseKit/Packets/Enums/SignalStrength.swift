@@ -39,4 +39,21 @@ public enum SignalStrength: UInt8 {
             return 903
         }
     }
+
+    var title: String {
+        switch self {
+        case .NoSignal:
+            return LocalizedString("No signal", comment: "signalStrength no signal")
+        case .Poor:
+            return LocalizedString("Poor", comment: "signalStrength poor")
+        case .VeryLow:
+            return LocalizedString("Very low", comment: "signalStrength very low")
+        case .Low:
+            return LocalizedString("Low", comment: "signalStrength low")
+        case .Good:
+            return LocalizedString("Good", comment: "signalStrength good")
+        case .Excellent:
+            return LocalizedString("Excellent", comment: "signalStrength excellent")
+        }
+    }
 }

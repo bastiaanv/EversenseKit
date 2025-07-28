@@ -129,7 +129,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                 self.completionDelegate?.completionNotifyingDidComplete(self)
             }
             let viewModel = EversenseSettingsViewModel(cgmManager: cgmManager, deleteCgm: deleteCgm)
-            return hostingController(rootView: EversenseSettings(viewModel: viewModel))
+            return hostingController(rootView: EversenseSettingsView(viewModel: viewModel))
         }
     }
 

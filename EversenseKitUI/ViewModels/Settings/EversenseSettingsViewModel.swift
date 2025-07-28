@@ -12,6 +12,8 @@ class EversenseSettingsViewModel: ObservableObject {
     @Published var nextCalibrationProcess: Double = 0
     @Published var nextCalibrationHours: Double = 0
     @Published var nextCalibrationMinutes: Double = 0
+    @Published var signalStrength: String = ""
+    @Published var connectionStatus: String = ""
 
     @Published var showingDeleteConfirmation: Bool = false
 
@@ -23,9 +25,11 @@ class EversenseSettingsViewModel: ObservableObject {
 
     private let cgmManager: EversenseCGMManager?
     public let deleteCgm: () -> Void
+    public let transmitterSettingsViewModel: TransmitterSettingsViewModel
     init(cgmManager: EversenseCGMManager?, deleteCgm: @escaping () -> Void) {
         self.cgmManager = cgmManager
         self.deleteCgm = deleteCgm
+        transmitterSettingsViewModel = TransmitterSettingsViewModel(cgmManager: cgmManager)
 
         guard let cgmManager = cgmManager else {
             return
@@ -44,10 +48,13 @@ extension EversenseSettingsViewModel: StateObserver {
     func stateDidUpdate(_ state: EversenseCGMState) {
         transmitterModel = state.modelStr ?? "UNKNOWN"
         transmitterName = state.bleNameString
+        connectionStatus = state.connectionStatus.title
         currentPhase = state.calibrationPhase.getTitle(
             isOneCal: state.isOneCalibrationPhase,
             oneCalExists: state.oneCalibrationPhaseExists
         )
+
+        signalStrength = state.signalStrength.title
 
         if let value = state.recentGlucoseInMgDl {
             lastMeasurement = HKQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value))

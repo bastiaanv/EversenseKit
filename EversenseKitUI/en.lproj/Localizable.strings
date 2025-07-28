@@ -40,9 +40,32 @@
 /* The information section */
 "Information" = "Information";
 
-
 /* Label for CgmManager deletion button */
 "Delete CGM" = "Delete CGM";
 
 /* Message for CgmManager deletion action sheet */
 "Are you sure you want to stop using Eversense CGM?" = "Are you sure you want to stop using Eversense CGM?";
+
+/* transmitter implant signal strength */
+"Signal strength" = "Signal strength";
+
+/* signalStrength no signal */
+"No signal" = "No signal";
+
+/* signalStrength poor */
+"Poor" = "Poor";
+
+/* signalStrength very low */
+"Very low" = "Very low";
+
+/* signalStrength low */
+"Low" = "Low";
+
+/* signalStrength good */
+"Good" = "Good";
+
+/* signalStrength excellent */
+"Excellent" = "Excellent";
+
+/* go to transmitter settings */
+"Transmitter settings" = "Transmitter settings";

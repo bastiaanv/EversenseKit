@@ -1,7 +1,7 @@
 import LoopKitUI
 import SwiftUI
 
-struct EversenseSettings: View {
+struct EversenseSettingsView: View {
     @Environment(\.dismissAction) private var dismiss
     @Environment(\.guidanceColors) private var guidanceColors
     @EnvironmentObject private var displayGlucosePreference: DisplayGlucosePreference
@@ -33,7 +33,7 @@ struct EversenseSettings: View {
                     HStack {
                         Spacer()
                         Image(uiImage: UIImage(
-                            named: "implant",
+                            named: "transmitter",
                             in: Bundle(for: EversenseUIController.self),
                             compatibleWith: nil
                         )!)
@@ -65,21 +65,23 @@ struct EversenseSettings: View {
             }
 
             Section(header: SectionHeader(label: LocalizedString(
-                "Information",
-                comment: "The information section"
+                "Recent glucose",
+                comment: "last reading"
             ))) {
                 SectionItem(
-                    title: LocalizedString("Current phase", comment: "current phase"),
-                    value: viewModel.currentPhase
-                )
-                SectionItem(
-                    title: LocalizedString("Recent glucose", comment: "last reading"),
+                    title: LocalizedString("Glucose", comment: "last reading"),
                     value: displayGlucosePreference.format(viewModel.lastMeasurement)
                 )
                 SectionItem(
-                    title: LocalizedString("Recent glucose time", comment: "last reading"),
+                    title: LocalizedString("Time", comment: "last reading"),
                     value: viewModel.lastMeasurementDatetime
                 )
+            }
+
+            Section(header: SectionHeader(label: LocalizedString(
+                "Calibrations",
+                comment: "last reading"
+            ))) {
                 SectionItem(
                     title: LocalizedString("Last calibration time", comment: "last calibration"),
                     value: viewModel.lastCalibrationDatetime
@@ -88,6 +90,23 @@ struct EversenseSettings: View {
                     title: LocalizedString("Next calibration time", comment: "next calibration"),
                     value: viewModel.nextCalibrationDatetime
                 )
+            }
+
+            Section(header: SectionHeader(label: LocalizedString(
+                "Transmitter information",
+                comment: "last reading"
+            ))) {
+                SectionItem(
+                    title: LocalizedString("Current phase", comment: "current phase"),
+                    value: viewModel.currentPhase
+                )
+                SectionItem(
+                    title: LocalizedString("Signal strength", comment: "transmitter implant signal strength"),
+                    value: viewModel.signalStrength
+                )
+                NavigationLink(destination: TransmitterSettingsView(viewModel: viewModel.transmitterSettingsViewModel)) {
+                    Text(LocalizedString("Transmitter settings", comment: "go to transmitter settings"))
+                }
             }
 
             Section {
@@ -115,7 +134,7 @@ struct EversenseSettings: View {
             Text(LocalizedString("State", comment: "Transmitter state"))
                 .fontWeight(.heavy)
                 .fixedSize()
-            Text("Operational") // TODO:
+            Text(viewModel.connectionStatus)
                 .foregroundColor(.secondary)
                 .textSelection(.enabled)
         }

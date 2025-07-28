@@ -23,6 +23,11 @@ class BluetoothManager: NSObject {
     func ensureConnected(completionAsync: @escaping (ConnectFailure?) async -> Void) {
         let completion = { (_ result: ConnectFailure?) -> Void in
             Task {
+                if let cgmManager = self.cgmManager {
+                    cgmManager.state.connectionStatus = result == nil ? .connected : .idle
+                    cgmManager.notifyStateDidChange()
+                }
+
                 await completionAsync(result)
             }
         }
@@ -30,6 +35,11 @@ class BluetoothManager: NSObject {
         if let _ = peripheral, let _ = peripheralManager {
             completion(nil)
             return
+        }
+
+        if let cgmManager = self.cgmManager {
+            cgmManager.state.connectionStatus = .connecting
+            cgmManager.notifyStateDidChange()
         }
 
         if let peripheral = peripheral {
@@ -124,6 +134,16 @@ class BluetoothManager: NSObject {
 extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         logger.debug("State update: \(central.state)")
+
+        guard central.state == .poweredOn else {
+            return
+        }
+
+        ensureConnected { error in
+            if let error = error {
+                self.logger.error("Failed to auto reconnect: \(error.describe)")
+            }
+        }
     }
 
     func centralManager(
@@ -167,6 +187,11 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_: CBCentralManager, didDisconnectPeripheral _: CBPeripheral, error: Error?) {
+        if let cgmManager = cgmManager {
+            cgmManager.state.connectionStatus = .idle
+            cgmManager.notifyStateDidChange()
+        }
+
         if let error = error {
             logger.error("Failure during disconnect: \(error.localizedDescription)")
         }
