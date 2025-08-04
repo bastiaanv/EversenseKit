@@ -7,6 +7,7 @@ enum EversenseUIScreen {
     case onboardingScan
 
     case settings
+    case transmitterSettings
 }
 
 class EversenseUIController: UINavigationController, CGMManagerOnboarding, CompletionNotifying, UINavigationControllerDelegate {
@@ -128,8 +129,19 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                 cgmManagerDelegate.cgmManagerWantsDeletion(cgmManager)
                 self.completionDelegate?.completionNotifyingDidComplete(self)
             }
-            let viewModel = EversenseSettingsViewModel(cgmManager: cgmManager, deleteCgm: deleteCgm)
+            let toTransmitterSettings = {
+                self.navigateTo(.transmitterSettings)
+            }
+
+            let viewModel = EversenseSettingsViewModel(
+                cgmManager: cgmManager,
+                deleteCgm: deleteCgm,
+                toTransmitterSettings: toTransmitterSettings
+            )
             return hostingController(rootView: EversenseSettingsView(viewModel: viewModel))
+        case .transmitterSettings:
+            let viewModel = TransmitterSettingsViewModel(cgmManager: cgmManager, unit: displayGlucosePreference.unit)
+            return hostingController(rootView: TransmitterSettingsView(viewModel: viewModel))
         }
     }
 

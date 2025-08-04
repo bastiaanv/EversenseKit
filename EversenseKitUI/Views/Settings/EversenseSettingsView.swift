@@ -104,9 +104,16 @@ struct EversenseSettingsView: View {
                     title: LocalizedString("Signal strength", comment: "transmitter implant signal strength"),
                     value: viewModel.signalStrength
                 )
-                NavigationLink(destination: TransmitterSettingsView(viewModel: viewModel.transmitterSettingsViewModel)) {
-                    Text(LocalizedString("Transmitter settings", comment: "go to transmitter settings"))
+                Button(action: viewModel.toTransmitterSettings) {
+                    HStack {
+                        Text(LocalizedString("Transmitter settings", comment: "go to transmitter settings"))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: UIFont.systemFontSize, weight: .medium))
+                            .opacity(0.35)
+                    }
                 }
+                .buttonStyle(PlainButtonStyle())
             }
 
             Section {

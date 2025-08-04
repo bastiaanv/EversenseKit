@@ -168,4 +168,19 @@ enum CommandOperations {
 
         return data
     }
+
+    static func writeSingleByteSerialFlashRegister(memoryAddress: FlashMemory, data: Data) -> Data {
+        var data =
+            Data([
+                0x2B,
+                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
+                data[0]
+            ])
+        let checksum = BinaryOperations.generateChecksumCRC16(data: data)
+        data.append(BinaryOperations.dataFrom16Bits(value: checksum))
+
+        return data
+    }
 }

@@ -51,9 +51,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         highGlucoseAlarmRepeatingDayTime = rawValue["highGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
         lowGlucoseAlarmRepeatingNightTime = rawValue["lowGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
         highGlucoseAlarmRepeatingNightTime = rawValue["highGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
-        lowGlucoseTargetInMgDl = rawValue["lowGlucoseTargetInMgDl"] as? UInt16 ?? 0
-        highGlucoseTargetInMgDl = rawValue["highGlucoseTargetInMgDl"] as? UInt16 ?? 0
-        isGlucoseAlarmEnabled = rawValue["isGlucoseAlarmEnabled"] as? Bool ?? false
+        isGlucoseHighAlarmEnabled = rawValue["isGlucoseHighAlarmEnabled"] as? Bool ?? false
         lowGlucoseAlarmInMgDl = rawValue["lowGlucoseAlarmInMgDl"] as? UInt16 ?? 0
         highGlucoseAlarmInMgDl = rawValue["highGlucoseAlarmInMgDl"] as? UInt16 ?? 0
         isPredictionEnabled = rawValue["isPredictionEnabled"] as? Bool ?? false
@@ -171,9 +169,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["highGlucoseAlarmRepeatingDayTime"] = highGlucoseAlarmRepeatingDayTime
         value["lowGlucoseAlarmRepeatingNightTime"] = lowGlucoseAlarmRepeatingNightTime
         value["highGlucoseAlarmRepeatingNightTime"] = highGlucoseAlarmRepeatingNightTime
-        value["lowGlucoseTargetInMgDl"] = lowGlucoseTargetInMgDl
-        value["highGlucoseTargetInMgDl"] = highGlucoseTargetInMgDl
-        value["isGlucoseAlarmEnabled"] = isGlucoseAlarmEnabled
+        value["isGlucoseHighAlarmEnabled"] = isGlucoseHighAlarmEnabled
         value["lowGlucoseAlarmInMgDl"] = lowGlucoseAlarmInMgDl
         value["highGlucoseAlarmInMgDl"] = highGlucoseAlarmInMgDl
         value["isPredictionEnabled"] = isPredictionEnabled
@@ -246,9 +242,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var lowGlucoseAlarmRepeatingNightTime: UInt8
     public var highGlucoseAlarmRepeatingNightTime: UInt8
 
-    public var lowGlucoseTargetInMgDl: UInt16
-    public var highGlucoseTargetInMgDl: UInt16
-    public var isGlucoseAlarmEnabled: Bool
+    public var isGlucoseHighAlarmEnabled: Bool
     public var lowGlucoseAlarmInMgDl: UInt16
     public var highGlucoseAlarmInMgDl: UInt16
 

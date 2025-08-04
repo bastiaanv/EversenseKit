@@ -25,11 +25,11 @@ class EversenseSettingsViewModel: ObservableObject {
 
     private let cgmManager: EversenseCGMManager?
     public let deleteCgm: () -> Void
-    public let transmitterSettingsViewModel: TransmitterSettingsViewModel
-    init(cgmManager: EversenseCGMManager?, deleteCgm: @escaping () -> Void) {
+    public let toTransmitterSettings: () -> Void
+    init(cgmManager: EversenseCGMManager?, deleteCgm: @escaping () -> Void, toTransmitterSettings: @escaping () -> Void) {
         self.cgmManager = cgmManager
         self.deleteCgm = deleteCgm
-        transmitterSettingsViewModel = TransmitterSettingsViewModel(cgmManager: cgmManager)
+        self.toTransmitterSettings = toTransmitterSettings
 
         guard let cgmManager = cgmManager else {
             return

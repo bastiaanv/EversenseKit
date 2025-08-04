@@ -165,19 +165,12 @@ enum TransmitterStateSync {
             cgmManager.state.calibrationMinThreshold = minCalibration.value
             cgmManager.state.calibrationMaxThreshold = maxCalibration.value
 
-            // Get glucose targets
-            let lowGlucoseTarget: GetLowGlucoseTargetResponse = try await peripheralManager.write(GetLowGlucoseTargetPacket())
-            let highGlucoseTarget: GetHighGlucoseTargetResponse = try await peripheralManager
-                .write(GetHighGlucoseTargetPacket())
-            cgmManager.state.lowGlucoseTargetInMgDl = lowGlucoseTarget.valueInMgDl
-            cgmManager.state.highGlucoseTargetInMgDl = highGlucoseTarget.valueInMgDl
-
             // Get glucose alarm enabled & thresholds
-            let isGlucoseAlarmEnabled: GetGlucoseAlarmEnabledResponse = try await peripheralManager
-                .write(GetGlucoseAlarmEnabledPacket())
+            let isGlucoseAlarmEnabled: GetHighGlucoseAlarmEnabledResponse = try await peripheralManager
+                .write(GetHighGlucoseAlarmEnabledPacket())
             let lowGlucoseAlarm: GetLowGlucoseAlarmResponse = try await peripheralManager.write(GetLowGlucoseAlarmPacket())
             let highGlucoseAlarm: GetHighGlucoseAlarmResponse = try await peripheralManager.write(GetHighGlucoseAlarmPacket())
-            cgmManager.state.isGlucoseAlarmEnabled = isGlucoseAlarmEnabled.value
+            cgmManager.state.isGlucoseHighAlarmEnabled = isGlucoseAlarmEnabled.value
             cgmManager.state.lowGlucoseAlarmInMgDl = lowGlucoseAlarm.valueInMgDl
             cgmManager.state.highGlucoseAlarmInMgDl = highGlucoseAlarm.valueInMgDl
 

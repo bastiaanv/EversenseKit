@@ -1,4 +1,4 @@
-class GetGlucoseAlarmEnabledResponse {
+class GetHighGlucoseAlarmEnabledResponse {
     let value: Bool
 
     init(value: Bool) {
@@ -6,8 +6,8 @@ class GetGlucoseAlarmEnabledResponse {
     }
 }
 
-class GetGlucoseAlarmEnabledPacket: BasePacket {
-    typealias T = GetGlucoseAlarmEnabledResponse
+class GetHighGlucoseAlarmEnabledPacket: BasePacket {
+    typealias T = GetHighGlucoseAlarmEnabledResponse
 
     var response: PacketIds {
         PacketIds.readSingleByteSerialFlashRegisterResponseId
@@ -17,8 +17,8 @@ class GetGlucoseAlarmEnabledPacket: BasePacket {
         CommandOperations.readSingleByteSerialFlashRegister(memoryAddress: FlashMemory.highGlucoseAlarmEnabled)
     }
 
-    func parseResponse(data: Data) -> GetGlucoseAlarmEnabledResponse {
-        GetGlucoseAlarmEnabledResponse(
+    func parseResponse(data: Data) -> GetHighGlucoseAlarmEnabledResponse {
+        GetHighGlucoseAlarmEnabledResponse(
             value: data[start] == 0x55
         )
     }
