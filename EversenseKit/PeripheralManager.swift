@@ -371,23 +371,14 @@ extension PeripheralManager {
         }
 
         do {
-            logger.info("Sending WhoAmI")
-            let whoAmIResponse: AuthenticateV2Response =
-                try await write(AuthenticateV2Packet(type: AuthType.WhoAmI, secret: clientId))
-
             if cgmManager.state.certificateV2 == nil ||
                 cgmManager.state.fleetKeyPublicKeyV2 == nil ||
-                cgmManager.state.noneV2 == nil ||
-                cgmManager.state.noneV2 != whoAmIResponse.nonce
+                cgmManager.state.noneV2 == nil
             {
-                logger
-                    .debug(
-                        "Fetching certificate, local nonce: \(cgmManager.state.noneV2?.hexString() ?? "nil"), received nonce: \(whoAmIResponse.nonce.hexString())"
-                    )
+                logger.info("Sending WhoAmI")
+                let whoAmIResponse: AuthenticateV2Response =
+                    try await write(AuthenticateV2Packet(type: AuthType.WhoAmI, secret: clientId))
 
-                logger.debug("public key full: \(publicKey.hexString())")
-                logger.debug("public key: \(publicKey.subdata(in: 27 ..< publicKey.count).hexString())")
-                logger.debug("Public key length: \(publicKey.subdata(in: 27 ..< publicKey.count).count)")
                 let fleetSecret = await KeyVaultApi.getFleetSecretV2(
                     accessToken: accessToken,
                     serialNumber: whoAmIResponse.serialNumber.base64Safe(),
@@ -408,26 +399,26 @@ extension PeripheralManager {
 
                 cgmManager.state.certificateV2 = certificate
                 cgmManager.state.fleetKeyPublicKeyV2 = decryptedPublicKey.rawRepresentation
-                cgmManager.state.noneV2 = whoAmIResponse.nonce
+                logger.debug("Got certificate!")
             } else {
                 logger.info("Skipping online keyVault call, certificate already set")
             }
 
-            return
+            guard let certificate = cgmManager.state.certificateV2, let certificateData = Data(hexString: certificate) else {
+                logger.error("No certificate available...")
+                return
+            }
 
-//            guard let certificate = cgmManager.state.certificateV2, let certificateData = Data(hexString: certificate) else {
-//                logger.error("No certificate available...")
-//                return
-//            }
-//
-//            logger.debug("Sending IDENTITY...")
-//            let identityResponse: AuthenticateV2Response =
-//                try await write(AuthenticateV2Packet(type: AuthType.Identity, secret: certificateData))
-//            logger.debug("Identity status: \(identityResponse.status)")
+            logger.debug("Sending IDENTITY...")
+            let identityResponse: AuthenticateV2Response =
+                try await write(AuthenticateV2Packet(type: AuthType.Identity, secret: certificateData))
+            logger.debug("Identity status: \(identityResponse.status)")
 
-//            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
-//            connectCompletion?(nil)
-//            connectCompletion = nil
+            // TODO: Send START command
+
+            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+            connectCompletion?(nil)
+            connectCompletion = nil
 
         } catch {
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")

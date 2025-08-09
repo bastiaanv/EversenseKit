@@ -18,8 +18,8 @@ extension BasePacket {
             return false
         }
 
-        // Minlength of a packet is 3
-        guard data.count >= 3 else {
+        // Minlength of a packet is 2
+        guard data.count >= 2 else {
             return false
         }
 

@@ -1,7 +1,7 @@
 enum KeyVaultApi {
     static let baseUrl = "https://deviceauthorization.eversensedms.com/api/vault"
     static let transmitterNo = "000000"
-    static let clientNo = 1
+    static let clientNo = 2
     static let clientType = 128
 
     static let logger = EversenseLogger(category: "KeyVaultApi")
@@ -45,7 +45,7 @@ enum KeyVaultApi {
             "txSerialNumber=\(serialNumber)",
             "nonce=\(nonce)",
             "clientNo=\(clientNo)",
-            "client_type=\(clientType)",
+            "clientType=\(clientType)",
             "kp_client_unique_id=\(kpClientUniqueId)"
         ].joined(separator: "&")
 

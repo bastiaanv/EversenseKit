@@ -42,23 +42,19 @@ class AuthenticateV2Packet: BasePacket {
     }
 
     func parseResponse(data: Data) -> AuthenticateV2Response {
-        print("AuthV2 response: \(data.hexString())")
-
         if data[1] == 0x01 {
             // WhoAmI response
             let serialNumberData = data.subdata(in: 2 ..< 34)
             let nonce = data.subdata(in: 34 ..< 42)
 
-            // 0B0133303633363600000000000000000000000000000000000000000000000000004CFC914E088197B20100
-            // https://deviceauthorization.eversensedms.com/api/vault/GetTxCertificate?tx_flags=false&txSerialNumber=MzA2MzY2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&nonce=A2FHViKll8g&clientType=128&clientNo=1&kp_client_unique_id=4mi93BpYpxivRiUHGWWpMDX7UjE7lCpB4YhFFHEebe4ulBMjALegv5dm5RSsc3wrj2Ddc5P6Ffs-qiWCtz3L5Q
-            print(
-                "AuthV2 response - nonce: \(nonce.hexString()), serialNumber: \(serialNumberData.hexString()), flags: \((UInt16(data[43]) << 8) | UInt16(data[42]))"
-            )
-
             return AuthenticateV2Response(
                 nonce: nonce,
                 serialNumber: serialNumberData,
                 flags: ((UInt16(data[43]) << 8) | UInt16(data[42]) & 0x0F) == 0
+            )
+        } else if data[1] == 0x02 {
+            return AuthenticateV2Response(
+                status: 0
             )
         } else {
             return AuthenticateV2Response(
