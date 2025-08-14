@@ -38,6 +38,20 @@ enum CryptoUtil {
 
         return (privateKey.derRepresentation, publicKey.derRepresentation, clientId)
     }
+    
+    static func generateEphem(privateKey pKeyData: Data) throws -> (Data, Data, Data, Data) {
+        let ephemPrivateKey = P256.KeyAgreement.PrivateKey()
+        let ephemPublicKey = ephemPrivateKey.publicKey
+        let salt = Data.randomSecure(length: 8)
+        
+        let privateKey = try P256.Signing.PrivateKey(derRepresentation: pKeyData)
+        
+        var data = Data(ephemPublicKey.derRepresentation)
+        data.append(salt)
+        let digitalSignature = try privateKey.signature(for: data)
+        
+        return (ephemPrivateKey.derRepresentation, ephemPublicKey.derRepresentation, salt, digitalSignature.derRepresentation)
+    }
 
     static func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
         let result = HMAC<SHA256>.authenticationCode(for: data, using: sessionKey)

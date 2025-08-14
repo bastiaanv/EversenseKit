@@ -364,7 +364,8 @@ extension PeripheralManager {
         guard
             let accessToken = cgmManager.state.accessToken,
             let clientId = cgmManager.state.clientIdV2,
-            let publicKey = cgmManager.state.publicKeyV2
+            let publicKey = cgmManager.state.publicKeyV2,
+            let privateKey = cgmManager.state.privateKeyV2
         else {
             logger.error("Failed to generate key pair")
             return
@@ -415,6 +416,19 @@ extension PeripheralManager {
             logger.debug("Identity status: \(identityResponse.status)")
 
             // TODO: Send START command
+            // 01010109038000D2037DADB575FF4294E2A988EB22D0C32ED416C02FCF06366314CDDFD6744E74FADBCD84C878A502AE60AF6CB549A34D2FC8606FF09C1EB79E4BDF89F31D184F402AF0A397F5AC776ACFD13D2A8516C18FB7C31525AF9F43E7F07AE6FDAE1251AA30441EF8FD84407CCD7013473E920A13FD3ACC5B8B8FA7F2BED1175670D54839DA0564C1B371EF780C18B139783846173CD56EDFD5CD5A65C378EDDDBD795FADCA3F1FE0CB00A2
+            
+            let (ephemPrivateKey, ephemPublicKey, salt, digitalSignature) = try CryptoUtil.generateEphem(privateKey: privateKey)
+            
+            var startSecret = Data(clientId)
+            startSecret.append(ephemPublicKey)
+            startSecret.append(salt)
+            startSecret.append(digitalSignature)
+            
+            logger.debug("Sending START...")
+            let startResponse: AuthenticateV2Response =
+                try await write(AuthenticateV2Packet(type: AuthType.Start, secret: startSecret))
+            logger.debug("Response start: \(startResponse.status)")
 
             await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
             connectCompletion?(nil)

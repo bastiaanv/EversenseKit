@@ -18,6 +18,7 @@ class AuthenticateV2Response {
 enum AuthType: UInt8 {
     case WhoAmI = 1
     case Identity = 2
+    case Start = 3
 }
 
 class AuthenticateV2Packet: BasePacket {
