@@ -38,19 +38,23 @@ enum CryptoUtil {
 
         return (privateKey.derRepresentation, publicKey.derRepresentation, clientId)
     }
-    
+
     static func generateEphem(privateKey pKeyData: Data) throws -> (Data, Data, Data, Data) {
         let ephemPrivateKey = P256.KeyAgreement.PrivateKey()
         let ephemPublicKey = ephemPrivateKey.publicKey
         let salt = Data.randomSecure(length: 8)
-        
+
         let privateKey = try P256.Signing.PrivateKey(derRepresentation: pKeyData)
-        
-        var data = Data(ephemPublicKey.derRepresentation)
+        let publicKeyData = Data(ephemPublicKey.derRepresentation)
+
+        var data = Data(publicKeyData.subdata(in: 27 ..< publicKeyData.count))
         data.append(salt)
-        let digitalSignature = try privateKey.signature(for: data)
         
-        return (ephemPrivateKey.derRepresentation, ephemPublicKey.derRepresentation, salt, digitalSignature.derRepresentation)
+        let digitalSignature = try privateKey.signature(for: data).derRepresentation
+        var actualSignature = Data(digitalSignature.subdata(in: 4 ..< 36))
+        actualSignature.append(digitalSignature.subdata(in: 39 ..< digitalSignature.count))
+
+        return (ephemPrivateKey.derRepresentation, ephemPublicKey.derRepresentation, salt, actualSignature)
     }
 
     static func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
