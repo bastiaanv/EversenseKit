@@ -1,3 +1,6 @@
+enum EversenseE3 {}
+enum Eversense365 {}
+
 protocol BasePacket<T> {
     associatedtype T = AnyClass
 

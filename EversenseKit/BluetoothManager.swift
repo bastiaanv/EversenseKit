@@ -187,6 +187,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_: CBCentralManager, didDisconnectPeripheral _: CBPeripheral, error: Error?) {
+//        peripheralManager = nil
+
         if let cgmManager = cgmManager {
             cgmManager.state.connectionStatus = .idle
             cgmManager.notifyStateDidChange()

@@ -273,9 +273,9 @@ extension PeripheralManager: CBPeripheralDelegate {
 extension PeripheralManager {
     private func writeNoneSecurity() async {
         do {
-            let _: SaveBleBondingInformationResponse = try await write(SaveBleBondingInformationPacket())
+            let _: EversenseE3.SaveBleBondingInformationResponse = try await write(EversenseE3.SaveBleBondingInformationPacket())
 
-            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+            await TransmitterStateSync.fullSyncE3(peripheralManager: self, cgmManager: cgmManager)
             connectCompletion?(nil)
             connectCompletion = nil
         } catch {
@@ -343,7 +343,7 @@ extension PeripheralManager {
         do {
             let _: Authenticatev1Response = try await write(Authenticatev1Packet(sessionKey: sessionKey, salt: salt))
 
-            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
+            await TransmitterStateSync.fullSync365(peripheralManager: self, cgmManager: cgmManager)
             connectCompletion?(nil)
             connectCompletion = nil
         } catch {
@@ -362,12 +362,15 @@ extension PeripheralManager {
         }
 
         guard
-            let accessToken = cgmManager.state.accessToken,
+            let username = cgmManager.state.username,
+            let password = cgmManager.state.password,
             let clientId = cgmManager.state.clientIdV2,
             let publicKey = cgmManager.state.publicKeyV2,
             let privateKey = cgmManager.state.privateKeyV2
         else {
-            logger.error("Failed to generate key pair")
+            logger.error("Failed to generate keypair")
+            connectCompletion?(.preconditionFailed(reason: "Failed to generate keypair..."))
+            connectCompletion = nil
             return
         }
 
@@ -376,12 +379,14 @@ extension PeripheralManager {
                 cgmManager.state.fleetKeyPublicKeyV2 == nil ||
                 cgmManager.state.noneV2 == nil
             {
-                logger.info("Sending WhoAmI")
-                let whoAmIResponse: AuthenticateV2Response =
-                    try await write(AuthenticateV2Packet(type: AuthType.WhoAmI, secret: clientId))
+                logger.info("Sending WhoAmI - clientID: \(clientId.hexString())")
+                let whoAmIResponse: Eversense365.AuthenticateV2Response =
+                    try await write(Eversense365.AuthenticateV2Packet(type: Eversense365.AuthType.WhoAmI, secret: clientId))
+
+                let accessResponse = try await AuthenticationApi.login(username: username, password: password)
 
                 let fleetSecret = await KeyVaultApi.getFleetSecretV2(
-                    accessToken: accessToken,
+                    accessToken: accessResponse.accessToken,
                     serialNumber: whoAmIResponse.serialNumber.base64Safe(),
                     nonce: whoAmIResponse.nonce.base64Safe(),
                     flags: whoAmIResponse.flags,
@@ -395,6 +400,8 @@ extension PeripheralManager {
                       let decryptedPublicKey = CryptoUtil.decryptPublicKey(fleetKey: kpTxUniqueId)
                 else {
                     logger.error("FleetSecret is empty or is missing information...")
+                    connectCompletion?(.preconditionFailed(reason: "FleetSecret is empty..."))
+                    connectCompletion = nil
                     return
                 }
 
@@ -407,38 +414,57 @@ extension PeripheralManager {
 
             guard let certificate = cgmManager.state.certificateV2, let certificateData = Data(hexString: certificate) else {
                 logger.error("No certificate available...")
+                connectCompletion?(.preconditionFailed(reason: "No cert available..."))
+                connectCompletion = nil
                 return
             }
 
             logger.debug("Sending IDENTITY...")
-            let identityResponse: AuthenticateV2Response =
-                try await write(AuthenticateV2Packet(type: AuthType.Identity, secret: certificateData))
+            let identityResponse: Eversense365.AuthenticateV2Response =
+                try await write(Eversense365.AuthenticateV2Packet(type: Eversense365.AuthType.Identity, secret: certificateData))
             logger.debug("Identity status: \(identityResponse.status)")
-
-            // TODO: Send START command
-            // 01010109038000D2037DADB575FF4294E2A988EB22D0C32ED416C02FCF06366314CDDFD6744E74FADBCD84C878A502AE60AF6CB549A34D2FC8606FF09C1EB79E4BDF89F31D184F402AF0A397F5AC776ACFD13D2A8516C18FB7C31525AF9F43E7F07AE6FDAE1251AA30441EF8FD84407CCD7013473E920A13FD3ACC5B8B8FA7F2BED1175670D54839DA0564C1B371EF780C18B139783846173CD56EDFD5CD5A65C378EDDDBD795FADCA3F1FE0CB00A2
 
             let (ephemPrivateKey, ephemPublicKey, salt, digitalSignature) = try CryptoUtil.generateEphem(privateKey: privateKey)
 
-            logger.debug("privateKey: \(privateKey.hexString())")
-            logger.debug("ephemPublicKey: \(ephemPublicKey.hexString())")
-            logger.debug("Salt: \(salt.hexString())")
-            logger.debug("Signature: \(digitalSignature.hexString())")
+            guard digitalSignature.count == 64 else {
+                connectCompletion?(.preconditionFailed(reason: "Signature failed..."))
+                connectCompletion = nil
+                return
+            }
 
+            let ephemPublic = ephemPublicKey.subdata(in: 27 ..< publicKey.count)
+            
+            logger.debug("ClientID - length: \(clientId.count), data: \(clientId.hexString())")
+            logger.debug("ephemPublicKey-  length: \(ephemPublic.count), data: \(ephemPublic.hexString())")
+            logger.debug("salt - length: \(salt.count), data: \(salt.hexString())")
+            logger.debug("digitalSignature - length: \(digitalSignature.count), data: \(digitalSignature.hexString())")
+            
             var startSecret = Data([128, 0])
             startSecret.append(clientId)
-            startSecret.append(ephemPublicKey.subdata(in: 27 ..< publicKey.count))
+            startSecret.append(ephemPublic)
             startSecret.append(salt)
             startSecret.append(digitalSignature)
 
             logger.debug("Sending START...")
-            let startResponse: AuthenticateV2Response =
-                try await write(AuthenticateV2Packet(type: AuthType.Start, secret: startSecret))
+            let startResponse: Eversense365.AuthenticateV2Response =
+                try await write(Eversense365.AuthenticateV2Packet(type: Eversense365.AuthType.Start, secret: startSecret))
             logger.debug("Response start: \(startResponse.status)")
 
-//            await TransmitterStateSync.fullSync(peripheralManager: self, cgmManager: cgmManager)
-//            connectCompletion?(nil)
-//            connectCompletion = nil
+            guard startResponse.length > 6 else {
+                connectCompletion?(.preconditionFailed(reason: "Auth flow failed"))
+                connectCompletion = nil
+                return
+            }
+
+            try CryptoUtil.shared.generateSessionKey(
+                sessionPublicKey: startResponse.sessionPublicKey,
+                privateKey: ephemPrivateKey,
+                salt: salt
+            )
+
+            await TransmitterStateSync.fullSync365(peripheralManager: self, cgmManager: cgmManager)
+            connectCompletion?(nil)
+            connectCompletion = nil
 
         } catch {
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")

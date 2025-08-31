@@ -140,36 +140,41 @@ extension EversenseCGMManager {
             }
 
             do {
-                let glucoseData: GetGlucoseDataResponse = try await self.bluetoothManager.write(GetGlucoseDataPacket())
-                let recentGlucoseValue: GetRecentGlucoseValueResponse = try await self.bluetoothManager
-                    .write(GetRecentGlucoseValuePacket())
-                let recentGlucoseDate: GetRecentGlucoseDateResponse = try await self.bluetoothManager
-                    .write(GetRecentGlucoseDatePacket())
-                let recentGlucoseTime: GetRecentGlucoseTimeResponse = try await self.bluetoothManager
-                    .write(GetRecentGlucoseTimePacket())
+                if !self.state.is365 {
+                    let glucoseData: EversenseE3.GetGlucoseDataResponse = try await self.bluetoothManager
+                        .write(EversenseE3.GetGlucoseDataPacket())
+                    let recentGlucoseValue: EversenseE3.GetRecentGlucoseValueResponse = try await self.bluetoothManager
+                        .write(EversenseE3.GetRecentGlucoseValuePacket())
+                    let recentGlucoseDate: EversenseE3.GetRecentGlucoseDateResponse = try await self.bluetoothManager
+                        .write(EversenseE3.GetRecentGlucoseDatePacket())
+                    let recentGlucoseTime: EversenseE3.GetRecentGlucoseTimeResponse = try await self.bluetoothManager
+                        .write(EversenseE3.GetRecentGlucoseTimePacket())
 
-                let dateTime = Date.fromComponents(
-                    date: recentGlucoseDate.date,
-                    time: recentGlucoseTime.time
-                )
-
-                self.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
-                self.state.recentGlucoseDateTime = dateTime
-
-                cgmManagerDelegate.cgmManager(self, hasNew: .newData([
-                    NewGlucoseSample(
-                        cgmManager: self,
-                        value: recentGlucoseValue.valueInMgDl,
-                        trend: glucoseData.trend ?? .flat,
-                        dateTime: dateTime
+                    let dateTime = Date.fromComponents(
+                        date: recentGlucoseDate.date,
+                        time: recentGlucoseTime.time
                     )
-                ]))
 
-                if let peripheralManager = self.bluetoothManager.peripheralManager {
-                    await TransmitterStateSync.fullSync(
-                        peripheralManager: peripheralManager,
-                        cgmManager: self
-                    )
+                    self.state.recentGlucoseInMgDl = recentGlucoseValue.valueInMgDl
+                    self.state.recentGlucoseDateTime = dateTime
+
+                    cgmManagerDelegate.cgmManager(self, hasNew: .newData([
+                        NewGlucoseSample(
+                            cgmManager: self,
+                            value: recentGlucoseValue.valueInMgDl,
+                            trend: glucoseData.trend ?? .flat,
+                            dateTime: dateTime
+                        )
+                    ]))
+
+                    if let peripheralManager = self.bluetoothManager.peripheralManager {
+                        await TransmitterStateSync.fullSyncE3(
+                            peripheralManager: peripheralManager,
+                            cgmManager: self
+                        )
+                    }
+                } else {
+                    self.logger.error("TODO: Implement 365 heartbeath operation")
                 }
 
             } catch {

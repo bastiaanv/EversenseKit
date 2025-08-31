@@ -14,8 +14,7 @@ struct CryptoUtilTests {
     @Test func generateSignature() async throws {
         let result = CryptoUtil.generateSession(fleetKey: fleetKey)
         guard let result = result else {
-            #expect(false)
-            return
+            throw NSError(domain: "EMPTY result", code: 0, userInfo: nil)
         }
 
         let (sessionKey, salt) = result
@@ -34,5 +33,17 @@ struct CryptoUtilTests {
 
         let result = CryptoUtil.decryptPublicKey(fleetKey: kpTxUniqueId)
         #expect(result != nil)
+    }
+
+    @Test func generateSalt() async throws {
+        let count: Int64 = 1
+        let salt = Data(hexString: "ff9f6b558126b96f")
+        guard let salt = salt else {
+            throw NSError(domain: "EMPTY salt", code: 0, userInfo: nil)
+        }
+
+        let x = (salt.toInt64() & Int64(-16384)) | count
+        let data = x.toData(length: 8)
+        #expect(data == Data(hexString: "01C09F6B558126B9"))
     }
 }

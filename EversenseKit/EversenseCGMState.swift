@@ -26,31 +26,21 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         bleUUIDString = rawValue["bleUUIDString"] as? String
         isOnboarded = rawValue["isOnboarded"] as? Bool ?? false
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
-        model = rawValue["model"] as? String
         version = rawValue["version"] as? String
         extVersion = rawValue["extVersion"] as? String
         communicationProtocol = rawValue["communicationProtocol"] as? String
         mmaFeatures = rawValue["mmaFeatures"] as? UInt8 ?? 0
         vibrateMode = rawValue["vibrateMode"] as? Bool
         batteryVoltage = rawValue["batteryVoltage"] as? Double ?? 0
-        algorithmFormatVersion = rawValue["algorithmFormatVersion"] as? UInt16 ?? 0
         dayStartTime = rawValue["dayStartTime"] as? Date ?? Date.defaultDayStartTime
         nightStartTime = rawValue["nightStartTime"] as? Date ?? Date.defaultNightStartTime
-        warmingUpDuration = rawValue["warmingUpDuration"] as? TimeInterval ?? .hours(24)
-        sensorSamplingInterval = rawValue["sensorSamplingInterval"] as? TimeInterval
         delayBLEDisconnectionAlarm = rawValue["delayBLEDisconnectionAlarm"] as? TimeInterval ?? .seconds(180)
         isDelayBLEDisconnectionAlarmSupported = rawValue["isDelayBLEDisconnectionAlarmSupported"] as? Bool ?? false
         lastCalibration = rawValue["lastCalibration"] as? Date
-        calibrationMinThreshold = rawValue["calibrationMinThreshold"] as? UInt16 ?? 0
-        calibrationMaxThreshold = rawValue["calibrationMaxThreshold"] as? UInt16 ?? 0
         phaseStart = rawValue["phaseStart"] as? Date
         oneCalibrationPhaseExists = rawValue["oneCalibrationPhaseExists"] as? Bool ?? false
         isOneCalibrationPhase = rawValue["isOneCalibrationPhase"] as? Bool ?? false
         calibrationCount = rawValue["calibrationCount"] as? UInt16 ?? 0
-        lowGlucoseAlarmRepeatingDayTime = rawValue["lowGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
-        highGlucoseAlarmRepeatingDayTime = rawValue["highGlucoseAlarmRepeatingDayTime"] as? UInt8 ?? 0
-        lowGlucoseAlarmRepeatingNightTime = rawValue["lowGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
-        highGlucoseAlarmRepeatingNightTime = rawValue["highGlucoseAlarmRepeatingNightTime"] as? UInt8 ?? 0
         isGlucoseHighAlarmEnabled = rawValue["isGlucoseHighAlarmEnabled"] as? Bool ?? false
         lowGlucoseAlarmInMgDl = rawValue["lowGlucoseAlarmInMgDl"] as? UInt16 ?? 0
         highGlucoseAlarmInMgDl = rawValue["highGlucoseAlarmInMgDl"] as? UInt16 ?? 0
@@ -80,28 +70,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
         } else {
             calibrationPhase = .UNKNOWN
-        }
-
-        if let rawMorningCalibration = rawValue["morningCalibrationTime"] as? Data {
-            morningCalibrationTime = DateComponents(
-                timeZone: GMTTimezone,
-                hour: Int(rawMorningCalibration[0]),
-                minute: Int(rawMorningCalibration[1]),
-                second: 0
-            )
-        } else {
-            morningCalibrationTime = DateComponents()
-        }
-
-        if let rawEveningCalibration = rawValue["eveningCalibrationTime"] as? Data {
-            eveningCalibrationTime = DateComponents(
-                timeZone: GMTTimezone,
-                hour: Int(rawEveningCalibration[0]),
-                minute: Int(rawEveningCalibration[1]),
-                second: 0
-            )
-        } else {
-            eveningCalibrationTime = DateComponents()
         }
 
         if let rawSignalStrength = rawValue["signalStrength"] as? SignalStrength.RawValue {
@@ -136,7 +104,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["bleUUIDString"] = bleUUIDString
         value["isOnboarded"] = isOnboarded
         value["isSyncing"] = isSyncing
-        value["model"] = model
         value["version"] = version
         value["extVersion"] = extVersion
         value["communicationProtocol"] = communicationProtocol
@@ -146,29 +113,16 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["signalStrength"] = signalStrength.rawValue
         value["signalStrengthRaw"] = signalStrengthRaw
         value["batteryVoltage"] = batteryVoltage
-        value["algorithmFormatVersion"] = algorithmFormatVersion
         value["dayStartTime"] = dayStartTime
         value["nightStartTime"] = nightStartTime
-        value["warmingUpDuration"] = warmingUpDuration
-        value["sensorSamplingInterval"] = sensorSamplingInterval
         value["delayBLEDisconnectionAlarm"] = delayBLEDisconnectionAlarm
         value["isDelayBLEDisconnectionAlarmSupported"] = isDelayBLEDisconnectionAlarmSupported
-        value["morningCalibrationTime"] =
-            Data([UInt8(morningCalibrationTime.hour ?? 0), UInt8(morningCalibrationTime.minute ?? 0)])
-        value["eveningCalibrationTime"] =
-            Data([UInt8(eveningCalibrationTime.hour ?? 0), UInt8(eveningCalibrationTime.minute ?? 0)])
         value["lastCalibration"] = lastCalibration
-        value["calibrationMinThreshold"] = calibrationMinThreshold
-        value["calibrationMaxThreshold"] = calibrationMaxThreshold
         value["phaseStart"] = phaseStart
         value["oneCalibrationPhaseExists"] = oneCalibrationPhaseExists
         value["isOneCalibrationPhase"] = isOneCalibrationPhase
         value["calibrationCount"] = calibrationCount
         value["calibrationPhase"] = calibrationPhase.rawValue
-        value["lowGlucoseAlarmRepeatingDayTime"] = lowGlucoseAlarmRepeatingDayTime
-        value["highGlucoseAlarmRepeatingDayTime"] = highGlucoseAlarmRepeatingDayTime
-        value["lowGlucoseAlarmRepeatingNightTime"] = lowGlucoseAlarmRepeatingNightTime
-        value["highGlucoseAlarmRepeatingNightTime"] = highGlucoseAlarmRepeatingNightTime
         value["isGlucoseHighAlarmEnabled"] = isGlucoseHighAlarmEnabled
         value["lowGlucoseAlarmInMgDl"] = lowGlucoseAlarmInMgDl
         value["highGlucoseAlarmInMgDl"] = highGlucoseAlarmInMgDl
@@ -202,7 +156,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var bleNameString: String
     public var isOnboarded: Bool
     public var isSyncing: Bool
-    public var model: String?
     public var version: String?
     public var extVersion: String?
     public var communicationProtocol: String?
@@ -210,7 +163,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var mmaFeatures: UInt8
     public var batteryVoltage: Double
     public var batteryPercentage: BatteryLevel
-    public var algorithmFormatVersion: UInt16
     public var vibrateMode: Bool?
 
     public var signalStrength: SignalStrength
@@ -220,12 +172,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public var dayStartTime: Date
     public var nightStartTime: Date
-    public var warmingUpDuration: TimeInterval
-    public var sensorSamplingInterval: TimeInterval?
     public var delayBLEDisconnectionAlarm: TimeInterval
     public var isDelayBLEDisconnectionAlarmSupported: Bool
-    public var morningCalibrationTime: DateComponents
-    public var eveningCalibrationTime: DateComponents
 
     public var lastCalibration: Date?
     public var phaseStart: Date?
@@ -234,13 +182,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var isOneCalibrationPhase: Bool
     public var calibrationPhase: CalibrationPhase
     public var calibrationCount: UInt16
-    public var calibrationMinThreshold: UInt16
-    public var calibrationMaxThreshold: UInt16
-
-    public var lowGlucoseAlarmRepeatingDayTime: UInt8
-    public var highGlucoseAlarmRepeatingDayTime: UInt8
-    public var lowGlucoseAlarmRepeatingNightTime: UInt8
-    public var highGlucoseAlarmRepeatingNightTime: UInt8
 
     public var isGlucoseHighAlarmEnabled: Bool
     public var lowGlucoseAlarmInMgDl: UInt16
@@ -290,7 +231,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public var modelStr: String? {
         if is365 {
-            return LocalizedString("Eversense 365 - 1 year", comment: "Eversense 365 (1year)")
+            return LocalizedString("Eversense 365", comment: "Eversense 365 (1year)")
         }
 
         return LocalizedString("Eversense E3", comment: "Eversense E3")
