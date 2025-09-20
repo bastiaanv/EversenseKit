@@ -54,10 +54,7 @@ enum KeyVaultApi {
             return nil
         }
 
-        logger
-            .debug(
-                "Sending request to: \(baseUrl)/GetTxCertificate?\(message)"
-            )
+        logger.debug("Sending request to: \(baseUrl)/GetTxCertificate?\(message)")
         do {
             var request = URLRequest(url: url)
             request.httpMethod = "GET"

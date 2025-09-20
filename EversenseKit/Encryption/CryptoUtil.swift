@@ -84,73 +84,110 @@ class CryptoUtil {
         let privateKey = try P256.KeyAgreement.PrivateKey(derRepresentation: privateKey)
         let secret = try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
 
-        sessionKey = secret.hkdfDerivedSymmetricKey(using: SHA256.self, salt: salt, sharedInfo: Data(), outputByteCount: 16)
+        sessionKey = secret.hkdfDerivedSymmetricKey(using: SHA256.self, salt: Data(), sharedInfo: salt, outputByteCount: 16)
     }
 
     func encrypt(data: Data) -> Data {
         guard let sessionKey = sessionKey else {
-            CryptoUtil.logger.error("No sessionKey stored...")
+            CryptoUtil.logger.error("[encrypt] No sessionKey stored...")
             return Data()
         }
 
         guard let salt = salt else {
-            CryptoUtil.logger.error("No salt stored...")
+            CryptoUtil.logger.error("[encrypt] No salt stored...")
             return Data()
         }
 
         do {
-            CryptoUtil.logger.debug("RAW data: \(data.hexString())")
-
-            let count = Int64(messageCount)
+            let i = Int64(messageCount) & 0x3FFF
             messageCount += 1
             if messageCount == 0x3FFF {
                 messageCount = 1
             }
 
-            let s = BinaryOperations.dataFrom16Bits(value: UInt16(count & 0x3FFF) << 2)
-            let nonce = (salt.toInt64() & Int64(-16384)) | count
-
-            let key = sessionKey.withUnsafeBytes { Array(Data($0)) }
-            CryptoUtil.logger.debug("sessionKey: \(key.toHexString())")
-            CryptoUtil.logger.debug("salt: \(salt.toHexString())")
-            CryptoUtil.logger.debug("nonce: \(nonce.toData(length: 8).toHexString())")
-            CryptoUtil.logger.debug("s: \(s.toHexString())")
-
+            let s = BinaryOperations.dataFrom16Bits(value: UInt16(i) << 2)
             let aes = try AES(
-                key: key,
+                key: sessionKey.withUnsafeBytes { Array(Data($0)) },
                 blockMode: CCM(
-                    iv: [UInt8](nonce.toData(length: 8)),
+                    iv: [UInt8](CryptoUtil.generateEncryptionSalt(salt: salt, i: i)),
                     tagLength: 8,
-                    messageLength: data.count + 8,
+                    messageLength: data.count,
                     additionalAuthenticatedData: [UInt8](s)
                 ),
                 padding: .noPadding
             )
 
-            let result = try aes.encrypt([UInt8](data))
-
-//            let result = try AES.GCM.seal(
-//                data,
-//                using: sessionKey,
-//                nonce: AES.GCM.Nonce(data: nonce.toData(length: 8)),
-//                authenticating: s
-//            )
-
-//            guard let data = result.combined else {
-//                CryptoUtil.logger.debug("Empty encryption result...")
-//                return Data()
-//            }
-
             var output = Data()
             output.append(s)
-            output.append(Data(result))
+            output.append(Data(try aes.encrypt([UInt8](data))))
 
-            CryptoUtil.logger.debug("ENCODED data: \(output.hexString())")
             return output
         } catch {
             CryptoUtil.logger.error("Failed to encrypt data: \(error)")
             return Data()
         }
+    }
+
+    func decrypt(data: Data) -> Data {
+        guard let sessionKey = sessionKey else {
+            CryptoUtil.logger.error("[decrypt] No sessionKey stored...")
+            return Data()
+        }
+
+        guard let salt = salt else {
+            CryptoUtil.logger.error("[decrypt] No salt stored...")
+            return Data()
+        }
+
+        do {
+            let cipherText = Data(data.subdata(in: 2 ..< data.count))
+            let prefix = Data(data.subdata(in: 0 ..< 2))
+
+            let s = prefix.toInt64()
+            let i = (s >> 2) & 0x3FFF
+
+            CryptoUtil.logger.debug("cipherText: \(cipherText.toHexString())")
+            CryptoUtil.logger.debug("prefix: \(prefix.toHexString())")
+            CryptoUtil.logger.debug("i: \(i)")
+            CryptoUtil.logger.debug("s: \(s)")
+
+            let aes = try AES(
+                key: sessionKey.withUnsafeBytes { Array(Data($0)) },
+                blockMode: CCM(
+                    iv: [UInt8](CryptoUtil.generateEncryptionSalt(salt: salt, i: i)),
+                    tagLength: 8,
+                    messageLength: cipherText.count,
+                    additionalAuthenticatedData: [UInt8](prefix)
+                ),
+                padding: .noPadding
+            )
+
+            CryptoUtil.logger.debug("AES entity ready!")
+
+            return Data(
+                try aes.decrypt([UInt8](cipherText))
+            )
+        } catch {
+            if let error = error as? CryptoSwift.CCM.Error {
+                switch error {
+                case .fail:
+                    CryptoUtil.logger.error("[decrypt] fail....")
+                default:
+                    CryptoUtil.logger.error("[decrypt] Failed to decrypt data: \(error)")
+                }
+            } else {
+                CryptoUtil.logger.error("[general] Failed to decrypt data: \(error)")
+            }
+            return Data()
+        }
+    }
+
+    public static func generateEncryptionSalt(salt: Data, i: Int64) -> Data {
+        let temp1 = salt.withUnsafeBytes { $0.load(as: Int64.self).littleEndian }
+        let temp2 = temp1 & -16384 | i
+
+        CryptoUtil.logger.debug("generateEncryptionSalt: \(temp2.toData(length: 8).toHexString())")
+        return temp2.toData(length: 8)
     }
 
     private static func getPublicKey() -> P256.KeyAgreement.PublicKey? {

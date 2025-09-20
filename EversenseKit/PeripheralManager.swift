@@ -213,8 +213,9 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         logger.debug("Received data: \(data.hexString())")
+        let isE3 = cgmManager.state.security == .none
 
-        if cgmManager.state.security != .none {
+        if !isE3 {
             logger.debug("Stripping header from received data")
             data = data.subdata(in: 3 ..< data.count)
         }
@@ -243,7 +244,18 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         // Parse normal packet
-        let isE3 = cgmManager.state.security == .none
+        if !isE3, data[0] != PacketIds.authenticateV2ResponseId.rawValue {
+            logger.debug("Decrypting payload...")
+
+            data = CryptoUtil.shared.decrypt(data: data)
+            guard !data.isEmpty else {
+                logger.error("Failed to decrypt payload")
+                return
+            }
+
+            logger.debug("Decrypted payload: \(data.hexString())")
+        }
+
         guard let packet = self.packet, packet.checkPacket(data: data, doChecksum: isE3) else {
             logger.warning("Received invalid response, invalid response code or checksum failed - data: \(data.hexString())")
             return
@@ -432,16 +444,9 @@ extension PeripheralManager {
                 return
             }
 
-            let ephemPublic = ephemPublicKey.subdata(in: 27 ..< publicKey.count)
-            
-            logger.debug("ClientID - length: \(clientId.count), data: \(clientId.hexString())")
-            logger.debug("ephemPublicKey-  length: \(ephemPublic.count), data: \(ephemPublic.hexString())")
-            logger.debug("salt - length: \(salt.count), data: \(salt.hexString())")
-            logger.debug("digitalSignature - length: \(digitalSignature.count), data: \(digitalSignature.hexString())")
-            
             var startSecret = Data([128, 0])
             startSecret.append(clientId)
-            startSecret.append(ephemPublic)
+            startSecret.append(ephemPublicKey.subdata(in: 27 ..< publicKey.count))
             startSecret.append(salt)
             startSecret.append(digitalSignature)
 

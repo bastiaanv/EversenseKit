@@ -20,6 +20,8 @@ enum AuthenticationApi {
                 "password=\(password)"
             ].joined(separator: "&")
 
+            logger.debug("Logging in to eversensedms API...")
+
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -34,6 +36,7 @@ enum AuthenticationApi {
                 throw NSError(domain: message, code: -1)
             }
 
+            logger.debug("Login completed!")
             return try! JSONDecoder().decode(AuthResponse.self, from: data)
         } catch {
             logger.error("Failed to do request: \(error.localizedDescription)")

@@ -46,4 +46,14 @@ struct CryptoUtilTests {
         let data = x.toData(length: 8)
         #expect(data == Data(hexString: "01C09F6B558126B9"))
     }
+
+    @Test func generateEncryptionSalt() async throws {
+        let salt = Data(hexString: "a3fbb86fbf38dab8")
+        guard let salt = salt else {
+            throw NSError(domain: "EMPTY salt", code: 0, userInfo: nil)
+        }
+
+        let result = CryptoUtil.generateEncryptionSalt(salt: salt, i: 1)
+        #expect(Data(hexString: "01c0b86fbf38dab8") == result)
+    }
 }
