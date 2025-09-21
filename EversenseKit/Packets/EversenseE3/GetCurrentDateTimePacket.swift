@@ -10,8 +10,12 @@ extension EversenseE3 {
     class GetCurrentDateTimePacket: BasePacket {
         typealias T = GetCurrentDateTimeResponse
 
-        var response: PacketIds {
-            PacketIds.readCurrentTransmitterDateAndTimeResponseId
+        var responseType: UInt8 {
+            PacketIds.readCurrentTransmitterDateAndTimeResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

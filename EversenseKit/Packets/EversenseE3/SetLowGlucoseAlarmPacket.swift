@@ -4,8 +4,12 @@ extension EversenseE3 {
     class SetLowGlucoseAlarmPacket: BasePacket {
         typealias T = SetLowGlucoseAlarmResponse
 
-        var response: PacketIds {
-            PacketIds.readTwoByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.readTwoByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         let value: UInt16

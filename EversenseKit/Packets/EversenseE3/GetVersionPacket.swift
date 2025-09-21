@@ -10,8 +10,12 @@ extension EversenseE3 {
     class GetVersionPacket: BasePacket {
         typealias T = GetVersionResponse
 
-        var response: PacketIds {
-            PacketIds.readFourByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.readFourByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

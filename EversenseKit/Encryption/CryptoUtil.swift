@@ -57,7 +57,6 @@ class CryptoUtil {
         data.append(salt)
 
         let digitalSignature = try privateKey.signature(for: data).derRepresentation
-        logger.debug("RAW signature: \(digitalSignature.hexString())")
 
         var actualSignature = Data()
         let nodeCollection = try DER.parse([UInt8](digitalSignature))
@@ -65,8 +64,6 @@ class CryptoUtil {
             actualSignature.append(contentsOf: try ArraySlice(derEncoded: &nodes))
             actualSignature.append(contentsOf: try ArraySlice(derEncoded: &nodes))
         }
-
-        logger.debug("DECODED signature: \(actualSignature.hexString())")
 
         return (ephemPrivateKey.derRepresentation, ephemPublicKey, salt, actualSignature)
     }
@@ -119,7 +116,9 @@ class CryptoUtil {
 
             var output = Data()
             output.append(s)
-            output.append(Data(try aes.encrypt([UInt8](data))))
+            output.append(
+                Data(try aes.encrypt([UInt8](data)))
+            )
 
             return output
         } catch {
@@ -142,42 +141,24 @@ class CryptoUtil {
         do {
             let cipherText = Data(data.subdata(in: 2 ..< data.count))
             let prefix = Data(data.subdata(in: 0 ..< 2))
-
-            let s = prefix.toInt64()
-            let i = (s >> 2) & 0x3FFF
-
-            CryptoUtil.logger.debug("cipherText: \(cipherText.toHexString())")
-            CryptoUtil.logger.debug("prefix: \(prefix.toHexString())")
-            CryptoUtil.logger.debug("i: \(i)")
-            CryptoUtil.logger.debug("s: \(s)")
+            let i = (prefix.toInt64() >> 2) & 0x3FFF
 
             let aes = try AES(
                 key: sessionKey.withUnsafeBytes { Array(Data($0)) },
                 blockMode: CCM(
                     iv: [UInt8](CryptoUtil.generateEncryptionSalt(salt: salt, i: i)),
                     tagLength: 8,
-                    messageLength: cipherText.count,
+                    messageLength: cipherText.count - 8,
                     additionalAuthenticatedData: [UInt8](prefix)
                 ),
                 padding: .noPadding
             )
 
-            CryptoUtil.logger.debug("AES entity ready!")
-
             return Data(
                 try aes.decrypt([UInt8](cipherText))
             )
         } catch {
-            if let error = error as? CryptoSwift.CCM.Error {
-                switch error {
-                case .fail:
-                    CryptoUtil.logger.error("[decrypt] fail....")
-                default:
-                    CryptoUtil.logger.error("[decrypt] Failed to decrypt data: \(error)")
-                }
-            } else {
-                CryptoUtil.logger.error("[general] Failed to decrypt data: \(error)")
-            }
+            CryptoUtil.logger.error("[general] Failed to decrypt data: \(error)")
             return Data()
         }
     }
@@ -186,7 +167,6 @@ class CryptoUtil {
         let temp1 = salt.withUnsafeBytes { $0.load(as: Int64.self).littleEndian }
         let temp2 = temp1 & -16384 | i
 
-        CryptoUtil.logger.debug("generateEncryptionSalt: \(temp2.toData(length: 8).toHexString())")
         return temp2.toData(length: 8)
     }
 

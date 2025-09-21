@@ -5,8 +5,12 @@ extension EversenseE3 {
         typealias T = SetAppVersionResponse
 
         private let appVersion: Data
-        var response: PacketIds {
-            PacketIds.writeFourByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.writeFourByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         init(appVersion: Data) {

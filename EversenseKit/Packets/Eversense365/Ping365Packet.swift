@@ -4,13 +4,16 @@ extension Eversense365 {
     class PingPacket: BasePacket {
         typealias T = PingResponse
 
-        var response: PacketIds {
-            PacketIds.pingResponseId
+        var responseType: UInt8 {
+            PacketIds.ReadResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            ReadIds.Ping.rawValue
         }
 
         func getRequestData() -> Data {
-            let data = Data([0x01])
-
+            let data = Data([PacketIds.ReadCommandId.rawValue, ReadIds.Ping.rawValue])
             return CryptoUtil.shared.encrypt(data: data)
         }
 

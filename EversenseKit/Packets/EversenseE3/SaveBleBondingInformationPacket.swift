@@ -4,8 +4,12 @@ extension EversenseE3 {
     class SaveBleBondingInformationPacket: BasePacket {
         typealias T = SaveBleBondingInformationResponse
 
-        var response: PacketIds {
-            PacketIds.saveBLEBondingInformationResponseId
+        var responseType: UInt8 {
+            PacketIds.saveBLEBondingInformationResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

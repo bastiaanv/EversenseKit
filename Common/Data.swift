@@ -25,6 +25,21 @@ extension Data {
             .replacingOccurrences(of: "/", with: "_")
     }
 
+    func toUtf8String() -> String {
+        var output = ""
+
+        for byte in self {
+            if byte == 0 {
+                // Skip empty characters
+                continue
+            }
+
+            output.append(String(byte.char))
+        }
+
+        return output
+    }
+
     static func randomSecure(length: Int) -> Data {
         var randomNumberGenerator = SecRandomNumberGenerator()
         return Data((0 ..< length).map { _ in UInt8.random(in: UInt8.min ... UInt8.max, using: &randomNumberGenerator) })
@@ -78,5 +93,11 @@ extension Int64 {
         }
 
         return output
+    }
+}
+
+extension UInt8 {
+    var char: Character {
+        Character(UnicodeScalar(self))
     }
 }

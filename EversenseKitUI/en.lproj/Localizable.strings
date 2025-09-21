@@ -69,3 +69,6 @@
 
 /* go to transmitter settings */
 "Transmitter settings" = "Transmitter settings";
+
+/* transmitter battery level */
+"Battery percentage" = "Battery percentage";

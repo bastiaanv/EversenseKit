@@ -4,8 +4,12 @@ extension EversenseE3 {
     class PingPacket: BasePacket {
         typealias T = PingResponse
 
-        var response: PacketIds {
-            PacketIds.pingResponseId
+        var responseType: UInt8 {
+            PacketIds.pingResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

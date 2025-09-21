@@ -12,8 +12,12 @@ extension EversenseE3 {
 
         private let STATUS_FLAG_COUNT = 13
 
-        var response: PacketIds {
-            PacketIds.readSensorGlucoseAlertsAndStatusResponseId
+        var responseType: UInt8 {
+            PacketIds.readSensorGlucoseAlertsAndStatusResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

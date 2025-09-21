@@ -10,8 +10,12 @@ extension EversenseE3 {
     class GetLastCalibrationDatePacket: BasePacket {
         typealias T = GetLastCalibrationDateResponse
 
-        var response: PacketIds {
-            PacketIds.readTwoByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.readTwoByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

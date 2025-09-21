@@ -9,8 +9,12 @@ extension EversenseE3 {
             self.dayStartTime = dayStartTime
         }
 
-        var response: PacketIds {
-            PacketIds.writeTwoByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.writeTwoByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

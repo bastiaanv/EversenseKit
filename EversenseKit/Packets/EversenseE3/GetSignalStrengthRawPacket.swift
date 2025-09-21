@@ -12,8 +12,12 @@ extension EversenseE3 {
     class GetSignalStrengthRawPacket: BasePacket {
         typealias T = GetSignalStrengthRawResponse
 
-        var response: PacketIds {
-            PacketIds.readTwoByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.readTwoByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

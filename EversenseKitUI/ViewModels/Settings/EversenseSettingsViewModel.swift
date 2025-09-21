@@ -12,6 +12,7 @@ class EversenseSettingsViewModel: ObservableObject {
     @Published var nextCalibrationProcess: Double = 0
     @Published var nextCalibrationHours: Double = 0
     @Published var nextCalibrationMinutes: Double = 0
+    @Published var batteryLevel: String = "0%"
     @Published var signalStrength: String = ""
     @Published var connectionStatus: String = ""
 
@@ -55,6 +56,7 @@ extension EversenseSettingsViewModel: StateObserver {
         )
 
         signalStrength = state.signalStrength.title
+        batteryLevel = "\(state.batteryPercentage)%"
 
         if let value = state.recentGlucoseInMgDl {
             lastMeasurement = HKQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value))

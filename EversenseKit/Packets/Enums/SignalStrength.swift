@@ -56,4 +56,28 @@ public enum SignalStrength: UInt8 {
             return LocalizedString("Excellent", comment: "signalStrength excellent")
         }
     }
+
+    static func from365(value: Int) -> SignalStrength {
+        if value >= 75 {
+            return SignalStrength.Excellent
+        }
+
+        if value >= 48 {
+            return SignalStrength.Good
+        }
+
+        if value >= 30 {
+            return SignalStrength.Low
+        }
+
+        if value >= 28 {
+            return SignalStrength.VeryLow
+        }
+
+        if value >= 25 {
+            return SignalStrength.Poor
+        }
+
+        return SignalStrength.NoSignal
+    }
 }

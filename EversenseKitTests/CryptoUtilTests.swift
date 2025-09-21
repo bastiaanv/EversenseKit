@@ -56,4 +56,10 @@ struct CryptoUtilTests {
         let result = CryptoUtil.generateEncryptionSalt(salt: salt, i: 1)
         #expect(Data(hexString: "01c0b86fbf38dab8") == result)
     }
+
+    @Test func testUnix() async throws {
+        let x = Date().toUnix2000()
+        let x2 = x.toHexString()
+        print(x2)
+    }
 }

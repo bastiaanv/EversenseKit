@@ -12,8 +12,12 @@ extension EversenseE3 {
     class GetGlucoseDataPacket: BasePacket {
         typealias T = GetGlucoseDataResponse
 
-        var response: PacketIds {
-            PacketIds.readSensorGlucoseResponseId
+        var responseType: UInt8 {
+            PacketIds.readSensorGlucoseResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

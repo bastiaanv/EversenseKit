@@ -10,8 +10,12 @@ extension EversenseE3 {
     class GetMmaFeaturesPacket: BasePacket {
         typealias T = GetMmaFeaturesResponse
 
-        var response: PacketIds {
-            PacketIds.readSingleByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.readSingleByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         func getRequestData() -> Data {

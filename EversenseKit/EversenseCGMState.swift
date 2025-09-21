@@ -31,7 +31,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         communicationProtocol = rawValue["communicationProtocol"] as? String
         mmaFeatures = rawValue["mmaFeatures"] as? UInt8 ?? 0
         vibrateMode = rawValue["vibrateMode"] as? Bool
-        batteryVoltage = rawValue["batteryVoltage"] as? Double ?? 0
         dayStartTime = rawValue["dayStartTime"] as? Date ?? Date.defaultDayStartTime
         nightStartTime = rawValue["nightStartTime"] as? Date ?? Date.defaultNightStartTime
         delayBLEDisconnectionAlarm = rawValue["delayBLEDisconnectionAlarm"] as? TimeInterval ?? .seconds(180)
@@ -59,12 +58,17 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         tempThresholdModeChange = rawValue["tempThresholdModeChange"] as? UInt8 ?? 52
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
+        batteryPercentage = rawValue["batteryPercentage"] as? Int ?? -1
 
         username = rawValue["username"] as? String
         password = rawValue["password"] as? String
         accessToken = rawValue["accessToken"] as? String
         accessTokenExpiration = rawValue["accessTokenExpiration"] as? Date
-        fleetKey = rawValue["fleetKey"] as? String
+        publicKeyV2 = rawValue["publicKeyV2"] as? Data
+        privateKeyV2 = rawValue["privateKeyV2"] as? Data
+        clientIdV2 = rawValue["clientIdV2"] as? Data
+        certificateV2 = rawValue["certificateV2"] as? String
+        fleetKeyPublicKeyV2 = rawValue["fleetKeyPublicKeyV2"] as? Data
 
         if let rawCalibrationPhase = rawValue["calibrationPhase"] as? CalibrationPhase.RawValue {
             calibrationPhase = CalibrationPhase(rawValue: rawCalibrationPhase) ?? .UNKNOWN
@@ -76,12 +80,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
             signalStrength = SignalStrength(rawValue: rawSignalStrength) ?? .NoSignal
         } else {
             signalStrength = .NoSignal
-        }
-
-        if let rawBatteryPercentage = rawValue["batteryPercentage"] as? BatteryLevel.RawValue {
-            batteryPercentage = BatteryLevel(rawValue: rawBatteryPercentage) ?? .Percentage0
-        } else {
-            batteryPercentage = .Percentage0
         }
 
         if let rawRecentGlucoseTrend = rawValue["recentGlucoseTrend"] as? GlucoseTrend.RawValue {
@@ -109,10 +107,9 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["communicationProtocol"] = communicationProtocol
         value["mmaFeatures"] = mmaFeatures
         value["vibrateMode"] = vibrateMode
-        value["batteryPercentage"] = batteryPercentage.rawValue
+        value["batteryPercentage"] = batteryPercentage
         value["signalStrength"] = signalStrength.rawValue
         value["signalStrengthRaw"] = signalStrengthRaw
-        value["batteryVoltage"] = batteryVoltage
         value["dayStartTime"] = dayStartTime
         value["nightStartTime"] = nightStartTime
         value["delayBLEDisconnectionAlarm"] = delayBLEDisconnectionAlarm
@@ -146,7 +143,11 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["password"] = password
         value["accessToken"] = accessToken
         value["accessTokenExpiration"] = accessTokenExpiration
-        value["fleetKey"] = fleetKey
+        value["publicKeyV2"] = publicKeyV2
+        value["privateKeyV2"] = privateKeyV2
+        value["clientIdV2"] = clientIdV2
+        value["certificateV2"] = certificateV2
+        value["fleetKeyPublicKeyV2"] = fleetKeyPublicKeyV2
 
         return value
     }
@@ -161,8 +162,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var communicationProtocol: String?
 
     public var mmaFeatures: UInt8
-    public var batteryVoltage: Double
-    public var batteryPercentage: BatteryLevel
+    public var batteryPercentage: Int
     public var vibrateMode: Bool?
 
     public var signalStrength: SignalStrength
@@ -213,11 +213,9 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var accessToken: String?
     public var accessTokenExpiration: Date?
 
-    public var fleetKey: String?
     public var publicKeyV2: Data?
     public var privateKeyV2: Data?
     public var clientIdV2: Data?
-    public var noneV2: Data?
     public var certificateV2: String?
     public var fleetKeyPublicKeyV2: Data?
 

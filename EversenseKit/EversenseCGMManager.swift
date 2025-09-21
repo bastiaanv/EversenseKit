@@ -133,6 +133,11 @@ extension EversenseCGMManager {
             return
         }
 
+        guard let peripheralManager = bluetoothManager.peripheralManager else {
+            logger.error("No peripheralManager")
+            return
+        }
+
         bluetoothManager.ensureConnected { error in
             if let internalError = error {
                 self.logger.error("Failed to connect to CGM: \(internalError.describe)")
@@ -167,14 +172,11 @@ extension EversenseCGMManager {
                         )
                     ]))
 
-                    if let peripheralManager = self.bluetoothManager.peripheralManager {
-                        await TransmitterStateSync.fullSyncE3(
-                            peripheralManager: peripheralManager,
-                            cgmManager: self
-                        )
-                    }
+                    await EversenseE3.fullSync(peripheralManager: peripheralManager, cgmManager: self)
                 } else {
                     self.logger.error("TODO: Implement 365 heartbeath operation")
+
+                    await Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
                 }
 
             } catch {

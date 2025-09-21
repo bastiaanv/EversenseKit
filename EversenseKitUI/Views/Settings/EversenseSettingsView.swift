@@ -104,6 +104,10 @@ struct EversenseSettingsView: View {
                     title: LocalizedString("Signal strength", comment: "transmitter implant signal strength"),
                     value: viewModel.signalStrength
                 )
+                SectionItem(
+                    title: LocalizedString("Battery percentage", comment: "transmitter battery level"),
+                    value: viewModel.batteryLevel
+                )
                 Button(action: viewModel.toTransmitterSettings) {
                     HStack {
                         Text(LocalizedString("Transmitter settings", comment: "go to transmitter settings"))

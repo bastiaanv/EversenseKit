@@ -4,8 +4,12 @@ extension EversenseE3 {
     class SetRateFallingThresholdPacket: BasePacket {
         typealias T = SetRateFallingThresholdResponse
 
-        var response: PacketIds {
-            PacketIds.writeSingleByteSerialFlashRegisterResponseId
+        var responseType: UInt8 {
+            PacketIds.writeSingleByteSerialFlashRegisterResponseId.rawValue
+        }
+
+        var responseId: UInt8? {
+            nil
         }
 
         let value: UInt8

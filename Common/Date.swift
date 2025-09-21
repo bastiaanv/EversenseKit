@@ -1,6 +1,8 @@
 let GMTTimezone = TimeZone(abbreviation: "GMT") ?? TimeZone.current
 let currentTimezone = TimeZone.current
 
+let UNIX_2000 = TimeInterval.milliseconds(946_684_800_000)
+
 extension Date {
     func toGmt() -> Date {
         let delta = TimeInterval(GMTTimezone.secondsFromGMT(for: self) - currentTimezone.secondsFromGMT(for: self))
@@ -10,6 +12,11 @@ extension Date {
     func toLocal() -> Date {
         let delta = TimeInterval(currentTimezone.secondsFromGMT(for: self) - GMTTimezone.secondsFromGMT(for: self))
         return addingTimeInterval(delta)
+    }
+
+    func toUnix2000() -> Data {
+        let result = Int64(timeIntervalSince1970 - UNIX_2000) * 1024
+        return result.toData(length: 8)
     }
 
     static func nowWithTimezone() -> Date {
@@ -37,6 +44,10 @@ extension Date {
         full.second = time.second
 
         return Calendar.current.date(from: full)!.toLocal()
+    }
+
+    static func fromUnix2000(data: Data) -> Date {
+        Date(timeIntervalSince1970: UNIX_2000 + .milliseconds(Double(data.toInt64() * 1024)))
     }
 
     static var defaultDayStartTime: Date {
