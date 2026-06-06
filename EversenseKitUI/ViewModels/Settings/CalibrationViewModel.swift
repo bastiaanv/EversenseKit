@@ -1,4 +1,5 @@
 import HealthKit
+import LoopAlgorithm
 import SwiftUI
 
 class CalibrationViewModel: ObservableObject {
@@ -13,9 +14,9 @@ class CalibrationViewModel: ObservableObject {
     private let logger = EversenseLogger(category: "CalibrationViewModel")
     private let cgmManager: EversenseCGMManager?
     private let done: () -> Void
-    private let unit: HKUnit
+    private let unit: LoopUnit
     public let allowCalibrations = FeatureFlags.ALLOW_CALIBRATION
-    init(cgmManager: EversenseCGMManager?, _ unit: HKUnit, _ done: @escaping () -> Void) {
+    init(cgmManager: EversenseCGMManager?, _ unit: LoopUnit, _ done: @escaping () -> Void) {
         self.cgmManager = cgmManager
         self.unit = unit
         self.done = done
@@ -33,7 +34,7 @@ class CalibrationViewModel: ObservableObject {
 
         var glucose = glucose
         if unit == .millimolesPerLiter {
-            let mgdl = HKQuantity(unit: unit, doubleValue: Double(glucose) / 10).doubleValue(for: .milligramsPerDeciliter)
+            let mgdl = LoopQuantity(unit: unit, doubleValue: Double(glucose) / 10).doubleValue(for: .milligramsPerDeciliter)
             glucose = UInt16(mgdl)
         }
 

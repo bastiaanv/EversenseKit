@@ -1,4 +1,5 @@
 import HealthKit
+import LoopAlgorithm
 import SwiftUI
 
 struct ActiveAlarmItem: Identifiable {
@@ -10,7 +11,7 @@ struct ActiveAlarmItem: Identifiable {
 
 class EversenseSettingsViewModel: ObservableObject {
     @Published var transmitterModel: String = ""
-    @Published var lastMeasurement = HKQuantity(unit: .milligramsPerDeciliter, doubleValue: 0)
+    @Published var lastMeasurement = LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: 0)
     @Published var lastMeasurementDatetime: String = ""
     @Published var lastCalibrationTime: String = ""
     @Published var lastCalibrationDate: String = ""
@@ -125,7 +126,7 @@ extension EversenseSettingsViewModel: StateObserver {
         }
 
         if let value = state.recentGlucoseInMgDl {
-            lastMeasurement = HKQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value))
+            lastMeasurement = LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value))
         }
 
         if let value = state.recentGlucoseDateTime {

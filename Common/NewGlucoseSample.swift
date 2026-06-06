@@ -1,11 +1,12 @@
 import HealthKit
+import LoopAlgorithm
 import LoopKit
 
 extension NewGlucoseSample {
     init(cgmManager: EversenseCGMManager, value: UInt16, trend: GlucoseTrend?, dateTime: Date) {
         self.init(
             date: dateTime,
-            quantity: HKQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value)),
+            quantity: LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: Double(value)),
             condition: nil,
             trend: trend,
             trendRate: nil,

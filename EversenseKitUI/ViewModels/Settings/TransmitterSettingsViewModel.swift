@@ -1,4 +1,5 @@
 import HealthKit
+import LoopAlgorithm
 import SwiftUI
 
 class TransmitterSettingsViewModel: ObservableObject {
@@ -36,9 +37,9 @@ class TransmitterSettingsViewModel: ObservableObject {
     public let repeatHighAllowedOptions: [Double] = (1 ... 33).map { TimeInterval(minutes: Double($0 * 5 + 15)) }
 
     private let cgmManager: EversenseCGMManager?
-    private let unit: HKUnit
+    private let unit: LoopUnit
     private let formatString: NSString
-    init(cgmManager: EversenseCGMManager?, unit: HKUnit) {
+    init(cgmManager: EversenseCGMManager?, unit: LoopUnit) {
         self.cgmManager = cgmManager
         self.unit = unit
         formatString = unit == .milligramsPerDeciliter ? "%.1f mg/dl/min" : "%.2f mmol/L/min"
@@ -70,12 +71,12 @@ class TransmitterSettingsViewModel: ObservableObject {
         repeatHigh = cgmManager.state.repeatHighTimeout
     }
 
-    func toHkQuantity(_ value: Double) -> HKQuantity {
-        HKQuantity(unit: .milligramsPerDeciliter, doubleValue: value)
+    func toHkQuantity(_ value: Double) -> LoopQuantity {
+        LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: value)
     }
 
     func toRateFormatted(_ value: Double) -> String {
-        let value = HKQuantity(unit: .milligramsPerDeciliter, doubleValue: value)
+        let value = LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: value)
         return NSString(format: formatString, value.doubleValue(for: unit)) as String
     }
 

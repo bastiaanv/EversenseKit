@@ -6,7 +6,20 @@ protocol StateObserver: AnyObject {
 }
 
 public class EversenseCGMManager: CGMManager {
-    public static var pluginIdentifier: String = "EversenseKit"
+    // Pluggable conformance: must be an instance property.
+    public let pluginIdentifier: String = "EversenseKit"
+
+    // DeviceManager conformance.
+    public var inSignalLoss: Bool {
+        guard let lastSynced = state.lastSynced else { return true }
+        return Date().timeIntervalSince(lastSynced) > .minutes(15)
+    }
+
+    public var isInoperable: Bool {
+        // EversenseKit reports connection/sensor state via state.connectionStatus;
+        // we treat anything other than .connected as not-inoperable but stale.
+        false
+    }
 
     private let logger = EversenseLogger(category: "CGMManager")
     internal let bluetoothManager: BluetoothManager
@@ -114,8 +127,8 @@ public class EversenseCGMManager: CGMManager {
         stateObservers.removeElement(state)
     }
 
-    public func acknowledgeAlert(alertIdentifier _: LoopKit.Alert.AlertIdentifier, completion: @escaping ((any Error)?) -> Void) {
-        completion(nil)
+    public func acknowledgeAlert(alertIdentifier _: LoopKit.Alert.AlertIdentifier) async throws {
+        // No-op: EversenseKit doesn't surface its own LoopKit alerts.
     }
 
     public func getSoundBaseURL() -> URL? {

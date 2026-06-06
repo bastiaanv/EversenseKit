@@ -1,4 +1,5 @@
 import HealthKit
+import LoopAlgorithm
 import LoopKitUI
 import SwiftUI
 
@@ -61,7 +62,7 @@ struct CalibrationView: View {
     }
 
     private func formatGlucose(_ value: UInt16) -> String {
-        let quantity = HKQuantity(
+        let quantity = LoopQuantity(
             unit: isMgDl ? .milligramsPerDeciliter : .millimolesPerLiter,
             doubleValue: isMgDl ? Double(value) : Double(value) / 10
         )
