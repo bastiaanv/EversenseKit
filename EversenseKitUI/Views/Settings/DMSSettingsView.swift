@@ -65,11 +65,12 @@ struct DMSSettingsView: View {
                         }
 
                         if edittingBatchSize {
-                            ResizeablePicker(
-                                selection: $viewModel.batchSize,
-                                data: viewModel.batchSizeOptions,
-                                formatter: { formatBatchSize($0) }
-                            )
+                            Picker(selection: $viewModel.batchSize) {
+                                ForEach(viewModel.batchSizeOptions, id: \.self) { item in
+                                    Text(formatBatchSize(item))
+                                }
+                            } label: { EmptyView() }
+                            .pickerStyle(.wheel)
                         }
                     }
 

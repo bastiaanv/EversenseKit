@@ -136,11 +136,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if pickerRepeatLow {
-                        ResizeablePicker(
-                            selection: $viewModel.repeatLow,
-                            data: viewModel.repeatLowAllowedOptions,
-                            formatter: { timeFormatter($0) }
-                        )
+                        Picker(selection: $viewModel.repeatLow) {
+                            ForEach(viewModel.repeatLowAllowedOptions, id: \.self) { item in
+                                Text(timeFormatter(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
 
                     HStack {
@@ -155,11 +156,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if pickerRepeatHigh {
-                        ResizeablePicker(
-                            selection: $viewModel.repeatHigh,
-                            data: viewModel.repeatHighAllowedOptions,
-                            formatter: { timeFormatter($0) }
-                        )
+                        Picker(selection: $viewModel.repeatHigh) {
+                            ForEach(viewModel.repeatHighAllowedOptions, id: \.self) { item in
+                                Text(timeFormatter(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
                 } footer: {
                     Text(
@@ -183,11 +185,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if pickerBleDisconnect {
-                        ResizeablePicker(
-                            selection: $viewModel.bleDisconnect,
-                            data: viewModel.bleDisconnectAllowedOptions,
-                            formatter: { timeFormatter($0) }
-                        )
+                        Picker(selection: $viewModel.bleDisconnect) {
+                            ForEach(viewModel.bleDisconnectAllowedOptions, id: \.self) { item in
+                                Text(timeFormatter(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
                 } footer: {
                     Text(
@@ -262,11 +265,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if statePicker.wrappedValue {
-                        ResizeablePicker(
-                            selection: valueValue,
-                            data: allowedOptions,
-                            formatter: { viewModel.toRateFormatted($0) }
-                        )
+                        Picker(selection: valueValue) {
+                            ForEach(allowedOptions, id: \.self) { item in
+                                Text(viewModel.toRateFormatted(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
                 }
             }
@@ -305,11 +309,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if statePicker.wrappedValue {
-                        ResizeablePicker(
-                            selection: valueValue,
-                            data: allowedOptions,
-                            formatter: { displayGlucosePreference.format(viewModel.toHkQuantity($0)) }
-                        )
+                        Picker(selection: valueValue) {
+                            ForEach(allowedOptions, id: \.self) { item in
+                                Text(displayGlucosePreference.format(viewModel.toHkQuantity(item)))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
                 }
             }
@@ -352,11 +357,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if stateTimePicker.wrappedValue {
-                        ResizeablePicker(
-                            selection: valueTime,
-                            data: allowedTimeOptions,
-                            formatter: { timeFormatter($0) }
-                        )
+                        Picker(selection: valueTime) {
+                            ForEach(allowedTimeOptions, id: \.self) { item in
+                                Text(timeFormatter(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
 
                     HStack {
@@ -371,11 +377,12 @@ struct TransmitterSettingsView: View {
                     }
 
                     if stateThresholdPicker.wrappedValue {
-                        ResizeablePicker(
-                            selection: valueThreshold,
-                            data: allowedThresholdOptions,
-                            formatter: { displayGlucosePreference.format(viewModel.toHkQuantity($0)) }
-                        )
+                        Picker(selection: valueThreshold) {
+                            ForEach(allowedThresholdOptions, id: \.self) { item in
+                                Text(displayGlucosePreference.format(viewModel.toHkQuantity(item)))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                     }
                 }
             }
@@ -407,11 +414,12 @@ struct TransmitterSettingsView: View {
                 }
 
                 if statePicker.wrappedValue {
-                    ResizeablePicker(
-                        selection: valueValue,
-                        data: allowedOptions,
-                        formatter: { displayGlucosePreference.format(viewModel.toHkQuantity($0)) }
-                    )
+                    Picker(selection: valueValue) {
+                        ForEach(allowedOptions, id: \.self) { item in
+                            Text(displayGlucosePreference.format(viewModel.toHkQuantity(item)))
+                        }
+                    } label: { EmptyView() }
+                    .pickerStyle(.wheel)
                 }
             }
         } footer: {

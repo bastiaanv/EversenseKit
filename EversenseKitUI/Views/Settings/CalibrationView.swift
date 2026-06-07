@@ -35,11 +35,12 @@ struct CalibrationView: View {
                     .buttonStyle(.plain)
 
                     if isEdittingGlucose {
-                        ResizeablePicker(
-                            selection: $viewModel.glucose,
-                            data: isMgDl ? viewModel.allowedGlucoseValuesMgDl : viewModel.allowedGlucoseValuesMmolL,
-                            formatter: { formatGlucose($0) }
-                        )
+                        Picker(selection: $viewModel.glucose) {
+                            ForEach(isMgDl ? viewModel.allowedGlucoseValuesMgDl : viewModel.allowedGlucoseValuesMmolL, id: \.self) { item in
+                                Text(formatGlucose(item))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.wheel)
                         .padding(.horizontal)
                     }
                 }
