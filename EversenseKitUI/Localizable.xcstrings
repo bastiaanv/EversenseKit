@@ -1564,7 +1564,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sunteți sigur că doriți să eliminați acest follower din partajarea dvs. Eversense NOW?"
+            "value" : "Sunteți sigur că doriți să eliminați acest urmăritor din partajarea dumneavoastră Eversense NOW?"
           }
         },
         "ru" : {
@@ -1726,7 +1726,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sunteți sigur că doriți să nu mai utilizați Eversense CGM?"
+            "value" : "Sunteți sigur că doriți să nu mai utilizați senzorul de glicemie Eversense?"
           }
         },
         "ru" : {
@@ -7396,7 +7396,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ștergeți CGM"
+            "value" : "Ștergeți senzorul de glicemie"
           }
         },
         "ru" : {
@@ -15490,7 +15490,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invitați follower"
+            "value" : "Invitați urmăritorul"
           }
         },
         "ru" : {
@@ -23266,7 +23266,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Îndepărtați CGM"
+            "value" : "Îndepărtați senzorul de glicemie"
           }
         },
         "ru" : {
@@ -26986,7 +26986,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Suspicios"
+            "value" : "Îndoielnic"
           }
         },
         "ru" : {
@@ -27148,7 +27148,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Înțepare suspicioasă în deget"
+            "value" : "Testare îndoielnică din sânge"
           }
         },
         "ru" : {
@@ -31032,7 +31032,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Setări emițător"
+            "value" : "Setări transmițător"
           }
         },
         "ru" : {

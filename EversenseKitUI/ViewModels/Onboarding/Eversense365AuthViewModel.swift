@@ -6,11 +6,7 @@ class Eversense365AuthViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var error: String = ""
     @Published var isLoading: Bool = false
-    @Published var apiZone: EversenseApiZone = .US {
-        didSet {
-            cgmManager.state.apiZone = apiZone
-        }
-    }
+    @Published var apiZone: EversenseApiZone = .US
 
     let is365: Bool
     let nextStep: () -> Void
@@ -25,6 +21,8 @@ class Eversense365AuthViewModel: ObservableObject {
         isLoading = true
         Task {
             do {
+                cgmManager.state.apiZone = apiZone
+
                 let response = try await AuthenticationApi.login(cgmManager: cgmManager, username: username, password: password)
                 cgmManager.keychain.setEversenseCredentials(credentials: Credentials(username: username, password: password))
                 cgmManager.state.accessToken = response.accessToken
