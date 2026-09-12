@@ -154,6 +154,22 @@ extension Eversense365 {
             let activeAlarms: GetActiveAlarmsResponse = try peripheralManager.write(alarmsRequest)
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
 
+            logger.debug("Reading battery logs")
+            let batteryLogRange: GetLogRangeResponse = try peripheralManager
+                .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .Battery))
+
+            if let range = RangeCalculator.calculateRange(
+                lastRecord: cgmManager.state.lastBatteryRecord,
+                rangeFrom: batteryLogRange.rangeFrom,
+                rangeTo: batteryLogRange.rangeTo
+            ) {
+                let packet2: GetBatteryLogResponse = try peripheralManager
+                    .write(GetBatteryLogPacket(from: range.from, to: range.to))
+
+                cgmManager.state.lastBatteryRecord = range.to
+                cgmManager.state.batteryReadingsToUpload.append(contentsOf: packet2.logs)
+            }
+
             logger.info("[365] Sync completed - timestamp: \(Date.now)")
 
         } catch {

@@ -126,6 +126,65 @@ enum DMSApi {
         }
     }
 
+    static func uploadBatteryLogs(
+        cgmManager: EversenseCGMManager,
+        sensorId: Data,
+        batteryLogs: [BatteryReadings]
+    ) async -> DMSUploadResult {
+        guard let url = URL(string: "\(cgmManager.state.apiZone.diagnosticUrl)PostBatteryLogs") else {
+            logger.error("Could not create URL...")
+            return .other("Could not create URL")
+        }
+
+        guard let transmitterId = cgmManager.state.transmitterId else {
+            logger.error("transmitterId is nil")
+            return .other("transmitterId is nil")
+        }
+
+        guard let version = cgmManager.state.version else {
+            logger.error("version is nil")
+            return .other("version is nil")
+        }
+
+        guard let token = await getAccessToken(cgmManager: cgmManager) else {
+            return .networkError("Not authenticated")
+        }
+
+        do {
+            let body = batteryLogs.map {
+                UploadBatteryLogRequest(
+                    MMATimestamp: dateFormatter.string(from: Date.now),
+                    TransmitterId: transmitterId,
+                    BatteryLogs: $0.value.base64EncodedString(),
+                    RecordNumber: Int($0.recordId),
+                    TxTimestamp: dateFormatter.string(from: $0.datetime),
+                    SensorId: sensorId.base64EncodedString(),
+                    FWVersion: version
+                )
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logger
+                .info(
+                    "Server response PostBatteryLogs: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
+                )
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
+                logger.error("Got invalid response from PostBatteryLogs")
+            }
+            return result
+        } catch {
+            logger.error("Failed to upload battery logs: \(error.localizedDescription)")
+            return .networkError(error.localizedDescription)
+        }
+    }
+
     /// Classifies a DMS response. Only an HTTP 2xx without an explicit failure flag is accepted;
     /// anything else keeps the caller's pending batch intact so it can be retried.
     private static func evaluate(data: Data, response: URLResponse) -> DMSUploadResult {

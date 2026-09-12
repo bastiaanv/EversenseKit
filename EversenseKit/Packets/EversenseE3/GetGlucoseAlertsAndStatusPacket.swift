@@ -34,10 +34,9 @@ extension EversenseE3 {
         }
 
         func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
-            var content = data.subdata(in: start + 1 ..< data.count - start - 2)
+            var content = data.subdata(in: start ..< data.count)
             if content.count < STATUS_FLAG_COUNT {
-                let prefix = Data(repeating: 0, count: STATUS_FLAG_COUNT - content.count)
-                content = prefix + content
+                content.append(Data(repeating: 0, count: STATUS_FLAG_COUNT - content.count))
             }
 
             if content.max() == 0 {

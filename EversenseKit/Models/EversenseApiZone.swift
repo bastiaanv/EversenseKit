@@ -18,6 +18,15 @@ public enum EversenseApiZone: UInt8 {
         }
     }
 
+    var diagnosticUrl: String {
+        switch self {
+        case .US:
+            return "https://usmobileappmsprod.eversensedms.com/api/v1.0/DiagnosticLog/"
+        case .OutsideUS:
+            return "https://ousmobileappmsprod.eversensedms.com/api/v1.0/DiagnosticLog/"
+        }
+    }
+
     var tokenUrl: String {
         switch self {
         case .US:

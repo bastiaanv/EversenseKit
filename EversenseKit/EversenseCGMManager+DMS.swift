@@ -25,7 +25,7 @@ extension EversenseCGMManager {
             notifyStateDidChange()
         }
     }
-    
+
     /// Uploads the current value and, when a full batch is queued, the device history.
     /// The two calls are independent: a failing current-value upload must not block history.
     func uploadToDMS(currentGlucose: CGMReading) async {
@@ -51,43 +51,70 @@ extension EversenseCGMManager {
                 self.logger.warning("Failed to upload current reading: \(String(describing: currentResult))")
             }
 
-            let readings: [CGMReading] = self.dmsQueue.sync { self.state.readingsToUpload }
-            guard readings.count >= self.state.uploadBatchSize else {
-                self.logger.debug("Nothing to upload... (\(readings.count)/\(self.state.uploadBatchSize))")
-                return
+            let (readings, batteryReadings) = self.dmsQueue.sync {
+                (self.state.readingsToUpload, self.state.batteryReadingsToUpload)
             }
 
-            let result = await DMSApi.uploadDeviceEvents(
-                cgmManager: self,
-                sensorId: self.state.sensorId,
-                readings: readings,
-                calibrations: [],
-                alerts: self.state.activeAlarms.filter { $0.code.dmsCode != 255 }
-            )
+            if readings.count >= self.state.uploadBatchSize {
+                let result = await DMSApi.uploadDeviceEvents(
+                    cgmManager: self,
+                    sensorId: self.state.sensorId,
+                    readings: readings,
+                    calibrations: [],
+                    alerts: self.state.activeAlarms.filter { $0.code.dmsCode != 255 }
+                )
 
-            switch result {
-            case .success:
-                let uploadedMax = readings.map(\.datetime).max()
-                self.dmsQueue.sync {
-                    if let uploadedMax {
-                        self.state.lastUploadedTimestamp = uploadedMax
-                        // Remove only what was uploaded; readings queued while the request
-                        // was in flight must be preserved.
-                        self.state.readingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                switch result {
+                case .success:
+                    let uploadedMax = readings.map(\.datetime).max()
+                    self.dmsQueue.sync {
+                        if let uploadedMax {
+                            self.state.lastUploadedTimestamp = uploadedMax
+                            // Remove only what was uploaded; readings queued while the request was in flight must be preserved.
+                            self.state.readingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        }
+                        self.notifyStateDidChange()
                     }
-                    self.state.activeAlarms = []
-                    self.notifyStateDidChange()
+                    self.logger.info("Uploaded \(readings.count) reading(s) to DMS")
+
+                case let .rejected(reason):
+                    self.logger.warning("DMS rejected device events, will retry: \(reason)")
+
+                case let .networkError(reason):
+                    self.logger.warning("Failed to upload device events, will retry: \(reason)")
+
+                case let .other(reason):
+                    self.logger.error("Failed to upload device events, will retry, other error: \(reason)")
                 }
-                self.logger.info("Uploaded \(readings.count) reading(s) to DMS")
+            }
 
-            case let .rejected(reason):
-                self.logger.warning("DMS rejected device events, will retry: \(reason)")
+            if batteryReadings.count >= self.state.uploadBatchSize {
+                let result = await DMSApi.uploadBatteryLogs(
+                    cgmManager: self,
+                    sensorId: self.state.sensorId,
+                    batteryLogs: batteryReadings
+                )
 
-            case let .networkError(reason):
-                self.logger.warning("Failed to upload device events, will retry: \(reason)")
+                switch result {
+                case .success:
+                    let uploadedMax = batteryReadings.map(\.datetime).max()
+                    self.dmsQueue.sync {
+                        if let uploadedMax {
+                            self.state.batteryReadingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        }
+                        self.notifyStateDidChange()
+                    }
+                    self.logger.info("Uploaded \(batteryReadings.count) battery log(s) to DMS")
 
-            case let .other(reason):
-                self.logger.error("Failed to upload device events, will retry, other error: \(reason)")
+                case let .rejected(reason):
+                    self.logger.warning("DMS rejected device events, will retry: \(reason)")
+
+                case let .networkError(reason):
+                    self.logger.warning("Failed to upload device events, will retry: \(reason)")
+
+                case let .other(reason):
+                    self.logger.error("Failed to upload device events, will retry, other error: \(reason)")
+                }
             }
         }
     }

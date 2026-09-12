@@ -46,10 +46,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
         lastSynced = rawValue["lastSynced"] as? Date
         lastOnlineSync = rawValue["lastOnlineSync"] as? Date ?? lastSynced
-        // `lastReadTimestamp` tracks how far the transmitter log has been read (BLE cursor),
-        // while `lastUploadedTimestamp` tracks how far the DMS has accepted data. Keeping them
-        // separate avoids re-reading (and duplicating) history while a batch is still pending.
-        // Migrate from the old single `lastOnlineSync` cursor.
         lastUploadedTimestamp = rawValue["lastUploadedTimestamp"] as? Date
             ?? rawValue["lastOnlineSync"] as? Date
             ?? lastSynced
@@ -92,6 +88,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
         batteryPercentage = rawValue["batteryPercentage"] as? Int ?? -1
+        lastBatteryRecord = rawValue["lastBatteryRecord"] as? UInt32 ?? 0
 
         username = rawValue["username"] as? String
         password = rawValue["password"] as? String
@@ -168,6 +165,18 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
                 .error("Failed to decode readingsToUpload - \(error.localizedDescription)")
             readingsToUpload = []
         }
+
+        do {
+            if let batteryReadingsToUploadData = rawValue["batteryReadingsToUpload"] as? Data {
+                batteryReadingsToUpload = try JSONDecoder().decode([BatteryReadings].self, from: batteryReadingsToUploadData)
+            } else {
+                batteryReadingsToUpload = []
+            }
+        } catch {
+            EversenseLogger(category: "EversenseCGMState")
+                .error("Failed to decode batteryReadingsToUpload - \(error.localizedDescription)")
+            batteryReadingsToUpload = []
+        }
     }
 
     public var rawValue: RawValue {
@@ -191,6 +200,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["activatedAt"] = activatedAt
         value["expiresAt"] = expiresAt
         value["mmaFeatures"] = mmaFeatures
+        value["lastBatteryRecord"] = lastBatteryRecord
         value["vibrateMode"] = vibrateMode
         value["batteryPercentage"] = batteryPercentage
         value["signalStrength"] = signalStrength.rawValue
@@ -242,6 +252,13 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         } catch {
             EversenseLogger(category: "EversenseCGMState")
                 .error("Failed to encode readingsToUpload - \(error.localizedDescription)")
+        }
+
+        do {
+            value["batteryReadingsToUpload"] = try JSONEncoder().encode(batteryReadingsToUpload)
+        } catch {
+            EversenseLogger(category: "EversenseCGMState")
+                .error("Failed to encode batteryReadingsToUpload - \(error.localizedDescription)")
         }
 
         return value
@@ -307,6 +324,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public var activeAlarms: [ActiveAlarm]
     public var readingsToUpload: [CGMReading]
+    public var lastBatteryRecord: UInt32
+    public var batteryReadingsToUpload: [BatteryReadings]
 
     // Eversense 365
     public var security: SecurityType = .none
