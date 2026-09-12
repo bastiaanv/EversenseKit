@@ -185,6 +185,64 @@ enum DMSApi {
         }
     }
 
+    static func uploadEssentailLogs(
+        cgmManager: EversenseCGMManager,
+        essentailLogs: [CGMReading]
+    ) async -> DMSUploadResult {
+        guard let url = URL(string: "\(cgmManager.state.apiZone.diagnosticUrl)PostEssentialLogs") else {
+            logger.error("Could not create URL...")
+            return .other("Could not create URL")
+        }
+
+        guard let transmitterId = cgmManager.state.transmitterId else {
+            logger.error("transmitterId is nil")
+            return .other("transmitterId is nil")
+        }
+
+        guard let version = cgmManager.state.version else {
+            logger.error("version is nil")
+            return .other("version is nil")
+        }
+
+        guard let token = await getAccessToken(cgmManager: cgmManager) else {
+            return .networkError("Not authenticated")
+        }
+
+        do {
+            let body = essentailLogs.map {
+                UploadEssentailLogRequest(
+                    EssentialLog: $0.raw,
+                    TransmitterId: transmitterId,
+                    Timestamp: dateFormatter.string(from: Date.now),
+                    CurrentGlucoseDateTime: dateFormatter.string(from: $0.datetime),
+                    CurrentGlucoseValue: Int($0.glucoseInMgDl),
+                    SensorId: "0000000000000000",
+                    FWVersion: version
+                )
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logger
+                .info(
+                    "Server response PostEssentialLogs: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
+                )
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
+                logger.error("Got invalid response from PostEssentialLogs")
+            }
+            return result
+        } catch {
+            logger.error("Failed to upload essentail logs: \(error.localizedDescription)")
+            return .networkError(error.localizedDescription)
+        }
+    }
+
     /// Classifies a DMS response. Only an HTTP 2xx without an explicit failure flag is accepted;
     /// anything else keeps the caller's pending batch intact so it can be retried.
     private static func evaluate(data: Data, response: URLResponse) -> DMSUploadResult {

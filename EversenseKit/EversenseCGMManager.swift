@@ -173,8 +173,9 @@ extension EversenseCGMManager {
                 return
             }
 
-            let result = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp)
-            guard let (currentGlucose, samples) = result else {
+            guard let samples = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp),
+                  let currentGlucose = samples.last
+            else {
                 return
             }
 
@@ -192,22 +193,14 @@ extension EversenseCGMManager {
                     return
                 }
 
-                var newData = samples
-                    .filter { $0.datetime > lastGlucoseTimestamp }
-                    .map {
-                        NewGlucoseSample(
-                            cgmManager: self,
-                            value: $0.glucoseInMgDl,
-                            trend: $0.trend,
-                            dateTime: $0.datetime
-                        ) }
-
-                newData.append(NewGlucoseSample(
-                    cgmManager: self,
-                    value: currentGlucose.glucoseInMgDl,
-                    trend: currentGlucose.trend,
-                    dateTime: currentGlucose.datetime
-                ))
+                let newData = samples.map {
+                    NewGlucoseSample(
+                        cgmManager: self,
+                        value: $0.glucoseInMgDl,
+                        trend: $0.trend,
+                        dateTime: $0.datetime
+                    )
+                }
 
                 delegate.cgmManager(self, hasNew: .newData(newData))
 
@@ -265,7 +258,7 @@ extension EversenseCGMManager {
     private func getGlucoseAndSync(
         _ peripheralManager: PeripheralManager,
         _ lastGlucoseTimestamp: Date
-    ) -> (CGMReading, [CGMReading])? {
+    ) -> [CGMReading]? {
         // `lastReadTimestamp` is the BLE read cursor and advances on every successful read.
         // Fall back to the old single cursor / delegate timestamp for migration.
         let readFrom = state.lastReadTimestamp
@@ -274,7 +267,7 @@ extension EversenseCGMManager {
             ?? lastGlucoseTimestamp
 
         if !state.is365 {
-            guard let (currentGlucose, samples) = EversenseE3.readGlucoseData(
+            guard let samples = EversenseE3.readGlucoseData(
                 peripheralManager: peripheralManager,
                 cgmManager: self,
                 lastGlucoseTimestamp: readFrom
@@ -283,9 +276,9 @@ extension EversenseCGMManager {
             }
 
             EversenseE3.fullSync(peripheralManager: peripheralManager, cgmManager: self)
-            return (currentGlucose, samples)
+            return samples
         } else {
-            guard let (currentGlucose, samples) = Eversense365.readGlucoseData(
+            guard let samples = Eversense365.readGlucoseData(
                 cgmManager: self,
                 peripheralManager: peripheralManager,
                 lastGlucoseTimestamp: readFrom
@@ -293,8 +286,12 @@ extension EversenseCGMManager {
                 return nil
             }
 
+            if state.shouldUploadToEversenseDMS {
+                state.essentailLogsToUpload.append(contentsOf: samples)
+            }
+
             Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
-            return (currentGlucose, samples)
+            return samples
         }
     }
 

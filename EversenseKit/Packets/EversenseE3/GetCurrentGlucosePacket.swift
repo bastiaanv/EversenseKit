@@ -51,11 +51,11 @@ extension EversenseE3 {
                 return .downDown
             case 2:
                 return .down
-            case 3:
-                return .flat
             case 4:
+                return .flat
+            case 8:
                 return .up
-            case 5:
+            case 16:
                 return .upUp
             default:
                 return .flat // STALE

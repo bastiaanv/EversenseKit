@@ -9,7 +9,7 @@ extension EversenseE3 {
         peripheralManager: PeripheralManager,
         cgmManager _: EversenseCGMManager,
         lastGlucoseTimestamp: Date
-    ) -> (CGMReading, [CGMReading])? {
+    ) -> [CGMReading]? {
         do {
             guard let mostRecentGlucose = getRecentGlucose(peripheralManager: peripheralManager) else {
                 return nil
@@ -41,8 +41,10 @@ extension EversenseE3 {
                 glucoseHistory.append(pageResponse)
             }
 
-            let samples = glucoseHistory
-                .filter { $0.datetime > lastGlucoseTimestamp && $0.datetime != mostRecentGlucose.datetime }.map {
+            var samples = glucoseHistory
+                .filter { $0.datetime > lastGlucoseTimestamp && $0.datetime != mostRecentGlucose.datetime }
+                .sorted { $0.datetime < $1.datetime }
+                .map {
                     CGMReading(
                         glucoseInMgDl: $0.glucoseInMgDl,
                         datetime: $0.datetime,
@@ -50,17 +52,15 @@ extension EversenseE3 {
                         raw: ""
                     )
                 }
+            samples.append(CGMReading(
+                glucoseInMgDl: mostRecentGlucose.glucoseInMgDl,
+                datetime: mostRecentGlucose.datetime,
+                trend: mostRecentGlucose.trend,
+                raw: ""
+            ))
 
             logger.info("[E3] Glucose data read  - timestamp: \(Date.now), count: \(samples.count)")
-            return (
-                CGMReading(
-                    glucoseInMgDl: mostRecentGlucose.glucoseInMgDl,
-                    datetime: mostRecentGlucose.datetime,
-                    trend: mostRecentGlucose.trend,
-                    raw: ""
-                ),
-                samples.sorted { $0.datetime < $1.datetime }
-            )
+            return samples
         } catch {
             logger.error("[E3] Something went wrong during readGlucoseData: \(error)")
             return nil

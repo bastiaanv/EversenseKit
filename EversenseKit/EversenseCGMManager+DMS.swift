@@ -51,21 +51,18 @@ extension EversenseCGMManager {
                 self.logger.warning("Failed to upload current reading: \(String(describing: currentResult))")
             }
 
-            let (readings, batteryReadings) = self.dmsQueue.sync {
-                (self.state.readingsToUpload, self.state.batteryReadingsToUpload)
+            let (readings, batteryReadings, essentailLogs) = self.dmsQueue.sync {
+                (self.state.readingsToUpload, self.state.batteryReadingsToUpload, self.state.essentailLogsToUpload)
             }
 
             if readings.count >= self.state.uploadBatchSize {
-                let result = await DMSApi.uploadDeviceEvents(
+                handleDMSResult(name: "reading(s)", count: readings.count, result: await DMSApi.uploadDeviceEvents(
                     cgmManager: self,
                     sensorId: self.state.sensorId,
                     readings: readings,
                     calibrations: [],
                     alerts: self.state.activeAlarms.filter { $0.code.dmsCode != 255 }
-                )
-
-                switch result {
-                case .success:
+                )) {
                     let uploadedMax = readings.map(\.datetime).max()
                     self.dmsQueue.sync {
                         if let uploadedMax {
@@ -75,28 +72,15 @@ extension EversenseCGMManager {
                         }
                         self.notifyStateDidChange()
                     }
-                    self.logger.info("Uploaded \(readings.count) reading(s) to DMS")
-
-                case let .rejected(reason):
-                    self.logger.warning("DMS rejected device events, will retry: \(reason)")
-
-                case let .networkError(reason):
-                    self.logger.warning("Failed to upload device events, will retry: \(reason)")
-
-                case let .other(reason):
-                    self.logger.error("Failed to upload device events, will retry, other error: \(reason)")
                 }
             }
 
             if batteryReadings.count >= self.state.uploadBatchSize {
-                let result = await DMSApi.uploadBatteryLogs(
+                handleDMSResult(name: "battery log(s)", count: batteryReadings.count, result: await DMSApi.uploadBatteryLogs(
                     cgmManager: self,
                     sensorId: self.state.sensorId,
                     batteryLogs: batteryReadings
-                )
-
-                switch result {
-                case .success:
+                )) {
                     let uploadedMax = batteryReadings.map(\.datetime).max()
                     self.dmsQueue.sync {
                         if let uploadedMax {
@@ -104,18 +88,40 @@ extension EversenseCGMManager {
                         }
                         self.notifyStateDidChange()
                     }
-                    self.logger.info("Uploaded \(batteryReadings.count) battery log(s) to DMS")
-
-                case let .rejected(reason):
-                    self.logger.warning("DMS rejected device events, will retry: \(reason)")
-
-                case let .networkError(reason):
-                    self.logger.warning("Failed to upload device events, will retry: \(reason)")
-
-                case let .other(reason):
-                    self.logger.error("Failed to upload device events, will retry, other error: \(reason)")
                 }
             }
+
+            if essentailLogs.count >= self.state.uploadBatchSize {
+                handleDMSResult(name: "essentail log(s)", count: essentailLogs.count, result: await DMSApi.uploadEssentailLogs(
+                    cgmManager: self,
+                    essentailLogs: essentailLogs
+                )) {
+                    let uploadedMax = essentailLogs.map(\.datetime).max()
+                    self.dmsQueue.sync {
+                        if let uploadedMax {
+                            self.state.essentailLogsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        }
+                        self.notifyStateDidChange()
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleDMSResult(name: String, count: Int, result: DMSUploadResult, onSuccess: @escaping () -> Void) {
+        switch result {
+        case .success:
+            onSuccess()
+            logger.info("Uploaded \(count) \(name) to DMS")
+
+        case let .rejected(reason):
+            logger.warning("DMS rejected \(name), will retry: \(reason)")
+
+        case let .networkError(reason):
+            logger.warning("Failed to upload \(name), will retry: \(reason)")
+
+        case let .other(reason):
+            logger.error("Failed to upload \(name), will retry, other error: \(reason)")
         }
     }
 }

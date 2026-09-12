@@ -167,6 +167,18 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         }
 
         do {
+            if let essentailLogsToUploadData = rawValue["essentailLogsToUpload"] as? Data {
+                essentailLogsToUpload = try JSONDecoder().decode([CGMReading].self, from: essentailLogsToUploadData)
+            } else {
+                essentailLogsToUpload = []
+            }
+        } catch {
+            EversenseLogger(category: "EversenseCGMState")
+                .error("Failed to decode essentailLogsToUpload - \(error.localizedDescription)")
+            essentailLogsToUpload = []
+        }
+
+        do {
             if let batteryReadingsToUploadData = rawValue["batteryReadingsToUpload"] as? Data {
                 batteryReadingsToUpload = try JSONDecoder().decode([BatteryReadings].self, from: batteryReadingsToUploadData)
             } else {
@@ -255,6 +267,13 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         }
 
         do {
+            value["essentailLogsToUpload"] = try JSONEncoder().encode(essentailLogsToUpload)
+        } catch {
+            EversenseLogger(category: "EversenseCGMState")
+                .error("Failed to encode essentailLogsToUpload - \(error.localizedDescription)")
+        }
+
+        do {
             value["batteryReadingsToUpload"] = try JSONEncoder().encode(batteryReadingsToUpload)
         } catch {
             EversenseLogger(category: "EversenseCGMState")
@@ -324,6 +343,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public var activeAlarms: [ActiveAlarm]
     public var readingsToUpload: [CGMReading]
+    public var essentailLogsToUpload: [CGMReading]
     public var lastBatteryRecord: UInt32
     public var batteryReadingsToUpload: [BatteryReadings]
 
