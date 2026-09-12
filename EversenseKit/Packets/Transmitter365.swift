@@ -9,13 +9,8 @@ extension Eversense365 {
         cgmManager: EversenseCGMManager,
         peripheralManager: PeripheralManager,
         lastGlucoseTimestamp: Date
-    ) -> (CGMReading, [CGMReading])? {
+    ) -> [CGMReading]? {
         do {
-            logger.debug("sending GetRecentGlucosePacket...")
-            guard let mostRecentGlucose = getRecentGlucose(peripheralManager: peripheralManager) else {
-                return nil
-            }
-
             logger.debug("sending GetGlucoseLogRangePacket...")
             let glucoseRange: GetLogRangeResponse = try peripheralManager
                 .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: LogTypes.Glucose))
@@ -33,25 +28,24 @@ extension Eversense365 {
             let historyResponse: GetGlucoseLogValuesResponse = try peripheralManager
                 .write(GetGlucoseLogValuesPacket(from: range.from, to: range.to), timeout: .seconds(15))
 
-            let samples = historyResponse.glucoseHistory.filter { $0.datetime > lastGlucoseTimestamp }.map {
-                CGMReading(
-                    glucoseInMgDl: $0.valueInMgDl,
-                    datetime: $0.datetime,
-                    trend: $0.trend,
-                    raw: $0.raw
-                )
+            let samples = historyResponse.glucoseHistory
+                .filter { $0.datetime > lastGlucoseTimestamp }
+                .sorted { $0.datetime < $1.datetime }
+                .map {
+                    CGMReading(
+                        glucoseInMgDl: $0.valueInMgDl,
+                        datetime: $0.datetime,
+                        trend: $0.trend,
+                        raw: $0.raw
+                    )
+                }
+
+            guard let mostRecentGlucose = samples.last else {
+                return nil
             }
 
             logger.info("[365] Glucose data read  - timestamp: \(Date.now), count: \(samples.count)")
-            return (
-                CGMReading(
-                    glucoseInMgDl: mostRecentGlucose.glucoseInMgDl,
-                    datetime: mostRecentGlucose.glucoseDatetime,
-                    trend: mostRecentGlucose.trend,
-                    raw: ""
-                ),
-                samples.sorted { $0.datetime < $1.datetime }
-            )
+            return samples
         } catch {
             logger.error("[365] Something went wrong during readGlucoseData: \(error)")
             return nil
@@ -153,6 +147,24 @@ extension Eversense365 {
             let alarmsRequest = GetActiveAlarmsPacket(currentGlucose: cgmManager.state.recentGlucoseInMgDl ?? 0)
             let activeAlarms: GetActiveAlarmsResponse = try peripheralManager.write(alarmsRequest)
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
+
+            if cgmManager.state.shouldUploadToEversenseDMS {
+                logger.debug("Reading battery logs")
+                let batteryLogRange: GetLogRangeResponse = try peripheralManager
+                    .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .Battery))
+
+                if let range = RangeCalculator.calculateRange(
+                    lastRecord: cgmManager.state.lastBatteryRecord,
+                    rangeFrom: batteryLogRange.rangeFrom,
+                    rangeTo: batteryLogRange.rangeTo
+                ) {
+                    let packet2: GetBatteryLogResponse = try peripheralManager
+                        .write(GetBatteryLogPacket(from: range.from, to: range.to))
+
+                    cgmManager.state.lastBatteryRecord = range.to
+                    cgmManager.state.batteryReadingsToUpload.append(contentsOf: packet2.logs)
+                }
+            }
 
             logger.info("[365] Sync completed - timestamp: \(Date.now)")
 

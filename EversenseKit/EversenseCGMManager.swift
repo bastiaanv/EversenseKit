@@ -1,5 +1,6 @@
 import HealthKit
 import LoopKit
+import UIKit
 
 protocol StateObserver: AnyObject {
     func stateDidUpdate(_ state: EversenseCGMState)
@@ -8,7 +9,7 @@ protocol StateObserver: AnyObject {
 public class EversenseCGMManager: CGMManager {
     public static var pluginIdentifier: String = "EversenseKit"
 
-    private let logger = EversenseLogger(category: "CGMManager")
+    let logger = EversenseLogger(category: "CGMManager")
     internal let bluetoothManager: BluetoothManager
     internal let keychain = KeychainManager()
 
@@ -74,6 +75,8 @@ public class EversenseCGMManager: CGMManager {
 
     let delegate = WeakSynchronizedDelegate<CGMManagerDelegate>()
     private let stateObservers = WeakSynchronizedSet<StateObserver>()
+    let dmsQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.dmsQueue")
+    var isUploadingDMS = false
 
     public let managerIdentifier: String = "EversenseCGMManager"
 
@@ -170,14 +173,19 @@ extension EversenseCGMManager {
                 return
             }
 
-            let result = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp)
-            guard let (currentGlucose, samples) = result else {
+            guard let samples = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp),
+                  let currentGlucose = samples.last
+            else {
                 return
             }
 
             self.state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
             self.state.recentGlucoseDateTime = currentGlucose.datetime
             self.state.recentGlucoseTrend = currentGlucose.trend ?? .flat
+            self.state.lastReadTimestamp = max(
+                currentGlucose.datetime,
+                samples.map(\.datetime).max() ?? currentGlucose.datetime
+            )
             self.notifyStateDidChange()
 
             self.delegate.notify { delegate in
@@ -185,22 +193,14 @@ extension EversenseCGMManager {
                     return
                 }
 
-                var newData = samples
-                    .filter { $0.datetime > lastGlucoseTimestamp }
-                    .map {
-                        NewGlucoseSample(
-                            cgmManager: self,
-                            value: $0.glucoseInMgDl,
-                            trend: $0.trend,
-                            dateTime: $0.datetime
-                        ) }
-
-                newData.append(NewGlucoseSample(
-                    cgmManager: self,
-                    value: currentGlucose.glucoseInMgDl,
-                    trend: currentGlucose.trend,
-                    dateTime: currentGlucose.datetime
-                ))
+                let newData = samples.map {
+                    NewGlucoseSample(
+                        cgmManager: self,
+                        value: $0.glucoseInMgDl,
+                        trend: $0.trend,
+                        dateTime: $0.datetime
+                    )
+                }
 
                 delegate.cgmManager(self, hasNew: .newData(newData))
 
@@ -220,33 +220,12 @@ extension EversenseCGMManager {
             }
 
             if self.state.shouldUploadToEversenseDMS {
+                // Queue the freshly-read history before any network work, so a failed or
+                // suspended upload can never discard data that was successfully read.
+                self.enqueueForDMS(samples)
+
                 Task {
-                    guard await DMSApi.uploadCurrentValues(cgmManager: self, reading: currentGlucose)
-                    else {
-                        self.logger.warning("Failed to upload current reading")
-                        return
-                    }
-
-                    self.state.readingsToUpload += samples
-                    if self.state.readingsToUpload.count < self.state.uploadBatchSize {
-                        self.logger.debug("Nothing to upload...")
-                        return
-                    }
-
-                    guard await DMSApi.uploadDeviceEvents(
-                        cgmManager: self,
-                        sensorId: self.state.sensorId,
-                        readings: self.state.readingsToUpload,
-                        calibrations: [],
-                        alerts: self.state.activeAlarms.filter { $0.code.dmsCode != 255 }
-                    ) else {
-                        self.logger.warning("Failed to upload device events")
-                        return
-                    }
-
-                    self.state.lastOnlineSync = self.state.readingsToUpload.map(\.datetime).max()
-                    self.state.readingsToUpload = []
-                    self.notifyStateDidChange()
+                    await self.uploadToDMS(currentGlucose: currentGlucose)
                 }
             }
 
@@ -279,29 +258,40 @@ extension EversenseCGMManager {
     private func getGlucoseAndSync(
         _ peripheralManager: PeripheralManager,
         _ lastGlucoseTimestamp: Date
-    ) -> (CGMReading, [CGMReading])? {
+    ) -> [CGMReading]? {
+        // `lastReadTimestamp` is the BLE read cursor and advances on every successful read.
+        // Fall back to the old single cursor / delegate timestamp for migration.
+        let readFrom = state.lastReadTimestamp
+            ?? state.lastUploadedTimestamp
+            ?? state.lastOnlineSync
+            ?? lastGlucoseTimestamp
+
         if !state.is365 {
-            guard let (currentGlucose, samples) = EversenseE3.readGlucoseData(
+            guard let samples = EversenseE3.readGlucoseData(
                 peripheralManager: peripheralManager,
                 cgmManager: self,
-                lastGlucoseTimestamp: state.lastOnlineSync ?? lastGlucoseTimestamp
+                lastGlucoseTimestamp: readFrom
             ) else {
                 return nil
             }
 
             EversenseE3.fullSync(peripheralManager: peripheralManager, cgmManager: self)
-            return (currentGlucose, samples)
+            return samples
         } else {
-            guard let (currentGlucose, samples) = Eversense365.readGlucoseData(
+            guard let samples = Eversense365.readGlucoseData(
                 cgmManager: self,
                 peripheralManager: peripheralManager,
-                lastGlucoseTimestamp: state.lastOnlineSync ?? lastGlucoseTimestamp
+                lastGlucoseTimestamp: readFrom
             ) else {
                 return nil
             }
 
+            if state.shouldUploadToEversenseDMS {
+                state.essentailLogsToUpload.append(contentsOf: samples)
+            }
+
             Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
-            return (currentGlucose, samples)
+            return samples
         }
     }
 

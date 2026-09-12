@@ -1,5 +1,22 @@
 import LoopKit
 
+enum DMSUploadResult: Equatable {
+    case success
+    /// The server understood the request but did not accept the data (HTTP error or business error).
+    case rejected(String)
+    /// The request never reached the server (no network, auth failure, invalid URL, ...).
+    case networkError(String)
+    /// The request could not be build or something else is preventing upload
+    case other(String)
+
+    var isSuccess: Bool {
+        if case .success = self {
+            return true
+        }
+        return false
+    }
+}
+
 enum DMSApi {
     private static let logger = EversenseLogger(category: "DMSApi")
 
@@ -10,14 +27,14 @@ enum DMSApi {
         return formatter
     }()
 
-    static func uploadCurrentValues(cgmManager: EversenseCGMManager, reading: CGMReading) async -> Bool {
+    static func uploadCurrentValues(cgmManager: EversenseCGMManager, reading: CGMReading) async -> DMSUploadResult {
         guard let url = URL(string: "\(cgmManager.state.apiZone.careUrl)api/care/PutCurrentValues") else {
             logger.error("Could not create URL...")
-            return false
+            return .other("Could not create URL")
         }
 
         guard let token = await getAccessToken(cgmManager: cgmManager) else {
-            return false
+            return .networkError("Not authenticated")
         }
 
         do {
@@ -42,15 +59,14 @@ enum DMSApi {
                     "Server response PutCurrentValues: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
                 )
 
-            guard let response = response as? HTTPURLResponse, response.statusCode < 400 else {
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
                 logger.error("Got invalid response from PutCurrentValues")
-                return false
             }
-
-            return true
+            return result
         } catch {
             logger.error("Failed to upload readings: \(error.localizedDescription)")
-            return false
+            return .networkError(error.localizedDescription)
         }
     }
 
@@ -60,19 +76,19 @@ enum DMSApi {
         readings: [CGMReading],
         calibrations: [CalibrationEvent],
         alerts: [ActiveAlarm]
-    ) async -> Bool {
+    ) async -> DMSUploadResult {
         guard let url = URL(string: "\(cgmManager.state.apiZone.careUrl)api/care/PutDeviceEvents") else {
             logger.error("Could not create URL...")
-            return false
+            return .other("Could not create URL")
         }
 
         guard let transmitterId = cgmManager.state.transmitterId else {
             logger.error("transmitterId is nil")
-            return false
+            return .other("transmitterId is nil")
         }
 
         guard let token = await getAccessToken(cgmManager: cgmManager) else {
-            return false
+            return .networkError("Not authenticated")
         }
 
         do {
@@ -99,16 +115,169 @@ enum DMSApi {
                 .info(
                     "Server response PutDeviceEvents: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
                 )
-            guard let response = response as? HTTPURLResponse, response.statusCode < 400 else {
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
                 logger.error("Got invalid response from PutDeviceEvents")
-                return false
             }
-
-            return true
+            return result
         } catch {
             logger.error("Failed to upload readings: \(error.localizedDescription)")
-            return false
+            return .networkError(error.localizedDescription)
         }
+    }
+
+    static func uploadBatteryLogs(
+        cgmManager: EversenseCGMManager,
+        sensorId: Data,
+        batteryLogs: [BatteryReadings]
+    ) async -> DMSUploadResult {
+        guard let url = URL(string: "\(cgmManager.state.apiZone.diagnosticUrl)PostBatteryLogs") else {
+            logger.error("Could not create URL...")
+            return .other("Could not create URL")
+        }
+
+        guard let transmitterId = cgmManager.state.transmitterId else {
+            logger.error("transmitterId is nil")
+            return .other("transmitterId is nil")
+        }
+
+        guard let version = cgmManager.state.version else {
+            logger.error("version is nil")
+            return .other("version is nil")
+        }
+
+        guard let token = await getAccessToken(cgmManager: cgmManager) else {
+            return .networkError("Not authenticated")
+        }
+
+        do {
+            let body = batteryLogs.map {
+                UploadBatteryLogRequest(
+                    MMATimestamp: dateFormatter.string(from: Date.now),
+                    TransmitterId: transmitterId,
+                    BatteryLogs: $0.value.base64EncodedString(),
+                    RecordNumber: Int($0.recordId),
+                    TxTimestamp: dateFormatter.string(from: $0.datetime),
+                    SensorId: sensorId.base64EncodedString(),
+                    FWVersion: version
+                )
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logger
+                .info(
+                    "Server response PostBatteryLogs: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
+                )
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
+                logger.error("Got invalid response from PostBatteryLogs")
+            }
+            return result
+        } catch {
+            logger.error("Failed to upload battery logs: \(error.localizedDescription)")
+            return .networkError(error.localizedDescription)
+        }
+    }
+
+    static func uploadEssentailLogs(
+        cgmManager: EversenseCGMManager,
+        essentailLogs: [CGMReading]
+    ) async -> DMSUploadResult {
+        guard let url = URL(string: "\(cgmManager.state.apiZone.diagnosticUrl)PostEssentialLogs") else {
+            logger.error("Could not create URL...")
+            return .other("Could not create URL")
+        }
+
+        guard let transmitterId = cgmManager.state.transmitterId else {
+            logger.error("transmitterId is nil")
+            return .other("transmitterId is nil")
+        }
+
+        guard let version = cgmManager.state.version else {
+            logger.error("version is nil")
+            return .other("version is nil")
+        }
+
+        guard let token = await getAccessToken(cgmManager: cgmManager) else {
+            return .networkError("Not authenticated")
+        }
+
+        do {
+            let body = essentailLogs.map {
+                UploadEssentailLogRequest(
+                    EssentialLog: $0.raw,
+                    TransmitterId: transmitterId,
+                    Timestamp: dateFormatter.string(from: Date.now),
+                    CurrentGlucoseDateTime: dateFormatter.string(from: $0.datetime),
+                    CurrentGlucoseValue: Int($0.glucoseInMgDl),
+                    SensorId: "0000000000000000",
+                    FWVersion: version
+                )
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logger
+                .info(
+                    "Server response PostEssentialLogs: \((response as? HTTPURLResponse)?.statusCode ?? -1), data: \(String(data: data, encoding: .utf8) ?? "No data")"
+                )
+            let result = evaluate(data: data, response: response)
+            if !result.isSuccess {
+                logger.error("Got invalid response from PostEssentialLogs")
+            }
+            return result
+        } catch {
+            logger.error("Failed to upload essentail logs: \(error.localizedDescription)")
+            return .networkError(error.localizedDescription)
+        }
+    }
+
+    /// Classifies a DMS response. Only an HTTP 2xx without an explicit failure flag is accepted;
+    /// anything else keeps the caller's pending batch intact so it can be retried.
+    private static func evaluate(data: Data, response: URLResponse) -> DMSUploadResult {
+        guard let http = response as? HTTPURLResponse else {
+            return .networkError("Invalid response type")
+        }
+
+        let body = String(data: data, encoding: .utf8) ?? "No data"
+        guard (200 ..< 300).contains(http.statusCode) else {
+            return .rejected("HTTP \(http.statusCode): \(body)")
+        }
+
+        if let businessError = businessError(in: data) {
+            return .rejected("\(businessError): \(body)")
+        }
+
+        return .success
+    }
+
+    /// Conservative business-error detection: only flags an explicit `success == false`
+    /// so an unknown response schema can never cause an endless retry loop.
+    private static func businessError(in data: Data) -> String? {
+        guard !data.isEmpty,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            return nil
+        }
+
+        for key in ["Success", "success", "IsSuccess", "isSuccess", "Succeeded", "succeeded"] {
+            if let value = json[key] as? Bool, value == false {
+                return "Server reported \(key)=false"
+            }
+        }
+
+        return nil
     }
 
     public static func updateFollowers(cgmManager: EversenseCGMManager) async -> [NowFollowerUI] {
