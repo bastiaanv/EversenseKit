@@ -40,6 +40,34 @@ class PeripheralManager: NSObject {
         self.peripheral.delegate = self
     }
 
+    // Kept separate from CoreBluetooth so framing can be tested without a peripheral.
+    // Returns true when the buffer is ready for the existing decode/dispatch path.
+    static func appendReceivedChunk(_ data: Data, to buffer: inout Data, isE3: Bool) -> Bool {
+        guard !data.isEmpty else {
+            return false
+        }
+
+        if isE3 {
+            buffer.append(data)
+        } else {
+            let headerLength = buffer.isEmpty ? 3 : 2
+            guard data.count >= headerLength else {
+                buffer = Data()
+                return false
+            }
+            buffer.append(data.subdata(in: headerLength ..< data.count))
+        }
+
+        guard !buffer.isEmpty else {
+            return false
+        }
+        return isE3 || data[0] == data[1]
+    }
+
+    static func matchesNotification(_ data: Data, pushId: Eversense365.PushIds) -> Bool {
+        data.count >= 2 && data[0] == Eversense365.PacketIds.NotificationId.rawValue && data[1] == pushId.rawValue
+    }
+
     func cleanup() {
         isCleaningUp = true
         writeSemaphore.signal()
@@ -210,19 +238,12 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         let isE3 = cgmManager.state.security == .none
-        if isE3 {
-            buffer.append(data)
-        } else {
-            buffer.append(data.subdata(in: (buffer.isEmpty ? 3 : 2) ..< data.count))
+        guard Self.appendReceivedChunk(data, to: &buffer, isE3: isE3) else {
+            return
         }
         var actualData = Data(buffer)
 
         if !isE3 {
-            if data[0] != data[1] {
-                // Data is chuncked, lets store this and wait
-                return
-            }
-
             if buffer[0] != Eversense365.PacketIds.AuthenticateV2ResponseId.rawValue {
                 // Only decrypt if packet is not for Authentication
                 actualData = CryptoUtil.shared.decrypt(data: actualData)
@@ -252,9 +273,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
 
-        if actualData[0] == Eversense365.PacketIds.NotificationId.rawValue,
-           actualData[1] == Eversense365.PushIds.KeepAlive.rawValue
-        {
+        if Self.matchesNotification(actualData, pushId: .KeepAlive) {
             let packet = Eversense365.PushKeepAlivePacket()
             let response = packet.parseResponse(data: actualData)
 
@@ -272,9 +291,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
 
-        if actualData[0] == Eversense365.PacketIds.NotificationId.rawValue,
-           actualData[1] == Eversense365.PushIds.AlarmWithData.rawValue
-        {
+        if Self.matchesNotification(actualData, pushId: .AlarmWithData) {
             let packet = Eversense365.PushAlarmWithDataPacket(currentGlucose: cgmManager.state.recentGlucoseInMgDl ?? 0)
             let response = packet.parseResponse(data: actualData)
             guard response.alarm.code != .unknown else {
