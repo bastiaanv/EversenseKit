@@ -46,6 +46,17 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
         lastSynced = rawValue["lastSynced"] as? Date
         lastOnlineSync = rawValue["lastOnlineSync"] as? Date ?? lastSynced
+        // `lastReadTimestamp` tracks how far the transmitter log has been read (BLE cursor),
+        // while `lastUploadedTimestamp` tracks how far the DMS has accepted data. Keeping them
+        // separate avoids re-reading (and duplicating) history while a batch is still pending.
+        // Migrate from the old single `lastOnlineSync` cursor.
+        lastUploadedTimestamp = rawValue["lastUploadedTimestamp"] as? Date
+            ?? rawValue["lastOnlineSync"] as? Date
+            ?? lastSynced
+        lastReadTimestamp = rawValue["lastReadTimestamp"] as? Date
+            ?? rawValue["lastUploadedTimestamp"] as? Date
+            ?? rawValue["lastOnlineSync"] as? Date
+            ?? lastSynced
         version = rawValue["version"] as? String
         extVersion = rawValue["extVersion"] as? String
         transmitterId = rawValue["transmitterId"] as? String
@@ -167,6 +178,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["isSyncing"] = isSyncing
         value["lastSynced"] = lastSynced
         value["lastOnlineSync"] = lastOnlineSync
+        value["lastReadTimestamp"] = lastReadTimestamp
+        value["lastUploadedTimestamp"] = lastUploadedTimestamp
         value["shouldUploadToEversenseDMS"] = shouldUploadToEversenseDMS
         value["uploadBatchSize"] = uploadBatchSize
         value["version"] = version
@@ -251,6 +264,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var shouldUploadToEversenseDMS: Bool
     public var uploadBatchSize: Int
     public var lastOnlineSync: Date?
+    public var lastReadTimestamp: Date?
+    public var lastUploadedTimestamp: Date?
 
     public var mmaFeatures: UInt8
     public var batteryPercentage: Int
