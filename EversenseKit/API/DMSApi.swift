@@ -427,9 +427,10 @@ enum DMSApi {
                 username: credentials.username,
                 password: credentials.password
             )
-            cgmManager.state.accessToken = response.accessToken
-            cgmManager.state.accessTokenExpiration = Date.now.addingTimeInterval(.seconds(Double(response.expiresIn)))
-            cgmManager.notifyStateDidChange()
+            cgmManager.updateState {
+                $0.accessToken = response.accessToken
+                $0.accessTokenExpiration = Date.now.addingTimeInterval(.seconds(Double(response.expiresIn)))
+            }
 
             return response.accessToken
         } catch {

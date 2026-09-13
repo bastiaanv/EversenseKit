@@ -1,5 +1,6 @@
 extension Eversense365 {
     struct GetBatteryLogResponse {
+        let rangeTo: UInt32
         let count: Int
         let logs: [BatteryReadings]
     }
@@ -32,7 +33,7 @@ extension Eversense365 {
         func parseResponse(data: Data) -> GetBatteryLogResponse {
             guard data[6] == LogTypes.Battery.rawValue else {
                 logger.error("Invalid packet type received - expected: \(LogTypes.Battery.rawValue), actual: \(data[6])")
-                return GetBatteryLogResponse(count: 0, logs: [])
+                return GetBatteryLogResponse(rangeTo: to, count: 0, logs: [])
             }
 
             let actualData = Data(data.subdata(in: 7 ..< data.count))
@@ -57,6 +58,7 @@ extension Eversense365 {
             }
 
             return GetBatteryLogResponse(
+                rangeTo: to,
                 count: logs.count,
                 logs: logs
             )

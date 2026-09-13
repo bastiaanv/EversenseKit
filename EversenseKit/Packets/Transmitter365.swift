@@ -74,8 +74,7 @@ extension Eversense365 {
         cgmManager: EversenseCGMManager
     ) {
         do {
-            cgmManager.state.isSyncing = true
-            cgmManager.notifyStateDidChange()
+            cgmManager.updateState { $0.isSyncing = true }
 
             // Do Ping
             logger.debug("Sending PING")
@@ -86,15 +85,7 @@ extension Eversense365 {
             let sensorInformation: GetSensorInformationResponse = try peripheralManager
                 .write(GetSensorInformationPacket())
 
-            cgmManager.state.transmitterId = sensorInformation.serialNumber
-            cgmManager.state.mmaFeatures = sensorInformation.mmaFeatures
-            cgmManager.state.sensorId = sensorInformation.sensorId
-            cgmManager.state.batteryPercentage = sensorInformation.batteryLevel
-            cgmManager.state.version = sensorInformation.version
-            cgmManager.state.extVersion = sensorInformation.extVersion
-            cgmManager.state.communicationProtocol = sensorInformation.communicationProtocolVersion
-            cgmManager.state.activatedAt = sensorInformation.insertionDate
-            cgmManager.state.expiresAt = sensorInformation.insertionDate.addingTimeInterval(.days(365))
+            
             sensorIdLength = sensorInformation.sensorIdLength
 
             let timeDifference = sensorInformation.transmitterDatetime.timeIntervalSince1970 - Date.nowWithTimezone()
@@ -108,46 +99,22 @@ extension Eversense365 {
             // Fetch signal strength
             logger.debug("Sending GetSignalStrenghtPacket")
             let signalStrength: GetSignalStrenghtResponse = try peripheralManager.write(GetSignalStrenghtPacket())
-            cgmManager.state.signalStrengthRaw = signalStrength.rawValue
-            cgmManager.state.signalStrength = signalStrength.signalStrength
 
             logger.debug("Sending GetCalibrationInfoPacket")
             let calibrationInfo: GetCalibrationInfoResponse = try peripheralManager.write(GetCalibrationInfoPacket())
-            cgmManager.state.calibrationCount = UInt16(calibrationInfo.countCalibrations)
-            cgmManager.state.calibrationReadiness = calibrationInfo.calibrationReadiness
-            cgmManager.state.calibrationMode = calibrationInfo.calibrationMode
-            cgmManager.state.calibrationPhase = calibrationInfo.currentPhase
-            cgmManager.state.lastCalibration = calibrationInfo.lastCalibration
-            cgmManager.state.nextCalibration = calibrationInfo.nextCalibration
 
             logger.debug("Sending SetAppVersionPacket")
             let _: SetAppVersionResponse = try peripheralManager.write(SetAppVersionPacket(appVersion: fakeAppVersion))
 
             logger.debug("Sending GetPatientSettingsPacket")
             let patientSettings: GetPatientSettingsResponse = try peripheralManager.write(GetPatientSettingsPacket())
-            cgmManager.state.vibrateMode = patientSettings.vibrateMode
-            cgmManager.state.lowGlucoseAlarmInMgDl = patientSettings.lowGlucoseAlarmInMgDl
-            cgmManager.state.isGlucoseHighAlarmEnabled = patientSettings.highGlucoseEnabled
-            cgmManager.state.highGlucoseAlarmInMgDl = patientSettings.highGlucoseAlarmInMgDl
-            cgmManager.state.isPredictionLowEnabled = patientSettings.predictionLowEnabled
-            cgmManager.state.isPredictionHighEnabled = patientSettings.predictionHighEnabled
-            cgmManager.state.predictionFallingInterval = patientSettings.predictionFallingInterval
-            cgmManager.state.predictionRisingInterval = patientSettings.predictionRisingInterval
-            cgmManager.state.predictionFallingThreshold = patientSettings.predictionFallingThreshold
-            cgmManager.state.predictionRisingThreshold = patientSettings.predictionRisingThreshold
-            cgmManager.state.isFallingRateEnabled = patientSettings.rateFallingEnabled
-            cgmManager.state.isRisingRateEnabled = patientSettings.rateRisingEnabled
-            cgmManager.state.rateFallingThreshold = patientSettings.rateFallingThreshold
-            cgmManager.state.rateRisingThreshold = patientSettings.rateRisingThreshold
-            cgmManager.state.bleDisconnectTimeout = patientSettings.disconnectTimeout
-            cgmManager.state.repeatLowTimeout = patientSettings.repeatLowTimeout
-            cgmManager.state.repeatHighTimeout = patientSettings.repeatHighTimeout
 
             logger.debug("Sending GetActiveAlarmsPacket")
             let alarmsRequest = GetActiveAlarmsPacket(currentGlucose: cgmManager.state.recentGlucoseInMgDl ?? 0)
             let activeAlarms: GetActiveAlarmsResponse = try peripheralManager.write(alarmsRequest)
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
 
+            var batteryLogResponse: GetBatteryLogResponse? = nil
             if cgmManager.state.shouldUploadToEversenseDMS {
                 logger.debug("Reading battery logs")
                 let batteryLogRange: GetLogRangeResponse = try peripheralManager
@@ -158,23 +125,64 @@ extension Eversense365 {
                     rangeFrom: batteryLogRange.rangeFrom,
                     rangeTo: batteryLogRange.rangeTo
                 ) {
-                    let packet2: GetBatteryLogResponse = try peripheralManager
+                    batteryLogResponse: GetBatteryLogResponse = try peripheralManager
                         .write(GetBatteryLogPacket(from: range.from, to: range.to))
+                }
+            }
 
-                    cgmManager.state.lastBatteryRecord = range.to
-                    cgmManager.state.batteryReadingsToUpload.append(contentsOf: packet2.logs)
+            cgmManager.updateState {
+                $0.isSyncing = false
+                $0.lastSynced = Date.now
+
+                $0.transmitterId = sensorInformation.serialNumber
+                $0.mmaFeatures = sensorInformation.mmaFeatures
+                $0.sensorId = sensorInformation.sensorId
+                $0.batteryPercentage = sensorInformation.batteryLevel
+                $0.version = sensorInformation.version
+                $0.extVersion = sensorInformation.extVersion
+                $0.communicationProtocol = sensorInformation.communicationProtocolVersion
+                $0.activatedAt = sensorInformation.insertionDate
+                $0.expiresAt = sensorInformation.insertionDate.addingTimeInterval(.days(365))
+
+                $0.signalStrengthRaw = signalStrength.rawValue
+                $0.signalStrength = signalStrength.signalStrength
+
+                $0.calibrationCount = UInt16(calibrationInfo.countCalibrations)
+                $0.calibrationReadiness = calibrationInfo.calibrationReadiness
+                $0.calibrationMode = calibrationInfo.calibrationMode
+                $0.lastCalibration = calibrationInfo.lastCalibration
+                $0.nextCalibration = calibrationInfo.nextCalibration
+
+                $0.vibrateMode = patientSettings.vibrateMode
+                $0.lowGlucoseAlarmInMgDl = patientSettings.lowGlucoseAlarmInMgDl
+                $0.isGlucoseHighAlarmEnabled = patientSettings.highGlucoseEnabled
+                $0.highGlucoseAlarmInMgDl = patientSettings.highGlucoseAlarmInMgDl
+                $0.isPredictionLowEnabled = patientSettings.predictionLowEnabled
+                $0.isPredictionHighEnabled = patientSettings.predictionHighEnabled
+                $0.predictionFallingInterval = patientSettings.predictionFallingInterval
+                $0.predictionRisingInterval = patientSettings.predictionRisingInterval
+                $0.predictionFallingThreshold = patientSettings.predictionFallingThreshold
+                $0.predictionRisingThreshold = patientSettings.predictionRisingThreshold
+                $0.isFallingRateEnabled = patientSettings.rateFallingEnabled
+                $0.isRisingRateEnabled = patientSettings.rateRisingEnabled
+                $0.rateFallingThreshold = patientSettings.rateFallingThreshold
+                $0.rateRisingThreshold = patientSettings.rateRisingThreshold
+                $0.bleDisconnectTimeout = patientSettings.disconnectTimeout
+                $0.repeatLowTimeout = patientSettings.repeatLowTimeout
+                $0.repeatHighTimeout = patientSettings.repeatHighTimeout
+
+                if let batteryLogResponse {
+                    $0.lastBatteryRecord = batteryLogResponse.to
+                    $0.batteryReadingsToUpload.append(contentsOf: batteryLogResponse.logs)
                 }
             }
 
             logger.info("[365] Sync completed - timestamp: \(Date.now)")
 
         } catch {
+            cgmManager.updateState { $0.isSyncing = false }
             logger.error("[365] Something went wrong during full sync: \(error)")
         }
-
-        cgmManager.state.isSyncing = false
-        cgmManager.state.lastSynced = Date.now
-        cgmManager.notifyStateDidChange()
     }
 
     static func writeTransmitterSettings(
@@ -234,8 +242,10 @@ extension Eversense365 {
         do {
             logger.debug("sending GetSignalStrenghtResponse...")
             let signalStrength: GetSignalStrenghtResponse = try cgmManager.bluetoothManager.write(GetSignalStrenghtPacket())
-            cgmManager.state.signalStrengthRaw = signalStrength.rawValue
-            cgmManager.state.signalStrength = signalStrength.signalStrength
+            cgmManager.updateState { 
+                $0.signalStrengthRaw = signalStrength.rawValue
+                $0.signalStrength = signalStrength.signalStrength
+            }
 
             return signalStrength
         } catch {

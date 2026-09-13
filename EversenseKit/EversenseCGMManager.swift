@@ -13,7 +13,36 @@ public class EversenseCGMManager: CGMManager {
     internal let bluetoothManager: BluetoothManager
     internal let keychain = KeychainManager()
 
-    public var state: EversenseCGMState
+    private var _state: EversenseCGMState
+    private let stateLock = NSRecursiveLock()
+
+    public var state: EversenseCGMState {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _state
+        }
+        set {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            _state = newValue
+        }
+    }
+
+    public func updateState(_ body: (inout EversenseCGMState) -> Void) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        body(&_state)
+        notifyStateDidChange()
+    }
+
+    /// Atomically reads a value derived from the manager state.
+    public func withState<T>(_ body: (EversenseCGMState) -> T) -> T {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return body(_state)
+    }
+
     public var rawState: RawStateValue {
         state.rawValue
     }
@@ -76,6 +105,8 @@ public class EversenseCGMManager: CGMManager {
     let delegate = WeakSynchronizedDelegate<CGMManagerDelegate>()
     private let stateObservers = WeakSynchronizedSet<StateObserver>()
     let dmsQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.dmsQueue")
+    /// Serializes all CGM BLE operations so two heartbeats can never run at the same time.
+    private let operationQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.operationQueue")
     var isUploadingDMS = false
 
     public let managerIdentifier: String = "EversenseCGMManager"
@@ -85,7 +116,7 @@ public class EversenseCGMManager: CGMManager {
     }
 
     public required init(rawState: RawStateValue) {
-        state = EversenseCGMState(rawValue: rawState)
+        _state = EversenseCGMState(rawValue: rawState)
         bluetoothManager = BluetoothManager()
         bluetoothManager.cgmManager = self
         EversenseLogger.cgmManager = self
@@ -93,15 +124,16 @@ public class EversenseCGMManager: CGMManager {
         // Migrate username/password
         if let username = state.username, let password = state.password {
             keychain.setEversenseCredentials(credentials: Credentials(username: username, password: password))
-            state.username = nil
-            state.password = nil
-            notifyStateDidChange()
+            updateState {
+                $0.username = nil
+                $0.password = nil
+            }
         }
     }
 
     func cleanup() {
         logger.info("Cleaning up CGMManager")
-        state.bleNameString = nil
+        updateState { $0.bleNameString = nil }
 
         bluetoothManager.stopScan()
         bluetoothManager.disconnect()
@@ -149,6 +181,16 @@ extension EversenseCGMManager {
 
     /// Responsible for handling fetching Glucose data when ready
     func heartbeathOperation(force: Bool = false, completion: (() -> Void)? = nil) {
+        operationQueue.async { [weak self] in
+            guard let self else {
+                completion?()
+                return
+            }
+            self.performHeartbeat(force: force, completion: completion)
+        }
+    }
+
+    private func performHeartbeat(force: Bool, completion: (() -> Void)?) {
         let lastGlucoseTimestamp = max(
             state.recentGlucoseDateTime ?? Date.distantPast,
             Date.now.addingTimeInterval(.hours(-4))
@@ -176,17 +218,19 @@ extension EversenseCGMManager {
             guard let samples = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp),
                   let currentGlucose = samples.last
             else {
+                completion?()
                 return
             }
 
-            self.state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
-            self.state.recentGlucoseDateTime = currentGlucose.datetime
-            self.state.recentGlucoseTrend = currentGlucose.trend ?? .flat
-            self.state.lastReadTimestamp = max(
-                currentGlucose.datetime,
-                samples.map(\.datetime).max() ?? currentGlucose.datetime
-            )
-            self.notifyStateDidChange()
+            self.updateState { state in
+                state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
+                state.recentGlucoseDateTime = currentGlucose.datetime
+                state.recentGlucoseTrend = currentGlucose.trend ?? .flat
+                state.lastReadTimestamp = max(
+                    currentGlucose.datetime,
+                    samples.map(\.datetime).max() ?? currentGlucose.datetime
+                )
+            }
 
             self.delegate.notify { delegate in
                 guard let delegate else {
@@ -214,8 +258,7 @@ extension EversenseCGMManager {
                     )
                     delegate.cgmManager(self, hasNew: [insertionEvent])
 
-                    self.state.hasReportedInsertionDate = true
-                    self.notifyStateDidChange()
+                    self.updateState { $0.hasReportedInsertionDate = true }
                 }
             }
 
@@ -247,7 +290,7 @@ extension EversenseCGMManager {
             }
         }
 
-        state.activeAlarms = alarms.filter { $0.code != .unknown }
+        updateState { $0.activeAlarms = alarms.filter { $0.code != .unknown } }
     }
 
     private func findNewAlarms(current: [ActiveAlarm], updated: [ActiveAlarm]) -> [ActiveAlarm] {
@@ -287,7 +330,9 @@ extension EversenseCGMManager {
             }
 
             if state.shouldUploadToEversenseDMS {
-                state.essentailLogsToUpload.append(contentsOf: samples)
+                dmsQueue.sync {
+                    self.updateState { $0.essentailLogsToUpload.append(contentsOf: samples) }
+                }
             }
 
             Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
@@ -296,8 +341,10 @@ extension EversenseCGMManager {
     }
 
     func notifyStateDidChange() {
+        // Take one consistent snapshot so every observer sees the same state.
+        let snapshot = state
         stateObservers.forEach { observer in
-            observer.stateDidUpdate(self.state)
+            observer.stateDidUpdate(snapshot)
         }
 
         delegate.notify { cgmManagerDelegate in

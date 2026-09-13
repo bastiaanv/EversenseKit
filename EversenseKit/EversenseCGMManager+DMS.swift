@@ -3,26 +3,34 @@ import Foundation
 extension EversenseCGMManager {
     func enqueueForDMS(_ samples: [CGMReading]) {
         dmsQueue.sync {
-            let lastQueued = state.lastUploadedTimestamp ?? .distantPast
-            var seen = Set(state.readingsToUpload.map(\.datetime))
+            var queuedCount = 0
+            updateState { state in
+                let lastQueued = state.lastUploadedTimestamp ?? .distantPast
+                var seen = Set(state.readingsToUpload.map(\.datetime))
 
-            let newSamples = samples
-                .filter { sample in
-                    guard sample.datetime > lastQueued, !seen.contains(sample.datetime) else {
-                        return false
+                let newSamples = samples
+                    .filter { sample in
+                        guard sample.datetime > lastQueued, !seen.contains(sample.datetime) else {
+                            return false
+                        }
+                        seen.insert(sample.datetime)
+                        return true
                     }
-                    seen.insert(sample.datetime)
-                    return true
-                }
-                .sorted { $0.datetime < $1.datetime }
+                    .sorted { $0.datetime < $1.datetime }
 
-            guard !newSamples.isEmpty else {
+                guard !newSamples.isEmpty else {
+                    return
+                }
+
+                state.readingsToUpload.append(contentsOf: newSamples)
+                queuedCount = newSamples.count
+            }
+
+            guard queuedCount > 0 else {
                 return
             }
 
-            state.readingsToUpload.append(contentsOf: newSamples)
-            logger.debug("Queued \(newSamples.count) reading(s) for DMS, total: \(state.readingsToUpload.count)")
-            notifyStateDidChange()
+            logger.debug("Queued \(queuedCount) reading(s) for DMS, total: \(state.readingsToUpload.count)")
         }
     }
 
@@ -52,10 +60,12 @@ extension EversenseCGMManager {
             }
 
             let (readings, batteryReadings, essentailLogs) = self.dmsQueue.sync {
-                (self.state.readingsToUpload, self.state.batteryReadingsToUpload, self.state.essentailLogsToUpload)
+                self.withState { ($0.readingsToUpload, $0.batteryReadingsToUpload, $0.essentailLogsToUpload) }
             }
 
-            if readings.count >= self.state.uploadBatchSize {
+            let uploadBatchSize = self.withState { $0.uploadBatchSize }
+
+            if readings.count >= uploadBatchSize {
                 handleDMSResult(name: "reading(s)", count: readings.count, result: await DMSApi.uploadDeviceEvents(
                     cgmManager: self,
                     sensorId: self.state.sensorId,
@@ -65,17 +75,18 @@ extension EversenseCGMManager {
                 )) {
                     let uploadedMax = readings.map(\.datetime).max()
                     self.dmsQueue.sync {
-                        if let uploadedMax {
-                            self.state.lastUploadedTimestamp = uploadedMax
-                            // Remove only what was uploaded; readings queued while the request was in flight must be preserved.
-                            self.state.readingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        self.updateState { state in
+                            if let uploadedMax {
+                                state.lastUploadedTimestamp = uploadedMax
+                                // Remove only what was uploaded; readings queued while the request was in flight must be preserved.
+                                state.readingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                            }
                         }
-                        self.notifyStateDidChange()
                     }
                 }
             }
 
-            if batteryReadings.count >= self.state.uploadBatchSize {
+            if batteryReadings.count >= uploadBatchSize {
                 handleDMSResult(name: "battery log(s)", count: batteryReadings.count, result: await DMSApi.uploadBatteryLogs(
                     cgmManager: self,
                     sensorId: self.state.sensorId,
@@ -83,25 +94,27 @@ extension EversenseCGMManager {
                 )) {
                     let uploadedMax = batteryReadings.map(\.datetime).max()
                     self.dmsQueue.sync {
-                        if let uploadedMax {
-                            self.state.batteryReadingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        self.updateState { state in
+                            if let uploadedMax {
+                                state.batteryReadingsToUpload.removeAll { $0.datetime <= uploadedMax }
+                            }
                         }
-                        self.notifyStateDidChange()
                     }
                 }
             }
 
-            if essentailLogs.count >= self.state.uploadBatchSize {
+            if essentailLogs.count >= uploadBatchSize {
                 handleDMSResult(name: "essentail log(s)", count: essentailLogs.count, result: await DMSApi.uploadEssentailLogs(
                     cgmManager: self,
                     essentailLogs: essentailLogs
                 )) {
                     let uploadedMax = essentailLogs.map(\.datetime).max()
                     self.dmsQueue.sync {
-                        if let uploadedMax {
-                            self.state.essentailLogsToUpload.removeAll { $0.datetime <= uploadedMax }
+                        self.updateState { state in
+                            if let uploadedMax {
+                                state.essentailLogsToUpload.removeAll { $0.datetime <= uploadedMax }
+                            }
                         }
-                        self.notifyStateDidChange()
                     }
                 }
             }

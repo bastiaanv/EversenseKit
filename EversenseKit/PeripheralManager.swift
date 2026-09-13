@@ -24,6 +24,9 @@ class PeripheralManager: NSObject {
     private let writeSemaphore = DispatchSemaphore(value: 1)
     private var writeResponse: AnyObject?
     private var isCleaningUp = false
+    /// Protects `packet`, `writeQueue`, `writeResponse` and `isCleaningUp`, which are
+    /// touched both by the thread performing the write and by the CoreBluetooth delegate.
+    private let writeLock = NSRecursiveLock()
 
     private let maxPacketSize: Int
 
@@ -34,45 +37,59 @@ class PeripheralManager: NSObject {
 
         // Need the MTU for the 365 transmitter
         maxPacketSize = self.peripheral.maximumWriteValueLength(for: .withoutResponse)
-        cgmManager.state.security = .none
         super.init()
 
         self.peripheral.delegate = self
     }
 
     func cleanup() {
+        writeLock.lock()
         isCleaningUp = true
-        writeSemaphore.signal()
-        if let writeAction = writeQueue {
-            writeAction.leave()
-        }
+        let writeAction = writeQueue
+        writeLock.unlock()
+
+        writeAction?.leave()
     }
 
     func write<T>(_ packet: any BasePacket, timeout: TimeInterval = .seconds(5)) throws -> T {
-        if isCleaningUp {
+        writeLock.lock()
+        let alreadyCleaningUp = isCleaningUp
+        writeLock.unlock()
+
+        if alreadyCleaningUp {
             throw NSError(domain: "PeripheralManager cleaned up", code: -1)
         }
+
         // Wait until previous write calls have been completed
         writeSemaphore.wait()
+
+        defer { writeSemaphore.signal() }
+
+        // cleanup() may have run while we were waiting for the lock
+        writeLock.lock()
+        let cleaningUp = isCleaningUp
+        writeLock.unlock()
+
+        guard !cleaningUp else {
+            throw NSError(domain: "PeripheralManager cleaned up", code: -1)
+        }
 
         guard let characteristic = requestCharacteristic else {
             logger.error("Not connected anymore...", type: .send)
             throw NSError(domain: "Not connected anymore...", code: 0, userInfo: nil)
         }
 
-        defer {
-            writeSemaphore.signal()
-            writeResponse = nil
-        }
-
-        self.packet = packet
         let writeQ = EversenseKitDispatchGroup()
         writeQ.enter()
 
+        writeLock.lock()
+        self.packet = packet
         writeQueue = writeQ
+        writeResponse = nil
+        writeLock.unlock()
 
         let data = packet.getRequestData()
-        if case cgmManager.state.security = .none {
+        if cgmManager.state.security == .none {
             logger.debug("[RAW] Writing data -> \(data.hexString())", type: .send)
             peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
         } else {
@@ -88,14 +105,17 @@ class PeripheralManager: NSObject {
 
         // Wait for response or timeout timer...
         _ = writeQ.wait(timeout: .now().advanced(by: .seconds(Int(timeout))))
-        writeQueue = nil
 
-        guard let response = writeResponse as? T else {
-            writeResponse = nil
+        writeLock.lock()
+        writeQueue = nil
+        let response = writeResponse as? T
+        writeResponse = nil
+        writeLock.unlock()
+
+        guard let response else {
             throw NSError(domain: "Timeout has been hit...", code: 0, userInfo: nil)
         }
 
-        writeResponse = nil
         return response
     }
 }
@@ -130,7 +150,7 @@ extension PeripheralManager: CBPeripheralDelegate {
            let responseCharacteristic = service.characteristics?
            .first(where: { $0.uuid == self.responseCharacteristicUUID })
         {
-            cgmManager.state.security = .none
+            cgmManager.updateState { $0.security = .none }
             self.requestCharacteristic = requestCharacteristic
             self.responseCharacteristic = responseCharacteristic
 
@@ -144,7 +164,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             let responseCharacteristic = service.characteristics?
             .first(where: { $0.uuid == self.responseCharacteristicSecureV2UUID })
         {
-            cgmManager.state.security = .v2
+            cgmManager.updateState { $0.security = .v2 }
             self.requestCharacteristic = requestCharacteristic
             self.responseCharacteristic = responseCharacteristic
 
@@ -158,7 +178,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             let responseCharacteristic = service.characteristics?
             .first(where: { $0.uuid == self.responseCharacteristicSecureUUID })
         {
-            cgmManager.state.security = .v1
+            cgmManager.updateState { $0.security = .v1 }
             self.requestCharacteristic = requestCharacteristic
             self.responseCharacteristic = responseCharacteristic
 
@@ -244,10 +264,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             if cgmManager.state.recentGlucoseDateTime == nil || cgmManager.state.recentGlucoseDateTime!
                 .addingTimeInterval(.minutes(4.5)) > Date.now
             {
-                DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                    guard let self = self else { return }
-                    cgmManager.heartbeathOperation()
-                }
+                cgmManager.heartbeathOperation()
             }
             return
         }
@@ -263,10 +280,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 type: .receive
             )
             if response.mostRecenteGlucoseDatetime > (cgmManager.state.recentGlucoseDateTime ?? .distantPast) {
-                DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                    guard let self = self else { return }
-                    cgmManager.heartbeathOperation()
-                }
+                cgmManager.heartbeathOperation()
             }
 
             return
@@ -282,10 +296,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 return
             }
 
-            DispatchQueue.main.async {
-                self.cgmManager.state.activeAlarms = [response.alarm]
-                self.cgmManager.notifyStateDidChange()
-            }
+            self.cgmManager.updateState { $0.activeAlarms = [response.alarm] }
 
             logger.debug("[365] Received alarm", type: .receive)
             return
@@ -294,7 +305,11 @@ extension PeripheralManager: CBPeripheralDelegate {
         if actualData[0] == EversenseE3.PacketIds.errorResponseId.rawValue {
             EversenseE3.handleError(data: actualData)
 
-            guard let stream = writeQueue else {
+            writeLock.lock()
+            let stream = writeQueue
+            writeLock.unlock()
+
+            guard let stream else {
                 logger.warning("No pending writeQueue", type: .receive)
                 return
             }
@@ -306,7 +321,11 @@ extension PeripheralManager: CBPeripheralDelegate {
         if actualData[0] == Eversense365.PacketIds.ErrorResponseId.rawValue {
             Eversense365.handleError(data: actualData)
 
-            guard let stream = writeQueue else {
+            writeLock.lock()
+            let stream = writeQueue
+            writeLock.unlock()
+
+            guard let stream else {
                 logger.warning("No pending writeQueue", type: .receive)
                 return
             }
@@ -316,7 +335,11 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         // From here we assume it is a normal packet
-        guard let packet = self.packet else {
+        writeLock.lock()
+        let packet = self.packet
+        writeLock.unlock()
+
+        guard let packet else {
             logger.error("No active packet - data: \(actualData.hexString())", type: .receive)
             return
         }
@@ -334,15 +357,20 @@ extension PeripheralManager: CBPeripheralDelegate {
             actualData = actualData.subdata(in: 1 ..< actualData.count - 2)
         }
 
-        writeResponse = packet.parseResponse(data: actualData) as AnyObject
+        let parsedResponse = packet.parseResponse(data: actualData) as AnyObject
 
-        guard let stream = writeQueue else {
+        writeLock.lock()
+        writeResponse = parsedResponse
+        let stream = writeQueue
+        writeQueue = nil
+        writeLock.unlock()
+
+        guard let stream else {
             logger.warning("No pending writeQueue - data: \(actualData.hexString())", type: .receive)
             return
         }
 
         stream.leave()
-        writeQueue = nil
     }
 }
 
@@ -367,9 +395,11 @@ extension PeripheralManager {
     private func authFlowV2() async {
         if cgmManager.state.publicKeyV2 == nil || cgmManager.state.privateKeyV2 == nil || cgmManager.state.clientIdV2 == nil {
             let (newPrivateKey, newPublicKey, newClientId) = CryptoUtil.generateKeyPair()
-            cgmManager.state.publicKeyV2 = newPublicKey
-            cgmManager.state.privateKeyV2 = newPrivateKey
-            cgmManager.state.clientIdV2 = newClientId
+            cgmManager.updateState {
+                $0.publicKeyV2 = newPublicKey
+                $0.privateKeyV2 = newPrivateKey
+                $0.clientIdV2 = newClientId
+            }
         }
 
         guard
@@ -422,7 +452,7 @@ extension PeripheralManager {
                     return
                 }
 
-                cgmManager.state.certificateV2 = certificate
+                cgmManager.updateState { $0.certificateV2 = certificate }
                 guard let certificateData = Data(hexString: certificate) else {
                     logger.error("Could not parse certificate - data: \(certificate)")
                     connectCompletion?(.preconditionFailed(reason: "No cert available..."))
@@ -470,8 +500,7 @@ extension PeripheralManager {
             connectCompletion = nil
 
         } catch {
-            cgmManager.state.certificateV2 = nil
-            cgmManager.notifyStateDidChange()
+            cgmManager.updateState { $0.certificateV2 = nil }
 
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")
             connectCompletion?(.failedToFetchFleetKey(reason: "Failed to write Auth v2 - \(error.localizedDescription)"))

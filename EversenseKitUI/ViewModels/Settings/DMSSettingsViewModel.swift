@@ -97,13 +97,14 @@ class DMSSettingsViewModel: ObservableObject {
     }
 
     func save() {
-        cgmManager.state.shouldUploadToEversenseDMS = enabled
         cgmManager.keychain.setEversenseCredentials(credentials: Credentials(username: username, password: password))
-        cgmManager.state.apiZone = apiZone
-        cgmManager.state.uploadBatchSize = batchSize
-        cgmManager.state.accessToken = nil
-        cgmManager.state.accessTokenExpiration = nil
-        cgmManager.notifyStateDidChange()
+        cgmManager.updateState {
+            $0.shouldUploadToEversenseDMS = enabled
+            $0.apiZone = apiZone
+            $0.uploadBatchSize = batchSize
+            $0.accessToken = nil
+            $0.accessTokenExpiration = nil
+        }
 
         updateFollowers()
     }
