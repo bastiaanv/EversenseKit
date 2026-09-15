@@ -85,7 +85,6 @@ extension Eversense365 {
             let sensorInformation: GetSensorInformationResponse = try peripheralManager
                 .write(GetSensorInformationPacket())
 
-            
             sensorIdLength = sensorInformation.sensorIdLength
 
             let timeDifference = sensorInformation.transmitterDatetime.timeIntervalSince1970 - Date.nowWithTimezone()
@@ -114,7 +113,7 @@ extension Eversense365 {
             let activeAlarms: GetActiveAlarmsResponse = try peripheralManager.write(alarmsRequest)
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
 
-            var batteryLogResponse: GetBatteryLogResponse? = nil
+            var batteryLogResponse: GetBatteryLogResponse?
             if cgmManager.state.shouldUploadToEversenseDMS {
                 logger.debug("Reading battery logs")
                 let batteryLogRange: GetLogRangeResponse = try peripheralManager
@@ -125,8 +124,7 @@ extension Eversense365 {
                     rangeFrom: batteryLogRange.rangeFrom,
                     rangeTo: batteryLogRange.rangeTo
                 ) {
-                    batteryLogResponse: GetBatteryLogResponse = try peripheralManager
-                        .write(GetBatteryLogPacket(from: range.from, to: range.to))
+                    batteryLogResponse = try peripheralManager.write(GetBatteryLogPacket(from: range.from, to: range.to))
                 }
             }
 
@@ -172,7 +170,7 @@ extension Eversense365 {
                 $0.repeatHighTimeout = patientSettings.repeatHighTimeout
 
                 if let batteryLogResponse {
-                    $0.lastBatteryRecord = batteryLogResponse.to
+                    $0.lastBatteryRecord = batteryLogResponse.rangeTo
                     $0.batteryReadingsToUpload.append(contentsOf: batteryLogResponse.logs)
                 }
             }
@@ -242,7 +240,7 @@ extension Eversense365 {
         do {
             logger.debug("sending GetSignalStrenghtResponse...")
             let signalStrength: GetSignalStrenghtResponse = try cgmManager.bluetoothManager.write(GetSignalStrenghtPacket())
-            cgmManager.updateState { 
+            cgmManager.updateState {
                 $0.signalStrengthRaw = signalStrength.rawValue
                 $0.signalStrength = signalStrength.signalStrength
             }

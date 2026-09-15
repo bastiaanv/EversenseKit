@@ -116,7 +116,6 @@ extension EversenseE3 {
             // Get MMA Features
             let mmaResponse: GetMmaFeaturesResponse = try peripheralManager
                 .write(GetMmaFeaturesPacket())
-            
 
             // Get battery percentage
             let batteryPercentage: GetBatteryPercentageResponse = try peripheralManager

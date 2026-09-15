@@ -296,7 +296,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 return
             }
 
-            self.cgmManager.updateState { $0.activeAlarms = [response.alarm] }
+            cgmManager.updateState { $0.activeAlarms = [response.alarm] }
 
             logger.debug("[365] Received alarm", type: .receive)
             return
