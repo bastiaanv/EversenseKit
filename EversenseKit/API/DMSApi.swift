@@ -40,8 +40,9 @@ enum DMSApi {
                 Active: true,
                 AppOS: "iOS",
                 AppOSVersion: UIDevice.current.systemVersion,
+                AppName: hostApp.name,
                 AppVersion: hostApp.version,
-                AppReserveField1: hostApp.name,
+                AppReserveField1: Self.generateLocaleTimezone(),
                 DeviceType: Self.getDeviceType(),
                 AutoSync: 0
             )
@@ -550,5 +551,24 @@ enum DMSApi {
             acc.append(Character(UnicodeScalar(UInt8(v))))
         }
         return machine.isEmpty ? "Unknown" : machine
+    }
+
+    private static func generateLocaleTimezone() -> String {
+        let locale = Locale.current
+        let timezone = TimeZone.current
+
+        // Language/region identifier (e.g., "en-US")
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        let regionCode = locale.region?.identifier ?? "US"
+        let localeString = "\(languageCode)-\(regionCode)"
+
+        // Timezone identifier (e.g., "America/Chicago")
+        let timezoneIdentifier = timezone.identifier
+
+        // UTC offset in minutes (e.g., -300 for UTC-5)
+        let offsetSeconds = timezone.secondsFromGMT()
+        let offsetMinutes = offsetSeconds / 60
+
+        return "\(localeString)|\(timezoneIdentifier)|\(offsetMinutes)"
     }
 }
