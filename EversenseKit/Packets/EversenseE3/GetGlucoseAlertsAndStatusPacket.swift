@@ -87,7 +87,7 @@ extension EversenseE3 {
 
             return GetGlucoseAlertsAndStatusPacketResonse(
                 alarms: alarms
-                    .map { ActiveAlarm(code: $0, codeRaw: $0.rawValue, glucoseInMgDl: currentGlucose, flag: 0, priority: 0) }
+                    .map { ActiveAlarm(code: $0, datetime: Date.now, glucoseInMgDl: currentGlucose, flag: 0, priority: 0) }
             )
         }
     }

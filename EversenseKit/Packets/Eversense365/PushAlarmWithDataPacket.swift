@@ -1,10 +1,12 @@
 extension Eversense365 {
     class PushAlarmWithDataResponse {
         let alarm: ActiveAlarm
+        let alarmRaw: UInt8
         let datetime: Date
 
-        init(alarm: ActiveAlarm, datetime: Date) {
+        init(alarm: ActiveAlarm, alarmRaw: UInt8, datetime: Date) {
             self.alarm = alarm
+            self.alarmRaw = alarmRaw
             self.datetime = datetime
         }
     }
@@ -39,11 +41,12 @@ extension Eversense365 {
             PushAlarmWithDataResponse(
                 alarm: ActiveAlarm(
                     code: Alarm(rawValue: data[2]) ?? .unknown,
-                    codeRaw: data[2],
+                    datetime: Date.now,
                     glucoseInMgDl: currentGlucose,
                     flag: 0,
                     priority: 0
                 ),
+                alarmRaw: data[2],
                 datetime: Date.fromUnix2000(data: data.subdata(in: 4 ..< 12)),
             )
         }

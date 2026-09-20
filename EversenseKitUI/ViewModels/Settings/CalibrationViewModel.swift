@@ -77,7 +77,6 @@ class CalibrationViewModel: ObservableObject {
         Task {
             let result = await DMSApi.uploadDeviceEvents(
                 cgmManager: cgmManager,
-                sensorId: cgmManager.state.sensorId,
                 readings: [],
                 calibrations: [
                     CalibrationEvent(

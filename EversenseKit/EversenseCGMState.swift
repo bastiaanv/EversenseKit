@@ -89,6 +89,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
         batteryPercentage = rawValue["batteryPercentage"] as? Int ?? -1
         lastBatteryRecord = rawValue["lastBatteryRecord"] as? UInt32 ?? 0
+        lastRawGlucoseRecord = rawValue["lastRawGlucoseRecord"] as? UInt32 ?? 0
+        hasReportedAppValues = rawValue["hasReportedAppValues"] as? Bool ?? false
 
         username = rawValue["username"] as? String
         password = rawValue["password"] as? String
@@ -143,51 +145,34 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
             apiZone = security == .none ? .OutsideUS : .US
         }
 
-        do {
-            if let activeAlarmsData = rawValue["activeAlarms"] as? Data {
-                activeAlarms = try JSONDecoder().decode([ActiveAlarm].self, from: activeAlarmsData)
-            } else {
-                activeAlarms = []
-            }
-        } catch {
-            EversenseLogger(category: "EversenseCGMState").error("Failed to decode activeAlarms - \(error.localizedDescription)")
+        if let activeAlarmsRaw = rawValue["activeAlarms"] as? [ActiveAlarm.RawValue] {
+            activeAlarms = activeAlarmsRaw.compactMap { ActiveAlarm(rawValue: $0) }
+        } else {
             activeAlarms = []
         }
 
-        do {
-            if let readingsToUploadData = rawValue["readingsToUpload"] as? Data {
-                readingsToUpload = try JSONDecoder().decode([CGMReading].self, from: readingsToUploadData)
-            } else {
-                readingsToUpload = []
-            }
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to decode readingsToUpload - \(error.localizedDescription)")
+        if let readingsToUploadRaw = rawValue["readingsToUpload"] as? [CGMReading.RawValue] {
+            readingsToUpload = readingsToUploadRaw.compactMap { CGMReading(rawValue: $0) }
+        } else {
             readingsToUpload = []
         }
 
-        do {
-            if let essentailLogsToUploadData = rawValue["essentailLogsToUpload"] as? Data {
-                essentailLogsToUpload = try JSONDecoder().decode([CGMReading].self, from: essentailLogsToUploadData)
-            } else {
-                essentailLogsToUpload = []
-            }
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to decode essentailLogsToUpload - \(error.localizedDescription)")
+        if let essentailLogsToUploadRaw = rawValue["essentailLogsToUpload"] as? [CGMReading.RawValue] {
+            essentailLogsToUpload = essentailLogsToUploadRaw.compactMap { CGMReading(rawValue: $0) }
+        } else {
             essentailLogsToUpload = []
         }
 
-        do {
-            if let batteryReadingsToUploadData = rawValue["batteryReadingsToUpload"] as? Data {
-                batteryReadingsToUpload = try JSONDecoder().decode([BatteryReadings].self, from: batteryReadingsToUploadData)
-            } else {
-                batteryReadingsToUpload = []
-            }
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to decode batteryReadingsToUpload - \(error.localizedDescription)")
+        if let batteryReadingsToUploadRaw = rawValue["batteryReadingsToUpload"] as? [BatteryReadings.RawValue] {
+            batteryReadingsToUpload = batteryReadingsToUploadRaw.compactMap { BatteryReadings(rawValue: $0) }
+        } else {
             batteryReadingsToUpload = []
+        }
+
+        if let rawGlucoseReadingsToUploadRaw = rawValue["rawGlucoseReadingsToUpload"] as? [RawGlucoseReading.RawValue] {
+            rawGlucoseReadingsToUpload = rawGlucoseReadingsToUploadRaw.compactMap { RawGlucoseReading(rawValue: $0) }
+        } else {
+            rawGlucoseReadingsToUpload = []
         }
     }
 
@@ -209,10 +194,12 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["sensorId"] = sensorId
         value["communicationProtocol"] = communicationProtocol
         value["hasReportedInsertionDate"] = hasReportedInsertionDate
+        value["hasReportedAppValues"] = hasReportedAppValues
         value["activatedAt"] = activatedAt
         value["expiresAt"] = expiresAt
         value["mmaFeatures"] = mmaFeatures
         value["lastBatteryRecord"] = lastBatteryRecord
+        value["lastRawGlucoseRecord"] = lastRawGlucoseRecord
         value["vibrateMode"] = vibrateMode
         value["batteryPercentage"] = batteryPercentage
         value["signalStrength"] = signalStrength.rawValue
@@ -253,32 +240,11 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["clientIdV2"] = clientIdV2
         value["certificateV2"] = certificateV2
 
-        do {
-            value["activeAlarms"] = try JSONEncoder().encode(activeAlarms)
-        } catch {
-            EversenseLogger(category: "EversenseCGMState").error("Failed to encode activeAlarms - \(error.localizedDescription)")
-        }
-
-        do {
-            value["readingsToUpload"] = try JSONEncoder().encode(readingsToUpload)
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to encode readingsToUpload - \(error.localizedDescription)")
-        }
-
-        do {
-            value["essentailLogsToUpload"] = try JSONEncoder().encode(essentailLogsToUpload)
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to encode essentailLogsToUpload - \(error.localizedDescription)")
-        }
-
-        do {
-            value["batteryReadingsToUpload"] = try JSONEncoder().encode(batteryReadingsToUpload)
-        } catch {
-            EversenseLogger(category: "EversenseCGMState")
-                .error("Failed to encode batteryReadingsToUpload - \(error.localizedDescription)")
-        }
+        value["activeAlarms"] = activeAlarms.map(\.rawValue)
+        value["readingsToUpload"] = readingsToUpload.map(\.rawValue)
+        value["essentailLogsToUpload"] = essentailLogsToUpload.map(\.rawValue)
+        value["batteryReadingsToUpload"] = batteryReadingsToUpload.map(\.rawValue)
+        value["rawGlucoseReadingsToUpload"] = rawGlucoseReadingsToUpload.map(\.rawValue)
 
         return value
     }
@@ -341,17 +307,21 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var recentGlucoseDateTime: Date?
     public var recentGlucoseTrend: GlucoseTrend
 
+    // Eversense DMS properties
+    public var hasReportedAppValues: Bool
     public var activeAlarms: [ActiveAlarm]
     public var readingsToUpload: [CGMReading]
     public var essentailLogsToUpload: [CGMReading]
     public var lastBatteryRecord: UInt32
     public var batteryReadingsToUpload: [BatteryReadings]
+    public var lastRawGlucoseRecord: UInt32
+    public var rawGlucoseReadingsToUpload: [RawGlucoseReading]
 
     // Eversense 365
     public var security: SecurityType = .none
     public var apiZone: EversenseApiZone
-    public var username: String?
-    public var password: String?
+    public var username: String? // UNUSED
+    public var password: String? // UNUSED
     public var accessToken: String?
     public var accessTokenExpiration: Date?
 

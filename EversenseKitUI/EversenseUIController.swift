@@ -76,7 +76,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
         largeTitleDisplayMode: UINavigationItem.LargeTitleDisplayMode = .automatic
     ) -> DismissibleHostingController<some View> {
         let rootView = rootView
-            .environment(\.appName, Bundle.main.bundleDisplayName)
+            .environment(\.appName, HostApp.current.name)
             .environmentObject(displayGlucosePreference)
 
         let hostedView = DismissibleHostingController(content: rootView, colorPalette: colorPalette)
@@ -252,14 +252,14 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
                 state.activeAlarms = [
                     ActiveAlarm(
                         code: .CalibrationNowAlarm,
-                        codeRaw: Alarm.CalibrationNowAlarm.rawValue,
+                        datetime: Date.now,
                         glucoseInMgDl: 0,
                         flag: 0,
                         priority: 0
                     ),
                     ActiveAlarm(
                         code: .PredictiveHighAlarm,
-                        codeRaw: Alarm.CalibrationNowAlarm.rawValue,
+                        datetime: Date.now,
                         glucoseInMgDl: 0,
                         flag: 0,
                         priority: 2

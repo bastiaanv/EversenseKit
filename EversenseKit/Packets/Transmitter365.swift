@@ -114,6 +114,7 @@ extension Eversense365 {
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
 
             var batteryLogResponse: GetBatteryLogResponse?
+            var rawGlucoseLogResponse: GetRawGlucoseLogResponse?
             if cgmManager.state.shouldUploadToEversenseDMS {
                 logger.debug("Reading battery logs")
                 let batteryLogRange: GetLogRangeResponse = try peripheralManager
@@ -125,6 +126,18 @@ extension Eversense365 {
                     rangeTo: batteryLogRange.rangeTo
                 ) {
                     batteryLogResponse = try peripheralManager.write(GetBatteryLogPacket(from: range.from, to: range.to))
+                }
+
+                logger.debug("Reading rawGlucose logs")
+                let rawGlucoseRange: GetLogRangeResponse = try peripheralManager
+                    .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .RawGlucose))
+
+                if let range = RangeCalculator.calculateRange(
+                    lastRecord: cgmManager.state.lastRawGlucoseRecord,
+                    rangeFrom: rawGlucoseRange.rangeFrom,
+                    rangeTo: rawGlucoseRange.rangeTo
+                ) {
+                    rawGlucoseLogResponse = try peripheralManager.write(GetRawGlucoseLogPacket(from: range.from, to: range.to))
                 }
             }
 
@@ -172,6 +185,11 @@ extension Eversense365 {
                 if let batteryLogResponse {
                     $0.lastBatteryRecord = batteryLogResponse.rangeTo
                     $0.batteryReadingsToUpload.append(contentsOf: batteryLogResponse.logs)
+                }
+
+                if let rawGlucoseLogResponse {
+                    $0.lastRawGlucoseRecord = rawGlucoseLogResponse.rangeTo
+                    $0.rawGlucoseReadingsToUpload.append(contentsOf: rawGlucoseLogResponse.logs)
                 }
             }
 

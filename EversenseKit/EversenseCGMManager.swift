@@ -294,8 +294,8 @@ extension EversenseCGMManager {
     }
 
     private func findNewAlarms(current: [ActiveAlarm], updated: [ActiveAlarm]) -> [ActiveAlarm] {
-        let currentCodes = Set(current.filter { $0.code != .unknown }.map(\.codeRaw))
-        return updated.filter { !currentCodes.contains($0.codeRaw) && $0.code != .unknown }
+        let currentCodes = Set(current.filter { $0.code != .unknown }.map(\.code.rawValue))
+        return updated.filter { !currentCodes.contains($0.code.rawValue) && $0.code != .unknown }
     }
 
     private func getGlucoseAndSync(

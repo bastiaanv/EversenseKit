@@ -1,33 +1,33 @@
-public struct BatteryReadings: RawRepresentable, Equatable {
-    let value: Data
+public struct RawGlucoseReading: RawRepresentable, Equatable {
     let datetime: Date
     let recordId: UInt32
+    let algoLog: String
 
-    init(value: Data, datetime: Date, recordId: UInt32) {
-        self.value = value
+    init(datetime: Date, recordId: UInt32, algoLog: String) {
         self.datetime = datetime
         self.recordId = recordId
+        self.algoLog = algoLog
     }
 
     public typealias RawValue = [String: Any]
     public init?(rawValue: RawValue) {
-        guard let value = rawValue["value"] as? Data,
-              let datetime = rawValue["datetime"] as? Date,
-              let recordId = rawValue["recordId"] as? UInt32
+        guard let datetime = rawValue["datetime"] as? Date,
+              let recordId = rawValue["recordId"] as? UInt32,
+              let algoLog = rawValue["algoLog"] as? String
         else {
             return nil
         }
 
-        self.value = value
         self.datetime = datetime
         self.recordId = recordId
+        self.algoLog = algoLog
     }
 
     public var rawValue: RawValue {
         var value: RawValue = [:]
-        value["value"] = value
         value["datetime"] = datetime
         value["recordId"] = recordId
+        value["algoLog"] = algoLog
 
         return value
     }

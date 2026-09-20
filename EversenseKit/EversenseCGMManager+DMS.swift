@@ -59,16 +59,33 @@ extension EversenseCGMManager {
                 self.logger.warning("Failed to upload current reading: \(String(describing: currentResult))")
             }
 
-            let (readings, batteryReadings, essentailLogs) = self.dmsQueue.sync {
-                self.withState { ($0.readingsToUpload, $0.batteryReadingsToUpload, $0.essentailLogsToUpload) }
+            let (hasReportedAppValues, readings, batteryReadings, essentailLogs, rawGlucoseLogs) = self.dmsQueue.sync {
+                self
+                    .withState {
+                        (
+                            $0.hasReportedAppValues,
+                            $0.readingsToUpload,
+                            $0.batteryReadingsToUpload,
+                            $0.essentailLogsToUpload,
+                            $0.rawGlucoseReadingsToUpload
+                        ) }
             }
 
             let uploadBatchSize = self.withState { $0.uploadBatchSize }
 
+            if !hasReportedAppValues {
+                handleDMSResult(name: "appValues", count: 0, result: await DMSApi.uploadAppValues(cgmManager: self)) {
+                    self.dmsQueue.sync {
+                        self.updateState { state in
+                            state.hasReportedAppValues = true
+                        }
+                    }
+                }
+            }
+
             if readings.count >= uploadBatchSize {
                 handleDMSResult(name: "reading(s)", count: readings.count, result: await DMSApi.uploadDeviceEvents(
                     cgmManager: self,
-                    sensorId: self.state.sensorId,
                     readings: readings,
                     calibrations: [],
                     alerts: self.state.activeAlarms.filter { $0.code.dmsCode != 255 }
@@ -89,7 +106,6 @@ extension EversenseCGMManager {
             if batteryReadings.count >= uploadBatchSize {
                 handleDMSResult(name: "battery log(s)", count: batteryReadings.count, result: await DMSApi.uploadBatteryLogs(
                     cgmManager: self,
-                    sensorId: self.state.sensorId,
                     batteryLogs: batteryReadings
                 )) {
                     let uploadedMax = batteryReadings.map(\.datetime).max()
@@ -113,6 +129,23 @@ extension EversenseCGMManager {
                         self.updateState { state in
                             if let uploadedMax {
                                 state.essentailLogsToUpload.removeAll { $0.datetime <= uploadedMax }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if rawGlucoseLogs.count >= uploadBatchSize {
+                handleDMSResult(
+                    name: "rawGlucose log(s)",
+                    count: rawGlucoseLogs.count,
+                    result: await DMSApi.uploadAlgorithmLogs(cgmManager: self, rawGlucoseLogs: rawGlucoseLogs)
+                ) {
+                    let uploadedMax = rawGlucoseLogs.map(\.datetime).max()
+                    self.dmsQueue.sync {
+                        self.updateState { state in
+                            if let uploadedMax {
+                                state.rawGlucoseReadingsToUpload.removeAll { $0.datetime <= uploadedMax }
                             }
                         }
                     }

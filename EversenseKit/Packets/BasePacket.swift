@@ -200,6 +200,7 @@ enum Eversense365 {
         case Alerts = 0
         case Battery = 3
         case Calibrations = 6
+        case RawGlucose = 8
         case Glucose = 13
     }
 
