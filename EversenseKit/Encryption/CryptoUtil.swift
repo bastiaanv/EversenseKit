@@ -113,6 +113,12 @@ class CryptoUtil {
     }
 
     func decrypt(data: Data) -> Data {
+        // Two-byte prefix followed by the eight-byte CCM authentication tag.
+        guard data.count >= 10 else {
+            CryptoUtil.logger.error("[decrypt] Encrypted payload too short - count: \(data.count)")
+            return Data()
+        }
+
         guard let sessionKey = sessionKey else {
             CryptoUtil.logger.error("[decrypt] No sessionKey stored...")
             return Data()
