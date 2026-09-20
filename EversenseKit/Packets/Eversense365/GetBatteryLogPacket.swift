@@ -31,6 +31,11 @@ extension Eversense365 {
         }
 
         func parseResponse(data: Data) -> GetBatteryLogResponse {
+            guard data.count >= 7 else {
+                logger.error("Battery log response too short - count: \(data.count)")
+                return GetBatteryLogResponse(rangeTo: to, count: 0, logs: [])
+            }
+
             guard data[6] == LogTypes.Battery.rawValue else {
                 logger.error("Invalid packet type received - expected: \(LogTypes.Battery.rawValue), actual: \(data[6])")
                 return GetBatteryLogResponse(rangeTo: to, count: 0, logs: [])

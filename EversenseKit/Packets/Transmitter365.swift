@@ -113,34 +113,6 @@ extension Eversense365 {
             let activeAlarms: GetActiveAlarmsResponse = try peripheralManager.write(alarmsRequest)
             cgmManager.handleAlarm(alarms: activeAlarms.alarms)
 
-            var batteryLogResponse: GetBatteryLogResponse?
-            var rawGlucoseLogResponse: GetRawGlucoseLogResponse?
-            if cgmManager.state.shouldUploadToEversenseDMS {
-                logger.debug("Reading battery logs")
-                let batteryLogRange: GetLogRangeResponse = try peripheralManager
-                    .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .Battery))
-
-                if let range = RangeCalculator.calculateRange(
-                    lastRecord: cgmManager.state.lastBatteryRecord,
-                    rangeFrom: batteryLogRange.rangeFrom,
-                    rangeTo: batteryLogRange.rangeTo
-                ) {
-                    batteryLogResponse = try peripheralManager.write(GetBatteryLogPacket(from: range.from, to: range.to))
-                }
-
-                logger.debug("Reading rawGlucose logs")
-                let rawGlucoseRange: GetLogRangeResponse = try peripheralManager
-                    .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .RawGlucose))
-
-                if let range = RangeCalculator.calculateRange(
-                    lastRecord: cgmManager.state.lastRawGlucoseRecord,
-                    rangeFrom: rawGlucoseRange.rangeFrom,
-                    rangeTo: rawGlucoseRange.rangeTo
-                ) {
-                    rawGlucoseLogResponse = try peripheralManager.write(GetRawGlucoseLogPacket(from: range.from, to: range.to))
-                }
-            }
-
             cgmManager.updateState {
                 $0.isSyncing = false
                 $0.lastSynced = Date.now
@@ -181,15 +153,48 @@ extension Eversense365 {
                 $0.bleDisconnectTimeout = patientSettings.disconnectTimeout
                 $0.repeatLowTimeout = patientSettings.repeatLowTimeout
                 $0.repeatHighTimeout = patientSettings.repeatHighTimeout
+            }
 
-                if let batteryLogResponse {
-                    $0.lastBatteryRecord = batteryLogResponse.rangeTo
-                    $0.batteryReadingsToUpload.append(contentsOf: batteryLogResponse.logs)
-                }
+            if cgmManager.state.shouldUploadToEversenseDMS {
+                do {
+                    logger.debug("Reading battery logs")
+                    let batteryLogRange: GetLogRangeResponse = try peripheralManager
+                        .write(GetLogRangePacket(communicationVersion: cgmManager.state.communicationProtocol, logType: .Battery))
 
-                if let rawGlucoseLogResponse {
-                    $0.lastRawGlucoseRecord = rawGlucoseLogResponse.rangeTo
-                    $0.rawGlucoseReadingsToUpload.append(contentsOf: rawGlucoseLogResponse.logs)
+                    if let range = RangeCalculator.calculateRange(
+                        lastRecord: cgmManager.state.lastBatteryRecord,
+                        rangeFrom: batteryLogRange.rangeFrom,
+                        rangeTo: batteryLogRange.rangeTo
+                    ) {
+                        let batteryLogResponse: GetBatteryLogResponse = try peripheralManager
+                            .write(GetBatteryLogPacket(from: range.from, to: range.to))
+                        cgmManager.updateState {
+                            $0.lastBatteryRecord = batteryLogResponse.rangeTo
+                            $0.batteryReadingsToUpload.append(contentsOf: batteryLogResponse.logs)
+                        }
+                    }
+
+                    logger.debug("Reading rawGlucose logs")
+                    let rawGlucoseRange: GetLogRangeResponse = try peripheralManager
+                        .write(GetLogRangePacket(
+                            communicationVersion: cgmManager.state.communicationProtocol,
+                            logType: .RawGlucose
+                        ))
+
+                    if let range = RangeCalculator.calculateRange(
+                        lastRecord: cgmManager.state.lastRawGlucoseRecord,
+                        rangeFrom: rawGlucoseRange.rangeFrom,
+                        rangeTo: rawGlucoseRange.rangeTo
+                    ) {
+                        let rawGlucoseLogResponse: GetRawGlucoseLogResponse = try peripheralManager
+                            .write(GetRawGlucoseLogPacket(from: range.from, to: range.to))
+                        cgmManager.updateState {
+                            $0.lastRawGlucoseRecord = rawGlucoseLogResponse.rangeTo
+                            $0.rawGlucoseReadingsToUpload.append(contentsOf: rawGlucoseLogResponse.logs)
+                        }
+                    }
+                } catch {
+                    logger.error("[365] Failed to read DMS diagnostic logs: \(error)")
                 }
             }
 

@@ -31,6 +31,11 @@ extension Eversense365 {
         }
 
         func parseResponse(data: Data) -> GetRawGlucoseLogResponse {
+            guard data.count >= 7 else {
+                logger.error("Raw glucose log response too short - count: \(data.count)")
+                return GetRawGlucoseLogResponse(rangeTo: to, count: 0, logs: [])
+            }
+
             guard data[6] == LogTypes.RawGlucose.rawValue else {
                 logger.error("Invalid packet type received - expected: \(LogTypes.RawGlucose.rawValue), actual: \(data[6])")
                 return GetRawGlucoseLogResponse(rangeTo: to, count: 0, logs: [])
