@@ -33,19 +33,6 @@ enum DMSApi {
         }
 
         let hostApp = HostApp.current
-        let data = await UploadAppValuesRequest(
-            Active: true,
-            AppOS: "iOS",
-            AppOSVersion: UIDevice.current.systemVersion,
-            AppVersion: hostApp.version,
-            AppReserveField1: hostApp.name,
-            DeviceType: Self.getDeviceType(),
-            AutoSync: 0
-        )
-        do {
-            logger.info("App values: \(String(describing: String(bytes: try JSONEncoder().encode(data), encoding: .utf8)))")
-        } catch {}
-
         return await doUploadRequest(
             cgmManager: cgmManager,
             url: url,
