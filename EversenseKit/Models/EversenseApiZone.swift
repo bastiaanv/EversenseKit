@@ -12,9 +12,18 @@ public enum EversenseApiZone: UInt8 {
     var careUrl: String {
         switch self {
         case .US:
-            return "https://usapialpha.eversensedms.com/"
+            return "https://usapialpha.eversensedms.com/api/care/"
         case .OutsideUS:
-            return "https://ousalphaapiservices.eversensedms.com/"
+            return "https://ousalphaapiservices.eversensedms.com/api/care/"
+        }
+    }
+
+    var diagnosticUrl: String {
+        switch self {
+        case .US:
+            return "https://usmobileappmsprod.eversensedms.com/api/v1.0/DiagnosticLog/"
+        case .OutsideUS:
+            return "https://ousmobileappmsprod.eversensedms.com/api/v1.0/DiagnosticLog/"
         }
     }
 

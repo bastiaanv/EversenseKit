@@ -21,13 +21,14 @@ class Eversense365AuthViewModel: ObservableObject {
         isLoading = true
         Task {
             do {
-                cgmManager.state.apiZone = apiZone
+                cgmManager.updateState { $0.apiZone = apiZone }
 
                 let response = try await AuthenticationApi.login(cgmManager: cgmManager, username: username, password: password)
                 cgmManager.keychain.setEversenseCredentials(credentials: Credentials(username: username, password: password))
-                cgmManager.state.accessToken = response.accessToken
-                cgmManager.state.accessTokenExpiration = Date.now.addingTimeInterval(.seconds(Double(response.expiresIn)))
-                cgmManager.notifyStateDidChange()
+                cgmManager.updateState {
+                    $0.accessToken = response.accessToken
+                    $0.accessTokenExpiration = Date.now.addingTimeInterval(.seconds(Double(response.expiresIn)))
+                }
 
                 await MainActor.run {
                     self.isLoading = false

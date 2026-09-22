@@ -15,8 +15,6 @@ final class EversenseKitDispatchGroup {
         defer { lock.unlock() }
 
         guard count > 0 else {
-            // Ignore surplus leaves without changing the count or retaining
-            // the lock, so subsequent operations can still use this group.
             return
         }
 

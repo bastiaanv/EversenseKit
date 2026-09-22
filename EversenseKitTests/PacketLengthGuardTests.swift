@@ -1,5 +1,5 @@
-@testable import EversenseKit
 import CryptoKit
+@testable import EversenseKit
 import Foundation
 import Testing
 
@@ -17,14 +17,12 @@ struct PacketLengthGuardTests {
         return crypto
     }
 
-    @Test(arguments: 0 ..< 10)
-    func rejectsShortEncryptedPayload(length: Int) throws {
+    @Test(arguments: 0 ..< 10) func rejectsShortEncryptedPayload(length: Int) throws {
         let crypto = try makeCrypto()
         #expect(crypto.decrypt(data: Data(repeating: 0, count: length)).isEmpty)
     }
 
-    @Test(arguments: [0, 1, 16, 32])
-    func preservesEncryptedRoundTrip(length: Int) throws {
+    @Test(arguments: [0, 1, 16, 32]) func preservesEncryptedRoundTrip(length: Int) throws {
         let crypto = try makeCrypto()
         let plaintext = Data((0 ..< length).map { UInt8($0) })
         let encrypted = crypto.encrypt(data: plaintext)

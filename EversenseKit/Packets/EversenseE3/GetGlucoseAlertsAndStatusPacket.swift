@@ -34,10 +34,9 @@ extension EversenseE3 {
         }
 
         func parseResponse(data: Data) -> GetGlucoseAlertsAndStatusPacketResonse {
-            var content = data.subdata(in: start + 1 ..< data.count - start - 2)
+            var content = data.subdata(in: start ..< data.count)
             if content.count < STATUS_FLAG_COUNT {
-                let prefix = Data(repeating: 0, count: STATUS_FLAG_COUNT - content.count)
-                content = prefix + content
+                content.append(Data(repeating: 0, count: STATUS_FLAG_COUNT - content.count))
             }
 
             if content.max() == 0 {
@@ -88,7 +87,7 @@ extension EversenseE3 {
 
             return GetGlucoseAlertsAndStatusPacketResonse(
                 alarms: alarms
-                    .map { ActiveAlarm(code: $0, codeRaw: $0.rawValue, glucoseInMgDl: currentGlucose, flag: 0, priority: 0) }
+                    .map { ActiveAlarm(code: $0, datetime: Date.now, glucoseInMgDl: currentGlucose, flag: 0, priority: 0) }
             )
         }
     }

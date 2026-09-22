@@ -1,23 +1,31 @@
 import Foundation
 import XCTest
 #if DISPATCH_GROUP_STANDALONE
-@testable import DispatchGroupSubject
+    @testable import DispatchGroupSubject
 #else
-@testable import EversenseKit
+    @testable import EversenseKit
 #endif
 
 final class DispatchGroupLifecycleTests: XCTestCase {
     // Run potentially blocking lock operations off the XCTest thread. The
     // standalone runner also bounds the whole test process as a final backstop.
-    private func assertCompletes(_ operation: @escaping () -> Void,
-                                 file: StaticString = #filePath, line: UInt = #line) {
+    private func assertCompletes(
+        _ operation: @escaping () -> Void,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
         let completed = DispatchSemaphore(value: 0)
         DispatchQueue(label: "dispatch-group-lifecycle").async {
             operation()
             completed.signal()
         }
-        XCTAssertEqual(completed.wait(timeout: .now() + 2), .success,
-                       "Group operation must not deadlock", file: file, line: line)
+        XCTAssertEqual(
+            completed.wait(timeout: .now() + 2),
+            .success,
+            "Group operation must not deadlock",
+            file: file,
+            line: line
+        )
     }
 
     func testBalancedLeavesWaitForEveryEnter() {
@@ -37,7 +45,7 @@ final class DispatchGroupLifecycleTests: XCTestCase {
     func testDuplicateLeavesAllowReuseWithoutCountDrift() {
         assertCompletes {
             let group = EversenseKitDispatchGroup()
-            for _ in 0..<20 {
+            for _ in 0 ..< 20 {
                 group.enter()
                 XCTAssertEqual(group.wait(timeout: .now()), .timedOut)
                 group.leave()
@@ -89,7 +97,10 @@ final class DispatchGroupLifecycleTests: XCTestCase {
             group.leave()
             completed.signal()
         }
-        XCTAssertEqual(completed.wait(timeout: .now() + 2), .success,
-                       "Surplus leave must release the lock for the next enter")
+        XCTAssertEqual(
+            completed.wait(timeout: .now() + 2),
+            .success,
+            "Surplus leave must release the lock for the next enter"
+        )
     }
 }

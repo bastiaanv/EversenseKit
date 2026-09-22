@@ -60,7 +60,7 @@ extension Eversense365 {
 
             var history: [GlucoseHistoryItem] = []
             var i: UInt32 = 0
-            while i + length < actualData.count {
+            while i + length <= actualData.count {
                 let end = i + length
                 let chunk = Data(actualData.subdata(in: Int(i) ..< Int(end)))
 

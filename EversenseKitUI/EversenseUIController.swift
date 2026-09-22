@@ -76,7 +76,7 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
         largeTitleDisplayMode: UINavigationItem.LargeTitleDisplayMode = .automatic
     ) -> DismissibleHostingController<some View> {
         let rootView = rootView
-            .environment(\.appName, Bundle.main.bundleDisplayName)
+            .environment(\.appName, HostApp.current.name)
             .environmentObject(displayGlucosePreference)
 
         let hostedView = DismissibleHostingController(content: rootView, colorPalette: colorPalette)
@@ -104,9 +104,10 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
 
         case .onboardingScan:
             let completion = {
-                self.cgmManager.state.isOnboarded = true
-                self.cgmManager.state.hasReportedInsertionDate = false
-                self.cgmManager.notifyStateDidChange()
+                self.cgmManager.updateState {
+                    $0.isOnboarded = true
+                    $0.hasReportedInsertionDate = false
+                }
 
                 if let cgmManagerOnboardingDelegate = self.cgmManagerOnboardingDelegate {
                     DispatchQueue.main.async {
@@ -231,38 +232,40 @@ class EversenseUIController: UINavigationController, CGMManagerOnboarding, Compl
 
     private func onboardingNextStep(_ cgmType: Int) {
         #if targetEnvironment(simulator)
-            cgmManager.state.isOnboarded = true
-            cgmManager.state.bleNameString = cgmType == 1 ? "Eversense 365 DEMO" : "Eversense E3 DEMO"
-            cgmManager.state.security = cgmType == 1 ? .v2 : .none
-            cgmManager.state.recentGlucoseInMgDl = 140
-            cgmManager.state.recentGlucoseDateTime = Date.now
-            cgmManager.state.recentGlucoseTrend = .flat
-            cgmManager.state.signalStrength = .Good
-            cgmManager.state.signalStrengthRaw = 1350
-            cgmManager.state.batteryPercentage = 75
-            cgmManager.state.calibrationMode = .WeeklySingle
-            cgmManager.state.calibrationPhase = .DAILY_CALIBRATION
-            cgmManager.state.calibrationReadiness = .Ready
-            cgmManager.state.activatedAt = Date.now
-            cgmManager.state.lastCalibration = Date.now
-            cgmManager.state.nextCalibration = Date.now.addingTimeInterval(.days(7))
-            cgmManager.state.lastSynced = Date.now
-            cgmManager.state.activeAlarms = [
-                ActiveAlarm(
-                    code: .CalibrationNowAlarm,
-                    codeRaw: Alarm.CalibrationNowAlarm.rawValue,
-                    glucoseInMgDl: 0,
-                    flag: 0,
-                    priority: 0
-                ),
-                ActiveAlarm(
-                    code: .PredictiveHighAlarm,
-                    codeRaw: Alarm.CalibrationNowAlarm.rawValue,
-                    glucoseInMgDl: 0,
-                    flag: 0,
-                    priority: 2
-                )
-            ]
+            cgmManager.updateState { state in
+                state.isOnboarded = true
+                state.bleNameString = cgmType == 1 ? "Eversense 365 DEMO" : "Eversense E3 DEMO"
+                state.security = cgmType == 1 ? .v2 : .none
+                state.recentGlucoseInMgDl = 140
+                state.recentGlucoseDateTime = Date.now
+                state.recentGlucoseTrend = .flat
+                state.signalStrength = .Good
+                state.signalStrengthRaw = 1350
+                state.batteryPercentage = 75
+                state.calibrationMode = .WeeklySingle
+                state.calibrationPhase = .DAILY_CALIBRATION
+                state.calibrationReadiness = .Ready
+                state.activatedAt = Date.now
+                state.lastCalibration = Date.now
+                state.nextCalibration = Date.now.addingTimeInterval(.days(7))
+                state.lastSynced = Date.now
+                state.activeAlarms = [
+                    ActiveAlarm(
+                        code: .CalibrationNowAlarm,
+                        datetime: Date.now,
+                        glucoseInMgDl: 0,
+                        flag: 0,
+                        priority: 0
+                    ),
+                    ActiveAlarm(
+                        code: .PredictiveHighAlarm,
+                        datetime: Date.now,
+                        glucoseInMgDl: 0,
+                        flag: 0,
+                        priority: 2
+                    )
+                ]
+            }
 
             if let cgmManagerOnboardingDelegate = self.cgmManagerOnboardingDelegate {
                 DispatchQueue.main.async {

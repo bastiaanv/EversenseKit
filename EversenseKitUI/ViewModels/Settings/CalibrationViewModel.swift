@@ -75,9 +75,8 @@ class CalibrationViewModel: ObservableObject {
 
     private func startDMSUpload(cgmManager: EversenseCGMManager, glucose: UInt16) {
         Task {
-            if await DMSApi.uploadDeviceEvents(
+            let result = await DMSApi.uploadDeviceEvents(
                 cgmManager: cgmManager,
-                sensorId: cgmManager.state.sensorId,
                 readings: [],
                 calibrations: [
                     CalibrationEvent(
@@ -86,8 +85,10 @@ class CalibrationViewModel: ObservableObject {
                     )
                 ],
                 alerts: []
-            ) == false {
-                self.logger.warning("Failed to upload device events")
+            )
+
+            if !result.isSuccess {
+                self.logger.warning("Failed to upload device events: \(String(describing: result))")
             }
         }
     }

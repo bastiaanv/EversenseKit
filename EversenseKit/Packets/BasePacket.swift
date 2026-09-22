@@ -198,7 +198,9 @@ enum Eversense365 {
 
     enum LogTypes: UInt8 {
         case Alerts = 0
+        case Battery = 3
         case Calibrations = 6
+        case RawGlucose = 8
         case Glucose = 13
     }
 
