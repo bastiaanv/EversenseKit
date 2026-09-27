@@ -37,7 +37,7 @@ extension Eversense365 {
             var data = Data([PacketIds.ReadCommandId.rawValue, ReadIds.LogValue.rawValue, LogTypes.Calibrations.rawValue])
             data.append(BinaryOperations.dataFrom32Bits(value: from))
             data.append(BinaryOperations.dataFrom32Bits(value: to))
-            return CryptoUtil.shared.encrypt(data: data)
+            return data
         }
 
         func parseResponse(data: Data) -> GetCalibrationLogResponse {

@@ -13,8 +13,7 @@ extension Eversense365 {
         }
 
         func getRequestData() -> Data {
-            let data = Data([PacketIds.ReadCommandId.rawValue, ReadIds.Ping.rawValue])
-            return CryptoUtil.shared.encrypt(data: data)
+            Data([PacketIds.ReadCommandId.rawValue, ReadIds.Ping.rawValue])
         }
 
         func parseResponse(data _: Data) -> PingResponse {

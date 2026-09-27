@@ -4,6 +4,7 @@ class PeripheralManager: NSObject {
     private let logger = EversenseLogger(category: "PeripheralManager")
     private let peripheral: CBPeripheral
     private let cgmManager: EversenseCGMManager
+    private let cryptoUtil = CryptoUtil()
     private var connectCompletion: ((ConnectFailure?) -> Void)?
 
     private var securityHandshakeCompleted = false
@@ -70,11 +71,14 @@ class PeripheralManager: NSObject {
             writeResponse = nil
             writeLock.unlock()
 
-            let data = packet.getRequestData()
+            var data = packet.getRequestData()
             if cgmManager.state.security == .none {
                 logger.debug("[RAW] Writing data -> \(data.hexString())", type: .send)
                 peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
             } else {
+                if packet.responseType != Eversense365.PacketIds.AuthenticateV2ResponseId.rawValue {
+                    data = cryptoUtil.encrypt(data: data)
+                }
                 let encodedMessage = EncodingOperations.encode(data: data, chunkSize: maxPacketSize)
                 for message in EncodingOperations.split(data: encodedMessage, chunkSize: maxPacketSize) {
                     logger.debug("[ENCODED] Writing data -> \(message.hexString())", type: .send)
@@ -233,7 +237,7 @@ extension PeripheralManager: CBPeripheralDelegate {
 
         if !isE3, securityHandshakeCompleted {
             // Only decrypt if packet is for 365 & not for Authentication
-            actualData = CryptoUtil.shared.decrypt(data: actualData)
+            actualData = cryptoUtil.decrypt(data: actualData)
             guard !actualData.isEmpty else {
                 logger.error("Failed to decrypt payload", type: .receive)
                 buffer = Data()
@@ -397,7 +401,7 @@ extension PeripheralManager {
 extension PeripheralManager {
     private func authFlowV2() async {
         if cgmManager.state.publicKeyV2 == nil || cgmManager.state.privateKeyV2 == nil || cgmManager.state.clientIdV2 == nil {
-            let (newPrivateKey, newPublicKey, newClientId) = CryptoUtil.generateKeyPair()
+            let (newPrivateKey, newPublicKey, newClientId) = cryptoUtil.generateKeyPair()
             cgmManager.updateState {
                 $0.publicKeyV2 = newPublicKey
                 $0.privateKeyV2 = newPrivateKey
@@ -414,8 +418,11 @@ extension PeripheralManager {
             return
         }
 
+        var hasEnteredAuthFlow = false
+
         do {
             if cgmManager.state.certificateV2 == nil {
+                hasEnteredAuthFlow = true
                 guard
                     let credentials = cgmManager.keychain.getEversenseCredentials(),
                     let publicKey = cgmManager.state.publicKeyV2
@@ -466,7 +473,7 @@ extension PeripheralManager {
                 logger.info("Skipping online keyVault call, certificate already set")
             }
 
-            let (ephemPrivateKey, ephemPublicKey, salt, digitalSignature) = try CryptoUtil.generateEphem(privateKey: privateKey)
+            let (ephemPrivateKey, ephemPublicKey, salt, digitalSignature) = try cryptoUtil.generateEphem(privateKey: privateKey)
             guard digitalSignature.count == 64 else {
                 logger.error("Generated an invalid signature - length: \(digitalSignature.count)")
                 failConnect(.preconditionFailed(reason: "Signature failed..."))
@@ -486,7 +493,7 @@ extension PeripheralManager {
                 return
             }
 
-            try CryptoUtil.shared.generateSessionKey(
+            try cryptoUtil.generateSessionKey(
                 sessionPublicKey: startResponse.sessionPublicKey,
                 privateKey: ephemPrivateKey,
                 salt: salt
@@ -497,7 +504,10 @@ extension PeripheralManager {
             succeedConnect()
 
         } catch {
-            cgmManager.updateState { $0.certificateV2 = nil }
+            if hasEnteredAuthFlow {
+                // Only reset certificate if auth flow failed
+                cgmManager.updateState { $0.certificateV2 = nil }
+            }
 
             logger.error("Failed to write Auth v2 - \(error.localizedDescription)")
             failConnect(.failedToFetchFleetKey(reason: "Failed to write Auth v2 - \(error.localizedDescription)"))

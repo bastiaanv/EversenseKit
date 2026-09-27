@@ -18,8 +18,7 @@ extension Eversense365 {
         }
 
         func getRequestData() -> Data {
-            let data = Data([PacketIds.WriteCommandId.rawValue, WriteIds.RateRisingEnabled.rawValue, enabled ? 1 : 0])
-            return CryptoUtil.shared.encrypt(data: data)
+            Data([PacketIds.WriteCommandId.rawValue, WriteIds.RateRisingEnabled.rawValue, enabled ? 1 : 0])
         }
 
         func parseResponse(data _: Data) -> SetRateRisingEnabledResponse {

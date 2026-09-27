@@ -2,22 +2,20 @@ import CryptoKit
 import Foundation
 
 class CryptoUtil {
-    public static let shared = CryptoUtil()
+    private let logger = EversenseLogger(category: "CryptoUtil")
 
-    private static let logger = EversenseLogger(category: "CryptoUtil")
-
-    private static let publicKey = "-----BEGIN PUBLIC KEY-----\n" +
+    private let publicKey = "-----BEGIN PUBLIC KEY-----\n" +
         "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEL67Un32stnX4wX8rNYpH9zsu+PFJ\n" +
         "kRDJg5gpOVobGb5e2fazOZ2DDhCqpgMfgUm1P/2HuZhWRJvwSrV402p4gA==\n" +
         "-----END PUBLIC KEY-----"
-    private static let aesKey = SymmetricKey(data: Array("XdHC2ni9oKcd1D5f".utf8))
-    private static let aesIV = Data(Array("9u4CzyxzQ4884yZL".utf8))
+    private let aesKey = SymmetricKey(data: Array("XdHC2ni9oKcd1D5f".utf8))
+    private let aesIV = Data(Array("9u4CzyxzQ4884yZL".utf8))
 
     private var messageCount: Int = 1
     private var salt: Data?
     private var sessionKey: SymmetricKey?
 
-    static func generateSession(fleetKey: String) -> (SymmetricKey, Data)? {
+    func generateSession(fleetKey: String) -> (SymmetricKey, Data)? {
         guard let publicKey = getPublicKey() else {
             return nil
         }
@@ -35,7 +33,7 @@ class CryptoUtil {
         return (sessionKey, salt)
     }
 
-    static func generateKeyPair() -> (Data, Data, Data) {
+    func generateKeyPair() -> (Data, Data, Data) {
         let privateKey = P256.KeyAgreement.PrivateKey()
         let publicKey = privateKey.publicKey
         let clientId = Data.randomSecure(length: 32)
@@ -43,7 +41,7 @@ class CryptoUtil {
         return (privateKey.derRepresentation, publicKey.derRepresentation, clientId)
     }
 
-    static func generateEphem(privateKey pKeyData: Data) throws -> (Data, Data, Data, Data) {
+    func generateEphem(privateKey pKeyData: Data) throws -> (Data, Data, Data, Data) {
         let ephemPrivateKey = P256.KeyAgreement.PrivateKey()
         let ephemPublicKey = Data(ephemPrivateKey.publicKey.derRepresentation)
         let salt = Data.randomSecure(length: 8)
@@ -58,7 +56,7 @@ class CryptoUtil {
         return (ephemPrivateKey.derRepresentation, ephemPublicKey, salt, actualSignature)
     }
 
-    static func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
+    func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
         let result = HMAC<SHA256>.authenticationCode(for: data, using: sessionKey)
         return Data(result).subdata(in: 0 ..< 8)
     }
@@ -76,12 +74,12 @@ class CryptoUtil {
 
     func encrypt(data: Data) -> Data {
         guard let sessionKey = sessionKey else {
-            CryptoUtil.logger.error("[encrypt] No sessionKey stored...")
+            logger.error("[encrypt] No sessionKey stored...")
             return Data()
         }
 
         guard let salt = salt else {
-            CryptoUtil.logger.error("[encrypt] No salt stored...")
+            logger.error("[encrypt] No salt stored...")
             return Data()
         }
 
@@ -96,7 +94,7 @@ class CryptoUtil {
 
             let ccm = try AESCCM(
                 key: sessionKey.withUnsafeBytes { Array($0) },
-                nonce: [UInt8](CryptoUtil.generateEncryptionSalt(salt: salt, i: i)),
+                nonce: [UInt8](generateEncryptionSalt(salt: salt, i: i)),
                 tagLength: 8,
                 additionalAuthenticatedData: [UInt8](s)
             )
@@ -107,7 +105,7 @@ class CryptoUtil {
 
             return output
         } catch {
-            CryptoUtil.logger.error("Failed to encrypt data: \(error)")
+            logger.error("Failed to encrypt data: \(error)")
             return Data()
         }
     }
@@ -115,17 +113,17 @@ class CryptoUtil {
     func decrypt(data: Data) -> Data {
         // Two-byte prefix followed by the eight-byte CCM authentication tag.
         guard data.count >= 10 else {
-            CryptoUtil.logger.error("[decrypt] Encrypted payload too short - count: \(data.count)")
+            logger.error("[decrypt] Encrypted payload too short - count: \(data.count)")
             return Data()
         }
 
         guard let sessionKey = sessionKey else {
-            CryptoUtil.logger.error("[decrypt] No sessionKey stored...")
+            logger.error("[decrypt] No sessionKey stored...")
             return Data()
         }
 
         guard let salt = salt else {
-            CryptoUtil.logger.error("[decrypt] No salt stored...")
+            logger.error("[decrypt] No salt stored...")
             return Data()
         }
 
@@ -136,7 +134,7 @@ class CryptoUtil {
 
             let ccm = try AESCCM(
                 key: sessionKey.withUnsafeBytes { Array($0) },
-                nonce: [UInt8](CryptoUtil.generateEncryptionSalt(salt: salt, i: i)),
+                nonce: [UInt8](generateEncryptionSalt(salt: salt, i: i)),
                 tagLength: 8,
                 additionalAuthenticatedData: [UInt8](prefix)
             )
@@ -144,19 +142,19 @@ class CryptoUtil {
             // cipherText already contains the 8-byte tag appended by encrypt()
             return Data(try ccm.decrypt([UInt8](cipherText)))
         } catch {
-            CryptoUtil.logger.error("[general] Failed to decrypt data: \(error)")
+            logger.error("[general] Failed to decrypt data: \(error)")
             return Data()
         }
     }
 
-    public static func generateEncryptionSalt(salt: Data, i: Int64) -> Data {
+    public func generateEncryptionSalt(salt: Data, i: Int64) -> Data {
         let temp1 = salt.withUnsafeBytes { $0.load(as: Int64.self).littleEndian }
         let temp2 = temp1 & -16384 | i
 
         return temp2.toData(length: 8)
     }
 
-    private static func getPublicKey() -> P256.KeyAgreement.PublicKey? {
+    private func getPublicKey() -> P256.KeyAgreement.PublicKey? {
         do {
             return try P256.KeyAgreement.PublicKey(pemRepresentation: publicKey)
         } catch {
@@ -165,7 +163,7 @@ class CryptoUtil {
         }
     }
 
-    public static func decryptPublicKey(fleetKey: String) -> P256.KeyAgreement.PublicKey? {
+    public func decryptPublicKey(fleetKey: String) -> P256.KeyAgreement.PublicKey? {
         guard let b64Encoded = fleetKey.data(using: .utf8), let encryptedBytes = Data(base64Encoded: b64Encoded) else {
             logger.error("Failed to base64 decode public key: \(fleetKey)")
             return nil
@@ -192,7 +190,7 @@ class CryptoUtil {
         }
     }
 
-    private static func decryptFleetKey(fleetKey: String) -> P256.KeyAgreement.PrivateKey? {
+    private func decryptFleetKey(fleetKey: String) -> P256.KeyAgreement.PrivateKey? {
         guard let b64Encoded = fleetKey.data(using: .utf8), let encryptedBytes = Data(base64Encoded: b64Encoded) else {
             logger.error("Failed to base64 decode fleetkey: \(fleetKey)")
             return nil
@@ -217,7 +215,7 @@ class CryptoUtil {
         }
     }
 
-    private static func getSharedSecret(
+    private func getSharedSecret(
         from privateKey: P256.KeyAgreement.PrivateKey,
         with publicKey: P256.KeyAgreement.PublicKey
     ) -> SharedSecret? {
@@ -229,7 +227,7 @@ class CryptoUtil {
         }
     }
 
-    private static func deriveSessionKey(sharedSecret: SharedSecret, salt: Data) -> SymmetricKey {
+    private func deriveSessionKey(sharedSecret: SharedSecret, salt: Data) -> SymmetricKey {
         sharedSecret.x963DerivedSymmetricKey(
             using: SHA256.self,
             sharedInfo: salt,

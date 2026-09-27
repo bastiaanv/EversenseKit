@@ -18,8 +18,7 @@ extension Eversense365 {
         }
 
         func getRequestData() -> Data {
-            let data = Data([PacketIds.OperationCommandId.rawValue, responseId ?? 0])
-            return CryptoUtil.shared.encrypt(data: data)
+            Data([PacketIds.OperationCommandId.rawValue, responseId ?? 0])
         }
 
         func parseResponse(data _: Data) -> SetDiagnosticModeResponse {
