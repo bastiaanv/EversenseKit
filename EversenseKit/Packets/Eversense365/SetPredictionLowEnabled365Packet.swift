@@ -18,8 +18,7 @@ extension Eversense365 {
         }
 
         func getRequestData() -> Data {
-            let data = Data([PacketIds.WriteCommandId.rawValue, WriteIds.PredictionLowEnabled.rawValue, value])
-            return CryptoUtil.shared.encrypt(data: data)
+            Data([PacketIds.WriteCommandId.rawValue, WriteIds.PredictionLowEnabled.rawValue, value])
         }
 
         func parseResponse(data _: Data) -> SetPredictionLowEnabledResponse {

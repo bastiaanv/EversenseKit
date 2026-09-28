@@ -21,7 +21,7 @@ extension Eversense365 {
             var data = Data([PacketIds.WriteCommandId.rawValue, WriteIds.HighGlucoseAlarm.rawValue])
             data.append(BinaryOperations.dataFrom16Bits(value: value))
 
-            return CryptoUtil.shared.encrypt(data: data)
+            return data
         }
 
         func parseResponse(data _: Data) -> SetHighGlucoseAlarmResponse {

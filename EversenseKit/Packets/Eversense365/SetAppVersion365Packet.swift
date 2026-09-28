@@ -30,7 +30,7 @@ extension Eversense365 {
                 i += 1
             }
 
-            return CryptoUtil.shared.encrypt(data: data)
+            return data
         }
 
         /// Parsed message:

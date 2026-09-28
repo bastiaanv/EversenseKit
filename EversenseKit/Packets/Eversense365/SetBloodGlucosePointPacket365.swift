@@ -27,7 +27,7 @@ extension Eversense365 {
             data.append(BinaryOperations.dataFrom16Bits(value: glucoseInMgDl))
             data.append(Data([1, 0, 0]))
 
-            return CryptoUtil.shared.encrypt(data: data)
+            return data
         }
 
         /// Parse response:

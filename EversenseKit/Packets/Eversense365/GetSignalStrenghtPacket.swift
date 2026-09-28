@@ -21,8 +21,7 @@ extension Eversense365 {
         }
 
         func getRequestData() -> Data {
-            let data = Data([PacketIds.ReadCommandId.rawValue, ReadIds.SignalStrength.rawValue])
-            return CryptoUtil.shared.encrypt(data: data)
+            Data([PacketIds.ReadCommandId.rawValue, ReadIds.SignalStrength.rawValue])
         }
 
         /// Message parsing:

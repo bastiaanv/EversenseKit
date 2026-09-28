@@ -102,7 +102,7 @@ class BluetoothManager: NSObject {
         stopScan()
 
         scanCompletion = completion
-        manager.scanForPeripherals(withServices: [PeripheralManager.serviceUUID])
+        manager.scanForPeripherals(withServices: [CBUUID.serviceUUID])
 
         logger.info("Started scanning!")
     }
@@ -205,7 +205,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
         )
 
         logger.debug("Connected to transmitter -> Start discovering services...")
-        peripheral.discoverServices([PeripheralManager.serviceUUID])
+        peripheral.discoverServices([CBUUID.serviceUUID])
     }
 
     func centralManager(_: CBCentralManager, didDisconnectPeripheral _: CBPeripheral, error: Error?) {

@@ -20,7 +20,7 @@ extension Eversense365 {
         func getRequestData() -> Data {
             var data = Data([PacketIds.WriteCommandId.rawValue, WriteIds.PredictionLowThreshold.rawValue])
             data.append(BinaryOperations.dataFrom16Bits(value: value))
-            return CryptoUtil.shared.encrypt(data: data)
+            return data
         }
 
         func parseResponse(data _: Data) -> SetPredictionLowThresholdResponse {
