@@ -41,12 +41,18 @@ class BluetoothManager: NSObject {
             return
         }
 
-        if let _ = peripheral, let _ = peripheralManager {
-            cgmManager.updateState { $0.connectionStatus = .connected }
+        if let peripheral, peripheral.state == .connected {
+            if peripheralManager?.isConfigured == true {
+                cgmManager.updateState { $0.connectionStatus = .connected }
+                logger.debug("Already connected!")
+                completion(nil)
+                return
+            }
 
-            logger.debug("Already connected!")
-
-            completion(nil)
+            cgmManager.updateState { $0.connectionStatus = .connecting }
+            logger.debug("Connected but not configured -> configuring")
+            connectCompletion = completion
+            configure(peripheral)
             return
         }
 
@@ -229,16 +235,9 @@ extension BluetoothManager: CBCentralManagerDelegate {
             return
         }
 
+        // The central is not powered on yet; centralManagerDidUpdateState configures or connects it
         logger.info("Restored peripheral \(peripheral.name ?? "unknown") state=\(peripheral.state.rawValue)")
         self.peripheral = peripheral
-        switch peripheral.state {
-        case .connected:
-            configure(peripheral)
-        case .connecting:
-            break   // the pending connect survives the relaunch
-        default:
-            central.connect(peripheral)
-        }
     }
 
     func centralManager(_: CBCentralManager, didDisconnectPeripheral _: CBPeripheral, error: Error?) {
