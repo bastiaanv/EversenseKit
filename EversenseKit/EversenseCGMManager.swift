@@ -107,6 +107,7 @@ public class EversenseCGMManager: CGMManager {
     let dmsQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.dmsQueue")
     /// Serializes all CGM BLE operations so two heartbeats can never run at the same time.
     private let operationQueue = DispatchQueue(label: "com.bastiaanv.eversensekit.operationQueue")
+    private var scheduledRead: DispatchWorkItem?
     var isUploadingDMS = false
 
     public let managerIdentifier: String = "EversenseCGMManager"
@@ -186,7 +187,25 @@ extension EversenseCGMManager {
                 completion?()
                 return
             }
+            self.scheduledRead?.cancel()
             self.performHeartbeat(force: force, completion: completion)
+        }
+    }
+
+    /// The transmitter takes a reading every 5 minutes but only announces it in its next keep-alive,
+    /// up to a minute later. Read it ourselves shortly after it is due instead.
+    private func scheduleNextRead(after readingDate: Date) {
+        let due = readingDate.addingTimeInterval(.minutes(5) + .seconds(5))
+        // A reading already older than that is not on the 5-minute cadence; leave it to the keep-alive
+        guard due.timeIntervalSinceNow > 30 else { return }
+        operationQueue.async { [weak self] in
+            guard let self else { return }
+            self.scheduledRead?.cancel()
+            let item = DispatchWorkItem { [weak self] in
+                self?.performHeartbeat(force: true, completion: nil)
+            }
+            self.scheduledRead = item
+            self.operationQueue.asyncAfter(deadline: .now() + due.timeIntervalSinceNow, execute: item)
         }
     }
 
@@ -222,6 +241,7 @@ extension EversenseCGMManager {
                 return
             }
 
+            self.scheduleNextRead(after: currentGlucose.datetime)
             self.updateState { state in
                 state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
                 state.recentGlucoseDateTime = currentGlucose.datetime
