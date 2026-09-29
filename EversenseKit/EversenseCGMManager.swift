@@ -133,7 +133,10 @@ public class EversenseCGMManager: CGMManager {
 
     func cleanup() {
         logger.info("Cleaning up CGMManager")
-        updateState { $0.bleNameString = nil }
+        updateState {
+            $0.bleNameString = nil
+            $0.peripheralIdentifier = nil
+        }
 
         bluetoothManager.stopScan()
         bluetoothManager.disconnect()
