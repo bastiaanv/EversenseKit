@@ -352,7 +352,7 @@ extension EversenseCGMManager {
 
         delegate.notify { cgmManagerDelegate in
             guard let cgmManagerDelegate = cgmManagerDelegate else {
-                self.logger.warning("Skip notifying delegate as no delegate set...")
+                self.logger.debug("Skip notifying delegate as no delegate set...")
                 return
             }
 
