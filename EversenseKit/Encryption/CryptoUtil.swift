@@ -50,10 +50,9 @@ class CryptoUtil {
         var data = Data(ephemPublicKey.subdata(in: 27 ..< ephemPublicKey.count))
         data.append(salt)
 
-        let digitalSignature = try privateKey.signature(for: data).derRepresentation
-        let actualSignature = try parseECDSASignature(digitalSignature)
+        let digitalSignature = try privateKey.signature(for: data).rawRepresentation
 
-        return (ephemPrivateKey.derRepresentation, ephemPublicKey, salt, actualSignature)
+        return (ephemPrivateKey.derRepresentation, ephemPublicKey, salt, digitalSignature)
     }
 
     func generateSignature(sessionKey: SymmetricKey, data: Data) -> Data {
