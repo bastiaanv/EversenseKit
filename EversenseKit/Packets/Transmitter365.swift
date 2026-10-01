@@ -212,7 +212,7 @@ extension Eversense365 {
     ) {
         do {
             logger.debug("Write vibration")
-            let _: SetDoNotDisturbResponse = try peripheralManager.write(SetDoNotDisturbRequest(silenced: data.vibrationMode))
+            let _: SetDoNotDisturbResponse = try peripheralManager.write(SetDoNotDisturbRequest(vibrationEnabled: data.vibrationMode))
 
             logger.debug("Write glucose alerts")
             let _: SetHighGlucoseAlarmEnabledResponse = try peripheralManager

@@ -13,8 +13,8 @@ extension Eversense365 {
         }
 
         let silenced: Bool
-        init(silenced: Bool) {
-            self.silenced = silenced
+        init(vibrationEnabled: Bool) {
+            silenced = !vibrationEnabled
         }
 
         func getRequestData() -> Data {

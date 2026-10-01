@@ -100,7 +100,7 @@ extension Eversense365 {
             let disconnectTimeout = UInt16(data[Offset.DISCONNECT_TIMEOUT]) | (UInt16(data[Offset.DISCONNECT_TIMEOUT + 1]) << 8)
 
             return GetPatientSettingsResponse(
-                vibrateMode: data[Offset.IS_DO_NOT_DISTURB_ENABLED] != 0x00,
+                vibrateMode: data[Offset.IS_DO_NOT_DISTURB_ENABLED] == 0x00,
                 disconnectTimeout: TimeInterval(seconds: Double(disconnectTimeout)),
                 highGlucoseEnabled: data[Offset.ALARM_HIGH_GLUCOSE_ENABLED] != 0x00,
                 highGlucoseAlarmInMgDl: UInt16(data[Offset.ALARM_HIGH_GLUCOSE_THRESHOLD]) |
