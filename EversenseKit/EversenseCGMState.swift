@@ -42,6 +42,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public init(rawValue: RawValue) {
         bleNameString = rawValue["bleNameString"] as? String
+        peripheralIdentifier = (rawValue["peripheralIdentifier"] as? String).flatMap(UUID.init)
         isOnboarded = rawValue["isOnboarded"] as? Bool ?? false
         isSyncing = rawValue["isSyncing"] as? Bool ?? false
         lastSynced = rawValue["lastSynced"] as? Date
@@ -180,6 +181,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         var value: [String: Any] = [:]
 
         value["bleNameString"] = bleNameString
+        value["peripheralIdentifier"] = peripheralIdentifier?.uuidString
         value["isOnboarded"] = isOnboarded
         value["isSyncing"] = isSyncing
         value["lastSynced"] = lastSynced
@@ -251,6 +253,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
 
     public var connectionStatus: ConnectionStatus = .idle
     public var bleNameString: String?
+    public var peripheralIdentifier: UUID?
     public var isOnboarded: Bool
     public var isSyncing: Bool
     public var lastSynced: Date?
@@ -348,6 +351,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
             "— Connection —",
             "connectionStatus: \(connectionStatus)",
             "bleNameString: \(bleNameString ?? "nil")",
+            "peripheralIdentifier: \(peripheralIdentifier?.uuidString ?? "nil")",
             "isOnboarded: \(isOnboarded)",
             "isSyncing: \(isSyncing)",
             "lastSynced: \(lastSynced?.description ?? "nil")",

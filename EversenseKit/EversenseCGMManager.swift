@@ -133,7 +133,10 @@ public class EversenseCGMManager: CGMManager {
 
     func cleanup() {
         logger.info("Cleaning up CGMManager")
-        updateState { $0.bleNameString = nil }
+        updateState {
+            $0.bleNameString = nil
+            $0.peripheralIdentifier = nil
+        }
 
         bluetoothManager.stopScan()
         bluetoothManager.disconnect()
@@ -349,7 +352,7 @@ extension EversenseCGMManager {
 
         delegate.notify { cgmManagerDelegate in
             guard let cgmManagerDelegate = cgmManagerDelegate else {
-                self.logger.warning("Skip notifying delegate as no delegate set...")
+                self.logger.debug("Skip notifying delegate as no delegate set...")
                 return
             }
 

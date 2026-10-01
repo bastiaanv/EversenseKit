@@ -10,6 +10,9 @@ class PeripheralManager: NSObject {
     private var securityHandshakeCompleted = false
     private var service: CBService?
     private var requestCharacteristic: CBCharacteristic?
+
+    /// Services and characteristics have been discovered; writes are possible.
+    var isConfigured: Bool { requestCharacteristic != nil }
     private var responseCharacteristic: CBCharacteristic?
 
     private var buffer = Data([])
