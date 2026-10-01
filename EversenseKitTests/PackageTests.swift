@@ -92,7 +92,7 @@ struct PackageTest {
         let packet = Eversense365.PushAlarmWithDataPacket(currentGlucose: 180)
         let result = packet.parseResponse(data: data)
 
-        #expect(result.alarm.codeRaw > 0)
+        #expect(result.alarmRaw > 0)
     }
 
     @Test func currentGlucoseOld() async throws {
