@@ -42,7 +42,7 @@ class BluetoothManager: NSObject {
         }
 
         if let peripheral, peripheral.state == .connected {
-            if peripheralManager?.isConfigured == true {
+            if let peripheralManager, peripheralManager.isConfigured, !peripheralManager.needsHandshake {
                 cgmManager.updateState { $0.connectionStatus = .connected }
                 logger.debug("Already connected!")
                 completion(nil)

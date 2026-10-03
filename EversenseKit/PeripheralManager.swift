@@ -13,6 +13,9 @@ class PeripheralManager: NSObject {
 
     /// Services and characteristics have been discovered; writes are possible.
     var isConfigured: Bool { requestCharacteristic != nil }
+
+    /// The 365 handshake failed on this link, so nothing can be decrypted until it is retried.
+    private(set) var needsHandshake = false
     private var responseCharacteristic: CBCharacteristic?
 
     private var buffer = Data([])
@@ -209,14 +212,20 @@ extension PeripheralManager: CBPeripheralDelegate {
         } else {
             logger.info("Successfully enabled notify for \(characteristic.uuid.uuidString)")
 
-            Task {
-                switch cgmManager.state.security {
-                case .none:
-                    writeNoneSecurity()
-                case .v2:
-                    await authFlowV2()
-                }
+            switch cgmManager.state.security {
+            case .none:
+                Task { writeNoneSecurity() }
+            case .v2:
+                runHandshakeV2()
             }
+        }
+    }
+
+    private func runHandshakeV2() {
+        needsHandshake = false
+        Task {
+            await authFlowV2()
+            needsHandshake = !securityHandshakeCompleted
         }
     }
 
@@ -237,6 +246,14 @@ extension PeripheralManager: CBPeripheralDelegate {
             return
         }
         var actualData = Data(buffer)
+
+        if !isE3, needsHandshake {
+            // The transmitter is pushing to a link whose handshake failed; retry it now
+            logger.info("Received data on an unauthenticated link, retrying handshake", type: .receive)
+            buffer = Data()
+            runHandshakeV2()
+            return
+        }
 
         if !isE3, securityHandshakeCompleted {
             // Only decrypt if packet is for 365 & not for Authentication
