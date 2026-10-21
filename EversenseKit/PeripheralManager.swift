@@ -461,21 +461,45 @@ extension PeripheralManager {
                     password: credentials.password
                 )
 
-                let fleetSecret = await KeyVaultApi.getFleetSecretV2(
-                    cgmManager: cgmManager,
-                    accessToken: accessResponse.accessToken,
-                    serialNumber: whoAmIResponse.serialNumber.base64Safe(),
-                    nonce: whoAmIResponse.nonce.base64Safe(),
-                    flags: whoAmIResponse.flags,
-                    kpClientUniqueId: publicKey.subdata(in: 27 ..< publicKey.count).base64Safe()
-                )
+                func requestCertificate(flags: Bool) async -> SecureKeyResponse? {
+                    await KeyVaultApi.getFleetSecretV2(
+                        cgmManager: cgmManager,
+                        accessToken: accessResponse.accessToken,
+                        serialNumber: whoAmIResponse.serialNumber.base64Safe(),
+                        nonce: whoAmIResponse.nonce.base64Safe(),
+                        flags: flags,
+                        kpClientUniqueId: publicKey.subdata(in: 27 ..< publicKey.count).base64Safe()
+                    )
+                }
+
+                var fleetSecret = await requestCertificate(flags: whoAmIResponse.flags)
+
+                // The meaning of the WhoAmI flag bytes isn't confirmed. Some transmitters report
+                // 01 00 (parsed as tx_flags=false) yet the key vault only returns their
+                // certificate for tx_flags=true, answering IsKeyAvailable=false otherwise.
+                // When no certificate comes back, ask once more with the flag inverted.
+                if fleetSecret?.result.certificate == nil {
+                    logger.warning(
+                        "No certificate for tx_flags=\(whoAmIResponse.flags) " +
+                            "(IsKeyAvailable=\(fleetSecret?.result.isKeyAvailable.description ?? "nil")), " +
+                            "retrying with tx_flags=\(!whoAmIResponse.flags)"
+                    )
+                    let retry = await requestCertificate(flags: !whoAmIResponse.flags)
+                    if retry?.result.certificate != nil {
+                        logger.info("Got certificate with tx_flags=\(!whoAmIResponse.flags)")
+                        fleetSecret = retry
+                    }
+                }
 
                 guard let fleetSecret = fleetSecret,
                       fleetSecret.status == "Success",
                       let certificate = fleetSecret.result.certificate
                 else {
                     logger.error("FleetSecret is empty or is missing information...")
-                    failConnect(.preconditionFailed(reason: "FleetSecret is empty..."))
+                    let reason = fleetSecret?.result.isKeyAvailable == false
+                        ? "Eversense has no key for this transmitter on your account (IsKeyAvailable=false)."
+                        : "FleetSecret is empty..."
+                    failConnect(.preconditionFailed(reason: reason))
                     return
                 }
 
