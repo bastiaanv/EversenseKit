@@ -61,7 +61,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         uploadBatchSize = rawValue["uploadBatchSize"] as? Int ?? 12
         sensorId = rawValue["sensorId"] as? Data ?? Data()
         communicationProtocol = rawValue["communicationProtocol"] as? Double ?? 0
-        hasReportedInsertionDate = rawValue["hasReportedInsertionDate"] as? Bool ?? false
+        sensorStartReportedFor = rawValue["sensorStartReportedFor"] as? String
+            ?? (rawValue["hasReportedInsertionDate"] as? Bool == true ? sensorId.hexString() : nil)
         activatedAt = rawValue["activatedAt"] as? Date ?? Date.distantPast
         expiresAt = rawValue["expiresAt"] as? Date ?? Date.distantPast
         mmaFeatures = rawValue["mmaFeatures"] as? UInt8 ?? 0
@@ -195,7 +196,7 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["transmitterId"] = transmitterId
         value["sensorId"] = sensorId
         value["communicationProtocol"] = communicationProtocol
-        value["hasReportedInsertionDate"] = hasReportedInsertionDate
+        value["sensorStartReportedFor"] = sensorStartReportedFor
         value["hasReportedAppValues"] = hasReportedAppValues
         value["activatedAt"] = activatedAt
         value["expiresAt"] = expiresAt
@@ -262,7 +263,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var transmitterId: String?
     public var sensorId: Data
     public var communicationProtocol: Double
-    public var hasReportedInsertionDate: Bool
+    /// The sensor whose `sensorStart` has been sent to Loop.
+    public var sensorStartReportedFor: String?
     public var activatedAt: Date
     public var expiresAt: Date
 

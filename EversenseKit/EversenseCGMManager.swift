@@ -251,17 +251,18 @@ extension EversenseCGMManager {
 
                 delegate.cgmManager(self, hasNew: .newData(newData))
 
-                if !self.state.hasReportedInsertionDate {
+                let sensorID = self.state.sensorId.hexString()
+                if !self.state.sensorId.isEmpty, self.state.sensorStartReportedFor != sensorID {
                     let insertionEvent = PersistedCgmEvent(
                         date: self.state.activatedAt,
                         type: .sensorStart,
-                        deviceIdentifier: self.state.sensorId.hexString(),
+                        deviceIdentifier: sensorID,
                         expectedLifetime: self.state.is365 ? .days(365) : .days(180),
                         warmupPeriod: .hours(24)
                     )
                     delegate.cgmManager(self, hasNew: [insertionEvent])
 
-                    self.updateState { $0.hasReportedInsertionDate = true }
+                    self.updateState { $0.sensorStartReportedFor = sensorID }
                 }
             }
 
