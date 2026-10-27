@@ -54,6 +54,8 @@ public enum Alarm: UInt8, Codable {
     case GeneralGlucoseSuspended = 65
     case SensorGraceAlarm = 66
     case SensorSyncConfirmedAlarm = 67
+    // Sent on the 365 when the placement guide ends after the transmitter is put back on the arm
+    case ExitPlacementGuideAlert = 71
     // Custom error codes in Eversense app
 //    case TxDockedAlert = 68
 //    case TxUndockedAlert = 69
@@ -155,6 +157,7 @@ public enum Alarm: UInt8, Codable {
              .SensorRetiringSoon6Alarm,
              .SensorRetiringSoon7Alarm,
              .SensorSyncConfirmedAlarm,
+             .ExitPlacementGuideAlert,
              .TwoCal:
             return .Info
 
@@ -262,6 +265,8 @@ public enum Alarm: UInt8, Codable {
             return String(localized: "Glucose Suspend", comment: "title for GeneralGlucoseSuspended")
         case .SensorSyncConfirmedAlarm:
             return String(localized: "Sensor Sync Confirmed", comment: "title for SensorSyncConfirmedAlarm")
+        case .ExitPlacementGuideAlert:
+            return String(localized: "Exit Placement Guide", comment: "title for ExitPlacementGuideAlert")
         case .SensorStability:
             return String(localized: "Sensor Stability", comment: "title for unknown")
         case .unknown:
@@ -425,6 +430,12 @@ public enum Alarm: UInt8, Codable {
                 localized:
                 "Your transmitter has synced with your sensor.",
                 comment: "description for SensorSyncConfirmedAlarm"
+            )
+        case .ExitPlacementGuideAlert:
+            return String(
+                localized:
+                "Your transmitter has finished the placement guide. Glucose readings will resume in a few minutes.",
+                comment: "description for ExitPlacementGuideAlert"
             )
         default:
             return nil

@@ -10041,6 +10041,168 @@
         }
       }
     },
+    "Exit Placement Guide" : {
+      "comment" : "title for ExitPlacementGuideAlert",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "انتهاء دليل التموضع"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Průvodce umístěním ukončen"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placeringsguide afsluttet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platzierungshilfe beendet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exit Placement Guide"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guía de colocación finalizada"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sijoitusopas päättynyt"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fin du guide de placement"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "מדריך המיקום הסתיים"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elhelyezési útmutató befejeződött"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guida al posizionamento terminata"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装着位置ガイド終了"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "배치 가이드 종료"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plasseringsveiledning avsluttet"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plaatsingsgids beëindigd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przewodnik umieszczania zakończony"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guia de colocação encerrado"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghid de plasare încheiat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Руководство по размещению завершено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprievodca umiestnením ukončený"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vodnik za namestitev končan"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placeringsguide avslutad"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerleştirme Kılavuzu Tamamlandı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посібник із розміщення завершено"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã kết thúc hướng dẫn vị trí"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放置指南已结束"
+          }
+        }
+      }
+    },
     "Falling alarming enabled" : {
       "comment" : "label falling alarming enabled",
       "extractionState" : "manual",
@@ -34967,6 +35129,168 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "您的发射机检测到振动电机有问题，无法再提供振动警报。请联系 Eversense 客户支持中心更换发射器。"
+          }
+        }
+      }
+    },
+    "Your transmitter has finished the placement guide. Glucose readings will resume in a few minutes." : {
+      "comment" : "description for ExitPlacementGuideAlert",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أنهى جهاز الإرسال الخاص بك دليل التموضع. ستُستأنف قراءات الجلوكوز خلال بضع دقائق."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vysílač dokončil průvodce umístěním. Hodnoty glukózy se obnoví během několika minut."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din sender har afsluttet placeringsguiden. Glukosemålingerne genoptages om få minutter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ihr Transmitter hat die Platzierungshilfe abgeschlossen. Die Glukosewerte werden in wenigen Minuten wieder angezeigt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your transmitter has finished the placement guide. Glucose readings will resume in a few minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El transmisor ha finalizado la guía de colocación. Las lecturas de glucosa se reanudarán en unos minutos."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lähettimesi on suorittanut sijoitusoppaan. Glukoosilukemat jatkuvat muutaman minuutin kuluttua."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre émetteur a terminé le guide de placement. Les mesures de glucose reprendront dans quelques minutes."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "המשדר שלך סיים את מדריך המיקום. קריאות הגלוקוז יתחדשו בעוד מספר דקות."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A jeladó befejezte az elhelyezési útmutatót. A glükózértékek néhány percen belül újra megjelennek."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il trasmettitore ha completato la guida al posizionamento. Le letture del glucosio riprenderanno tra pochi minuti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信機の装着位置ガイドが終了しました。数分以内にグルコース値の表示が再開されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "송신기의 배치 가이드가 완료되었습니다. 몇 분 내에 혈당 측정값이 다시 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senderen har fullført plasseringsveiledningen. Glukosemålingene fortsetter om noen minutter."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je zender heeft de plaatsingsgids afgerond. Glucosemetingen worden binnen enkele minuten hervat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadajnik zakończył przewodnik umieszczania. Odczyty glukozy zostaną wznowione w ciągu kilku minut."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O transmissor concluiu o guia de colocação. As leituras de glicose serão retomadas em alguns minutos."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transmițătorul dumneavoastră a încheiat ghidul de plasare. Citirile glicemiei vor fi reluate în câteva minute."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш передатчик завершил руководство по размещению. Показания глюкозы возобновятся через несколько минут."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš vysielač dokončil sprievodcu umiestnením. Hodnoty glukózy sa obnovia o niekoľko minút."
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oddajnik je zaključil vodnik za namestitev. Meritve glukoze se bodo nadaljevale v nekaj minutah."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din sändare har slutfört placeringsguiden. Glukosvärdena återupptas om några minuter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vericiniz yerleştirme kılavuzunu tamamladı. Glukoz ölçümleri birkaç dakika içinde yeniden başlayacak."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш передавач завершив посібник із розміщення. Показники глюкози відновляться за кілька хвилин."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Máy phát của bạn đã hoàn tất hướng dẫn vị trí. Chỉ số glucose sẽ tiếp tục sau vài phút."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发射器已完成放置指南。葡萄糖读数将在几分钟内恢复。"
           }
         }
       }
