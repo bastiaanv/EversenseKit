@@ -408,6 +408,7 @@ extension PeripheralManager {
         do {
             let _: EversenseE3.SaveBleBondingInformationResponse = try write(EversenseE3.SaveBleBondingInformationPacket())
 
+            cgmManager.readGlucoseAfterConnect(self)
             EversenseE3.fullSync(peripheralManager: self, cgmManager: cgmManager)
             succeedConnect()
         } catch {
@@ -544,6 +545,7 @@ extension PeripheralManager {
             )
 
             securityHandshakeCompleted = true
+            cgmManager.readGlucoseAfterConnect(self)
             Eversense365.fullSync(peripheralManager: self, cgmManager: cgmManager)
             succeedConnect()
 
