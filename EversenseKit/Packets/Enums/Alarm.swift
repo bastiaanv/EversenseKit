@@ -140,7 +140,8 @@ public enum Alarm: UInt8, Codable {
                 body: body,
                 acknowledgeActionButtonLabel: String(localized: "OK", comment: "Acknowlegde alarm")
             ),
-            trigger: .immediate
+            trigger: .immediate,
+            interruptionLevel: type == .Info ? .active : .timeSensitive
         )
     }
 

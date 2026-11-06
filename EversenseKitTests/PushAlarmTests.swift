@@ -1,5 +1,6 @@
 @testable import EversenseKit
 import Foundation
+import LoopKit
 import Testing
 
 struct PushAlarmTests {
@@ -28,5 +29,17 @@ struct PushAlarmTests {
         let afterPush = EversenseCGMManager.alarms(afterPush: alarm(.LowGlucoseAlarm), current: [alarm(.LowGlucoseAlarm)])
 
         #expect(afterPush.map(\.code) == [.LowGlucoseAlarm])
+    }
+}
+
+struct AlarmInterruptionLevelTests {
+    @Test func infoAlarmsAreNormalPriority() {
+        #expect(Alarm.OneCal.alarm.interruptionLevel == .active)
+        #expect(Alarm.SensorRetiringSoon1Alarm.alarm.interruptionLevel == .active)
+    }
+
+    @Test func otherAlarmsStayTimeSensitive() {
+        #expect(Alarm.LowGlucoseAlarm.alarm.interruptionLevel == .timeSensitive)
+        #expect(Alarm.CalibrationNowAlarm.alarm.interruptionLevel == .timeSensitive)
     }
 }
