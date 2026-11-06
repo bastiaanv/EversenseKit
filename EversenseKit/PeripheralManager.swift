@@ -341,7 +341,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             return true
         }
 
-        cgmManager.updateState { $0.activeAlarms = [response.alarm] }
+        cgmManager.handleAlarm(alarms: EversenseCGMManager.alarms(afterPush: response.alarm, current: cgmManager.state.activeAlarms))
 
         logger.debug("[365] Received alarm", type: .receive)
         return true
