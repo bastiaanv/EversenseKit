@@ -193,11 +193,28 @@ extension EversenseCGMManager {
         }
     }
 
-    private func performHeartbeat(force: Bool, completion: (() -> Void)?) {
-        let lastGlucoseTimestamp = max(
+    private var heartbeatLastGlucoseTimestamp: Date {
+        max(
             state.recentGlucoseDateTime ?? Date.distantPast,
             Date.now.addingTimeInterval(.hours(-4))
         )
+    }
+
+    /// Called once a link is up, before the full sync, so a link that drops again
+    /// within seconds still delivers the readings that are due.
+    func readGlucoseAfterConnect(_ peripheralManager: PeripheralManager) {
+        let lastGlucoseTimestamp = heartbeatLastGlucoseTimestamp
+        guard isOnboarded,
+              Date.now.timeIntervalSince(lastGlucoseTimestamp) >= .minutes(4.5),
+              let samples = getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp, fullSync: false)
+        else {
+            return
+        }
+        deliver(samples)
+    }
+
+    private func performHeartbeat(force: Bool, completion: (() -> Void)?) {
+        let lastGlucoseTimestamp = heartbeatLastGlucoseTimestamp
 
         if !force, Date.now.timeIntervalSince(lastGlucoseTimestamp) < .minutes(4.5) {
             logger.warning("Skipping sync, glucose is still fresh - \(Date.now.timeIntervalSince(lastGlucoseTimestamp))s")
@@ -218,65 +235,67 @@ extension EversenseCGMManager {
                 return
             }
 
-            guard let samples = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp),
-                  let currentGlucose = samples.last
-            else {
-                completion?()
+            if let samples = self.getGlucoseAndSync(peripheralManager, lastGlucoseTimestamp) {
+                self.deliver(samples)
+            }
+            completion?()
+        }
+    }
+
+    private func deliver(_ samples: [CGMReading]) {
+        guard let currentGlucose = samples.last else {
+            return
+        }
+
+        self.updateState { state in
+            state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
+            state.recentGlucoseDateTime = currentGlucose.datetime
+            state.recentGlucoseTrend = currentGlucose.trend ?? .flat
+            state.lastReadTimestamp = max(
+                currentGlucose.datetime,
+                samples.map(\.datetime).max() ?? currentGlucose.datetime
+            )
+        }
+
+        self.delegate.notify { delegate in
+            guard let delegate else {
                 return
             }
 
-            self.updateState { state in
-                state.recentGlucoseInMgDl = currentGlucose.glucoseInMgDl
-                state.recentGlucoseDateTime = currentGlucose.datetime
-                state.recentGlucoseTrend = currentGlucose.trend ?? .flat
-                state.lastReadTimestamp = max(
-                    currentGlucose.datetime,
-                    samples.map(\.datetime).max() ?? currentGlucose.datetime
+            let newData = samples.map {
+                NewGlucoseSample(
+                    cgmManager: self,
+                    value: $0.glucoseInMgDl,
+                    trend: $0.trend,
+                    dateTime: $0.datetime
                 )
             }
 
-            self.delegate.notify { delegate in
-                guard let delegate else {
-                    return
-                }
+            delegate.cgmManager(self, hasNew: .newData(newData))
 
-                let newData = samples.map {
-                    NewGlucoseSample(
-                        cgmManager: self,
-                        value: $0.glucoseInMgDl,
-                        trend: $0.trend,
-                        dateTime: $0.datetime
-                    )
-                }
+            let sensorID = self.state.sensorId.hexString()
+            if !self.state.sensorId.isEmpty, self.state.sensorStartReportedFor != sensorID {
+                let insertionEvent = PersistedCgmEvent(
+                    date: self.state.activatedAt,
+                    type: .sensorStart,
+                    deviceIdentifier: sensorID,
+                    expectedLifetime: self.state.is365 ? .days(365) : .days(180),
+                    warmupPeriod: .hours(24)
+                )
+                delegate.cgmManager(self, hasNew: [insertionEvent])
 
-                delegate.cgmManager(self, hasNew: .newData(newData))
-
-                let sensorID = self.state.sensorId.hexString()
-                if !self.state.sensorId.isEmpty, self.state.sensorStartReportedFor != sensorID {
-                    let insertionEvent = PersistedCgmEvent(
-                        date: self.state.activatedAt,
-                        type: .sensorStart,
-                        deviceIdentifier: sensorID,
-                        expectedLifetime: self.state.is365 ? .days(365) : .days(180),
-                        warmupPeriod: .hours(24)
-                    )
-                    delegate.cgmManager(self, hasNew: [insertionEvent])
-
-                    self.updateState { $0.sensorStartReportedFor = sensorID }
-                }
+                self.updateState { $0.sensorStartReportedFor = sensorID }
             }
+        }
 
-            if self.state.shouldUploadToEversenseDMS {
-                // Queue the freshly-read history before any network work, so a failed or
-                // suspended upload can never discard data that was successfully read.
-                self.enqueueForDMS(samples)
+        if self.state.shouldUploadToEversenseDMS {
+            // Queue the freshly-read history before any network work, so a failed or
+            // suspended upload can never discard data that was successfully read.
+            self.enqueueForDMS(samples)
 
-                Task {
-                    await self.uploadToDMS(currentGlucose: currentGlucose)
-                }
+            Task {
+                await self.uploadToDMS(currentGlucose: currentGlucose)
             }
-
-            completion?()
         }
     }
 
@@ -304,7 +323,8 @@ extension EversenseCGMManager {
 
     private func getGlucoseAndSync(
         _ peripheralManager: PeripheralManager,
-        _ lastGlucoseTimestamp: Date
+        _ lastGlucoseTimestamp: Date,
+        fullSync: Bool = true
     ) -> [CGMReading]? {
         // `lastReadTimestamp` is the BLE read cursor and advances on every successful read.
         // Fall back to the old single cursor / delegate timestamp for migration.
@@ -322,7 +342,9 @@ extension EversenseCGMManager {
                 return nil
             }
 
-            EversenseE3.fullSync(peripheralManager: peripheralManager, cgmManager: self)
+            if fullSync {
+                EversenseE3.fullSync(peripheralManager: peripheralManager, cgmManager: self)
+            }
             return samples
         } else {
             guard let samples = Eversense365.readGlucoseData(
@@ -339,7 +361,9 @@ extension EversenseCGMManager {
                 }
             }
 
-            Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
+            if fullSync {
+                Eversense365.fullSync(peripheralManager: peripheralManager, cgmManager: self)
+            }
             return samples
         }
     }
