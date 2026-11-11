@@ -10958,7 +10958,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nume și prenume"
+            "value" : "Numele complet"
           }
         },
         "ru" : {
@@ -23426,7 +23426,7 @@
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminați adeptul %@"
+            "value" : "Eliminați urmăritorul %@"
           }
         },
         "ru" : {
